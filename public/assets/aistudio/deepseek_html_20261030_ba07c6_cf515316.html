@@ -1,0 +1,1349 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#0a0a0d">
+<title>Picsart Clone</title>
+<style>
+:root{
+  --bg:#000;--panel:#0d0d10;--panel2:#16161a;--panel3:#1c1c22;
+  --border:#26262e;--text:#fff;--dim:#9a9aa5;--mute:#5c5c66;
+  --accent:#e0289a;--accent-hi:#ff3dad;--active:#8b5cf6;
+  --pro:#ff5c8a;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;overflow:hidden;font-family:-apple-system,'Inter','Segoe UI',sans-serif;font-size:13px;color:var(--text);background:#000;user-select:none;-webkit-user-select:none;overscroll-behavior:none}
+button{font:inherit;color:inherit;cursor:pointer;border:none;background:none;padding:0;touch-action:manipulation}
+input,select,textarea{font:inherit;color:inherit}
+svg{display:block;flex-shrink:0}
+
+#app{
+  position:relative;width:100vw;height:100dvh;display:flex;flex-direction:column;
+  overflow:hidden;background:#000;
+}
+
+/* ============ TOP BAR ============ */
+.topbar{
+  position:relative;z-index:40;
+  display:flex;align-items:center;gap:6px;
+  padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));
+  background:transparent;
+}
+.topbar-group{display:flex;gap:4px}
+.tb-icon{
+  width:36px;height:36px;display:flex;align-items:center;justify-content:center;
+  background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
+  border-radius:50%;color:#fff;transition:background .15s,transform .1s;
+}
+.tb-icon:active{transform:scale(0.92);background:rgba(255,255,255,0.15)}
+.tb-icon svg{width:18px;height:18px}
+.tb-sep{flex:1}
+.tb-icon.check{background:var(--accent);color:#fff}
+.tb-icon.check:active{background:var(--accent-hi)}
+.res-badge{
+  padding:6px 12px;background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);
+  border-radius:18px;font-size:11px;font-weight:500;color:#fff;white-space:nowrap;
+  font-variant-numeric:tabular-nums;
+}
+.layers-fab{
+  position:absolute;top:calc(60px + env(safe-area-inset-top));right:12px;z-index:35;
+  width:36px;height:36px;background:rgba(255,255,255,0.08);backdrop-filter:blur(20px);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.layers-fab svg{width:16px;height:16px}
+.layers-fab:active{transform:scale(0.92)}
+
+/* ============ CANVAS AREA ============ */
+.canvas-area{
+  position:relative;flex:1;overflow:hidden;background:#000;
+  display:flex;align-items:center;justify-content:center;
+}
+.stage{
+  position:relative;display:block;
+  box-shadow:0 4px 40px rgba(0,0,0,0.7);
+  touch-action:none;
+  max-width:100%;max-height:100%;
+}
+#canvas,#overlay{display:block;max-width:100%;max-height:100%;object-fit:contain}
+#overlay{position:absolute;inset:0;pointer-events:none}
+
+/* ============ BOTTOM TOOLBAR ============ */
+.bottom-toolbar{
+  position:relative;z-index:30;
+  display:flex;align-items:center;gap:2px;
+  padding:6px 8px;padding-bottom:calc(6px + env(safe-area-inset-bottom));
+  background:#000;
+  overflow-x:auto;overflow-y:hidden;
+  scrollbar-width:none;
+  -webkit-overflow-scrolling:touch;
+  transition:opacity .2s,transform .2s;
+}
+.bottom-toolbar::-webkit-scrollbar{display:none}
+.bottom-toolbar.hidden{display:none}
+.btool{
+  flex-shrink:0;
+  min-width:64px;
+  padding:6px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  border-radius:10px;
+  color:var(--dim);
+  position:relative;
+  transition:background .15s,color .15s;
+}
+.btool:active{background:rgba(255,255,255,0.06)}
+.btool.active{color:var(--active)}
+.btool svg{width:22px;height:22px}
+.btool-label{font-size:9px;font-weight:500;white-space:nowrap;letter-spacing:-0.01em}
+.btool-pro{
+  position:absolute;top:2px;right:8px;
+  background:var(--accent);color:#fff;
+  font-size:7px;font-weight:700;padding:1px 4px;border-radius:3px;letter-spacing:0.02em;
+}
+
+/* ============ FAB ============ */
+.fab{
+  position:absolute;right:12px;bottom:calc(80px + env(safe-area-inset-bottom));
+  width:48px;height:48px;border-radius:50%;
+  background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;z-index:35;
+  box-shadow:0 6px 20px rgba(224,40,154,0.4);
+  transition:transform .15s,box-shadow .15s;
+}
+.fab:active{transform:scale(0.92)}
+.fab svg{width:22px;height:22px}
+
+/* ============ TOOL GRID POPUP ============ */
+.tool-grid{
+  position:absolute;left:0;right:0;bottom:calc(100px + env(safe-area-inset-bottom));
+  background:#0d0d10;
+  border-top-left-radius:14px;border-top-right-radius:14px;
+  padding:12px 8px;
+  z-index:28;
+  transform:translateY(calc(100% + 100px));
+  transition:transform .28s cubic-bezier(0.32, 0.72, 0, 1);
+  max-height:70vh;overflow-y:auto;
+  scrollbar-width:none;
+}
+.tool-grid::-webkit-scrollbar{display:none}
+.tool-grid.open{transform:translateY(0)}
+.tool-grid-inner{
+  display:grid;grid-template-columns:repeat(4,1fr);gap:4px;
+}
+.grid-item{
+  display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:10px 4px;border-radius:10px;
+  color:var(--dim);
+  transition:background .15s;
+}
+.grid-item:active{background:rgba(255,255,255,0.05)}
+.grid-item svg{width:24px;height:24px}
+.grid-item-label{font-size:9px;font-weight:500;text-align:center;line-height:1.15;letter-spacing:-0.01em}
+.grid-item.ai{position:relative}
+.grid-item.ai::after{
+  content:'AI';position:absolute;top:6px;right:14px;
+  background:var(--accent);color:#fff;font-size:6px;font-weight:700;
+  padding:1px 3px;border-radius:2px;
+}
+
+/* ============ TOOL PANEL (when tool active) ============ */
+.tool-panel{
+  position:absolute;left:0;right:0;bottom:0;
+  z-index:32;
+  background:#000;
+  transform:translateY(100%);
+  transition:transform .3s cubic-bezier(0.32, 0.72, 0, 1);
+  padding-bottom:env(safe-area-inset-bottom);
+}
+.tool-panel.open{transform:translateY(0)}
+
+/* --- shapes strip --- */
+.shapes-strip{
+  display:flex;gap:6px;padding:10px 12px;
+  overflow-x:auto;scrollbar-width:none;
+  border-bottom:1px solid #1a1a20;
+  background:#000;
+}
+.shapes-strip::-webkit-scrollbar{display:none}
+.shape-btn{
+  flex-shrink:0;width:46px;height:46px;
+  background:rgba(255,255,255,0.06);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;
+  transition:background .15s;
+}
+.shape-btn.active{background:var(--active)}
+.shape-btn svg{width:22px;height:22px}
+.shape-btn:active{transform:scale(0.94)}
+
+/* --- sub-options row --- */
+.submenu{
+  display:flex;gap:2px;padding:8px 6px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.submenu::-webkit-scrollbar{display:none}
+.submenu-item{
+  flex-shrink:0;min-width:62px;
+  padding:6px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;
+  color:var(--dim);
+  border-radius:8px;
+}
+.submenu-item:active{background:rgba(255,255,255,0.05)}
+.submenu-item.active{color:var(--accent-hi)}
+.submenu-item svg{width:20px;height:20px}
+.submenu-label{font-size:10px;font-weight:500;white-space:nowrap}
+
+/* --- crop panel --- */
+.crop-panel{
+  display:flex;flex-direction:column;background:#000;
+}
+.rotate-slider-wrap{
+  padding:14px 16px 6px;position:relative;
+}
+.rotate-badge{
+  display:flex;align-items:center;justify-content:center;gap:6px;
+  margin:0 auto 8px;padding:5px 14px;background:rgba(255,255,255,0.08);
+  border-radius:16px;font-size:12px;font-weight:500;
+  font-variant-numeric:tabular-nums;max-width:120px;
+}
+.rotate-badge button{color:var(--dim)}
+.rotate-badge svg{width:12px;height:12px}
+.rotate-track{
+  position:relative;height:44px;
+  display:flex;align-items:center;
+}
+.rotate-track::before{
+  content:'';position:absolute;left:0;right:0;top:50%;
+  height:1px;background:#2a2a33;
+}
+.rotate-ticks{
+  display:flex;justify-content:space-between;width:100%;
+  font-size:9px;color:var(--mute);padding-bottom:22px;
+  font-variant-numeric:tabular-nums;
+}
+.rotate-needle{
+  position:absolute;top:6px;bottom:14px;left:50%;
+  width:2px;background:var(--accent-hi);
+  transform:translateX(-50%);
+  border-radius:2px;
+}
+.rotate-needle::before,.rotate-needle::after{
+  content:'';position:absolute;left:50%;transform:translateX(-50%);
+  width:8px;height:8px;border-radius:50%;background:var(--accent-hi);
+}
+.rotate-needle::before{top:-4px}
+.rotate-needle::after{bottom:-4px}
+
+.ratio-row{
+  display:flex;gap:4px;padding:8px 8px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.ratio-row::-webkit-scrollbar{display:none}
+.ratio-btn{
+  flex-shrink:0;min-width:52px;padding:8px 6px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;
+  background:rgba(255,255,255,0.04);
+  border-radius:8px;color:var(--dim);
+  font-size:10px;
+  transition:background .15s;
+}
+.ratio-btn.active{background:var(--active);color:#fff}
+.ratio-btn:active{transform:scale(0.95)}
+.ratio-btn svg{width:16px;height:16px}
+.ratio-icon{width:18px;height:14px;border:1.5px solid currentColor;border-radius:2px}
+
+.crop-tabs{
+  display:flex;gap:2px;padding:8px 8px;padding-bottom:max(8px, env(safe-area-inset-bottom));
+  background:#0a0a0d;border-top:1px solid #1a1a20;
+}
+.crop-tab{
+  flex:1;padding:10px;text-align:center;
+  font-size:11px;font-weight:600;color:var(--mute);letter-spacing:0.03em;
+  background:rgba(255,255,255,0.03);border-radius:6px;
+  transition:background .15s,color .15s;
+}
+.crop-tab.active{background:#26262e;color:#fff}
+.crop-tab:active{transform:scale(0.96)}
+
+/* --- brush panel --- */
+.brush-types{
+  display:flex;gap:6px;padding:12px;
+  overflow-x:auto;scrollbar-width:none;
+  border-bottom:1px solid #1a1a20;
+}
+.brush-types::-webkit-scrollbar{display:none}
+.brush-tile{
+  flex-shrink:0;width:52px;height:52px;
+  background:rgba(255,255,255,0.05);
+  border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;
+  overflow:hidden;
+}
+.brush-tile.active{border:2px solid var(--accent)}
+.brush-preview{
+  width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+}
+
+/* --- text panel --- */
+.text-panel{background:#000}
+.text-panel-body{padding:12px}
+.text-input{
+  width:100%;min-height:80px;
+  background:#16161a;border:1px solid #26262e;
+  border-radius:8px;padding:10px;
+  color:#fff;font-size:14px;resize:none;outline:none;
+  font-family:inherit;
+}
+.text-input:focus{border-color:var(--accent)}
+.font-row{
+  display:flex;gap:6px;margin-top:10px;
+  overflow-x:auto;scrollbar-width:none;
+}
+.font-row::-webkit-scrollbar{display:none}
+.font-chip{
+  flex-shrink:0;padding:8px 14px;
+  background:#16161a;border:1px solid #26262e;
+  border-radius:20px;font-size:12px;color:var(--dim);
+}
+.font-chip.active{background:var(--active);border-color:var(--active);color:#fff}
+
+/* ============ LAYERS PANEL ============ */
+.layers-panel{
+  position:absolute;top:0;right:0;bottom:0;
+  width:220px;
+  background:rgba(13,13,16,0.98);backdrop-filter:blur(30px);
+  z-index:45;
+  transform:translateX(100%);
+  transition:transform .28s cubic-bezier(0.32, 0.72, 0, 1);
+  padding-top:calc(12px + env(safe-area-inset-top));
+  padding-bottom:env(safe-area-inset-bottom);
+  display:flex;flex-direction:column;
+}
+.layers-panel.open{transform:translateX(0)}
+.layers-header{
+  padding:10px 14px;display:flex;align-items:center;justify-content:space-between;
+  border-bottom:1px solid #1a1a20;
+  font-size:12px;font-weight:600;
+}
+.layers-add{
+  width:28px;height:28px;background:rgba(255,255,255,0.06);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+}
+.layers-add svg{width:14px;height:14px}
+.layers-list{flex:1;overflow-y:auto;padding:6px}
+.layer-row{
+  display:flex;align-items:center;gap:8px;
+  padding:8px;border-radius:8px;
+  margin-bottom:2px;
+}
+.layer-row.active{background:rgba(139,92,246,0.15);box-shadow:inset 2px 0 0 var(--active)}
+.layer-thumb{
+  width:34px;height:34px;border-radius:4px;background:#000;border:1px solid #26262e;
+  display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;
+}
+.layer-info{flex:1;min-width:0}
+.layer-name{font-size:11px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.layer-vis{
+  width:24px;height:24px;display:flex;align-items:center;justify-content:center;
+  color:var(--dim);flex-shrink:0;
+}
+.layer-vis.on{color:#fff}
+.layer-vis svg{width:14px;height:14px}
+
+/* ============ TOAST ============ */
+.toast{
+  position:fixed;top:50%;left:50%;
+  transform:translate(-50%,-50%) scale(0.9);
+  background:#fff;color:#000;
+  padding:14px 18px;border-radius:12px;
+  display:flex;flex-direction:column;gap:10px;
+  max-width:320px;width:calc(100% - 60px);
+  box-shadow:0 20px 60px rgba(0,0,0,0.6);
+  opacity:0;pointer-events:none;
+  transition:opacity .2s,transform .2s;
+  z-index:100;
+}
+.toast.show{opacity:1;transform:translate(-50%,-50%) scale(1);pointer-events:auto}
+.toast-content{display:flex;gap:12px;align-items:flex-start}
+.toast-icon{
+  width:36px;height:36px;background:#000;border-radius:8px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;color:#fff;
+}
+.toast-icon svg{width:20px;height:20px}
+.toast-msg{font-size:13px;font-weight:500;line-height:1.35;color:#000}
+.toast-btn{
+  align-self:flex-start;color:#8b5cf6;font-weight:600;font-size:13px;
+  padding:4px 0;
+}
+
+/* ============ SLIDER (custom) ============ */
+.slider-row{
+  display:flex;align-items:center;gap:10px;padding:8px 14px;
+}
+.slider-row label{font-size:11px;color:var(--dim);min-width:60px}
+.slider-row input[type=range]{
+  flex:1;accent-color:var(--accent);
+  height:3px;
+}
+.slider-row .val{
+  font-size:11px;color:#fff;min-width:32px;text-align:right;
+  font-variant-numeric:tabular-nums;
+}
+
+/* ============ ADJUST/TOOL EXTRAS ============ */
+.tool-actions{
+  display:flex;gap:6px;padding:10px 12px;padding-bottom:max(10px, env(safe-area-inset-bottom));
+  border-top:1px solid #1a1a20;
+}
+.btn-primary{
+  flex:1;padding:12px;background:var(--accent);color:#fff;
+  border-radius:10px;font-weight:600;font-size:13px;
+}
+.btn-primary:active{background:var(--accent-hi)}
+.btn-secondary{
+  flex:1;padding:12px;background:rgba(255,255,255,0.08);color:#fff;
+  border-radius:10px;font-weight:600;font-size:13px;
+}
+
+/* ============ SCREEN SHAKE ============ */
+@media (max-height:640px){
+  .tool-grid{max-height:60vh}
+}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- TOP BAR -->
+  <header class="topbar" id="topbar">
+    <button class="tb-icon" data-act="close">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="topbar-group">
+      <button class="tb-icon" data-act="undo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+      </button>
+      <button class="tb-icon" data-act="redo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+      </button>
+      <button class="tb-icon" data-act="more">
+        <svg viewBox="0 0 24 24" fill="currentColor"><circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/></svg>
+      </button>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-icon" data-act="download">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+    </button>
+    <button class="tb-icon" data-act="share">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/></svg>
+    </button>
+  </header>
+
+  <!-- TOP BAR (tool mode) -->
+  <header class="topbar" id="topbarTool" style="display:none">
+    <button class="tb-icon" id="tbBack">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="topbar-group">
+      <button class="tb-icon" data-act="undo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/></svg>
+      </button>
+      <button class="tb-icon" data-act="redo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/></svg>
+      </button>
+      <button class="tb-icon" data-act="erase">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L13 3.17a2 2 0 0 1 2.83 0l5 5a2 2 0 0 1 0 2.83L11 20"/></svg>
+      </button>
+    </div>
+    <div class="tb-sep"></div>
+    <button class="tb-icon check" id="tbConfirm">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+    </button>
+  </header>
+
+  <!-- LAYERS FAB -->
+  <button class="layers-fab" id="layersFab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/></svg>
+  </button>
+
+  <!-- CANVAS -->
+  <main class="canvas-area">
+    <div class="stage" id="stage">
+      <canvas id="canvas"></canvas>
+      <canvas id="overlay"></canvas>
+    </div>
+  </main>
+
+  <!-- TOOL GRID POPUP -->
+  <div class="tool-grid" id="toolGrid">
+    <div class="tool-grid-inner" id="toolGridInner"></div>
+  </div>
+
+  <!-- TOOL PANEL (replaces toolbar when tool active) -->
+  <div class="tool-panel" id="toolPanel"></div>
+
+  <!-- BOTTOM TOOLBAR -->
+  <nav class="bottom-toolbar" id="bottomToolbar"></nav>
+
+  <!-- FAB -->
+  <button class="fab" id="fab">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+  </button>
+
+  <!-- LAYERS PANEL -->
+  <aside class="layers-panel" id="layersPanel">
+    <div class="layers-header">
+      <span>Livelli</span>
+      <button class="layers-add" id="layersAdd">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      </button>
+    </div>
+    <div class="layers-list" id="layersList"></div>
+  </aside>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast">
+    <div class="toast-content">
+      <div class="toast-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 12l2 2 4-4"/><circle cx="12" cy="12" r="10"/></svg>
+      </div>
+      <div class="toast-msg" id="toastMsg">Messaggio</div>
+    </div>
+    <button class="toast-btn" id="toastBtn">Capito!</button>
+  </div>
+
+</div>
+
+<script>
+(() => {
+'use strict';
+
+// ============ UTILS ============
+const $ = id => document.getElementById(id);
+const rnd = (v, p = 1) => Math.round(v * 10 ** p) / 10 ** p;
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+
+// ============ ICONS ============
+const ICONS = {
+  close:'<path d="M18 6L6 18M6 6l12 12"/>',
+  undo:'<path d="M3 7v6h6M21 17a9 9 0 0 0-9-9 9 9 0 0 0-6 2.3L3 13"/>',
+  redo:'<path d="M21 7v6h-6M3 17a9 9 0 0 1 9-9 9 9 0 0 1 6 2.3L21 13"/>',
+  more:'<circle cx="5" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="19" cy="12" r="2"/>',
+  download:'<path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/>',
+  share:'<circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"/><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"/>',
+  layers:'<polygon points="12 2 2 7 12 12 22 7 12 2"/><polyline points="2 17 12 22 22 17"/><polyline points="2 12 12 17 22 12"/>',
+  tool:'<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"/>',
+  sparkles:'<path d="M12 3l1.9 5.8L19 10l-5.1 1.2L12 17l-1.9-5.8L5 10l5.1-1.2L12 3z"/>',
+  bandage:'<path d="M14 6l4 4M9 18l-4-4M18 12l-6 6M6 6l6 6M12 3l9 9-9 9-9-9 9-9z"/>',
+  wand:'<path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M12.2 11.8L11 13M12.2 6.2L11 5M15 9h0"/><path d="M3 21l9-9"/>',
+  sticker:'<path d="M20.24 12.24a6 6 0 0 0-8.49-8.49L5 10.5V19h8.5z"/><line x1="16" y1="8" x2="2" y2="22"/><line x1="17.5" y1="15" x2="9" y2="15"/>',
+  crop:'<path d="M6 2v14a2 2 0 0 0 2 2h14"/><path d="M18 22V8a2 2 0 0 0-2-2H2"/>',
+  text:'<polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/>',
+  addphoto:'<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/>',
+  remove:'<path d="M15 4V2M15 16v-2M8 9h2M20 9h2M17.8 11.8L19 13M17.8 6.2L19 5M12.2 11.8L11 13M12.2 6.2L11 5M15 9h0"/><path d="M3 21l9-9"/>',
+  replay:'<path d="M3 2v6h6"/><path d="M3 8a9 9 0 1 0 3-6"/>',
+  fit:'<path d="M3 9V3h6M21 9V3h-6M3 15v6h6M21 15v6h-6"/>',
+  brush:'<path d="M9.06 11.9l8.07-8.06a2.85 2.85 0 1 1 4.03 4.03l-8.06 8.08"/><path d="M7.07 14.94c-1.66 0-3 1.35-3 3.02 0 1.33-2.5 1.52-2 2.02 1.08 1.1 2.49 2.02 4 2.02 2.2 0 4-1.8 4-4.04a3.01 3.01 0 0 0-3-3.02z"/>',
+  border:'<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10"/>',
+  shape:'<circle cx="8.5" cy="8.5" r="4.5"/><rect x="13" y="13" width="8" height="8" rx="1"/>',
+  mask:'<circle cx="12" cy="12" r="9" fill="currentColor" opacity="0.4"/><path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor"/>',
+  draw:'<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/>',
+  tryon:'<circle cx="12" cy="8" r="4"/><path d="M6 21v-2a6 6 0 0 1 12 0v2"/>',
+  reflect:'<path d="M12 3v18"/><path d="M8 8l-5 5 5 5"/><path d="M16 8l5 5-5 5"/>',
+  maskform:'<rect x="3" y="3" width="18" height="18" rx="2" fill="currentColor" opacity="0.3"/><path d="M6 6l12 12"/>',
+  frame:'<rect x="3" y="3" width="18" height="18" rx="2"/><rect x="7" y="7" width="10" height="10" rx="1"/>',
+  callout:'<path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/>',
+  freecrop:'<path d="M6 2v14a2 2 0 0 0 2 2h14" stroke-dasharray="3 3"/><path d="M18 22V8a2 2 0 0 0-2-2H2" stroke-dasharray="3 3"/>',
+  shapecrop:'<path d="M12 3L22 20H2L12 3z" stroke-dasharray="3 3"/>',
+  dispersion:'<circle cx="12" cy="12" r="3"/><circle cx="4" cy="6" r="1"/><circle cx="20" cy="6" r="1"/><circle cx="4" cy="18" r="1"/><circle cx="20" cy="18" r="1"/><circle cx="2" cy="12" r="1"/><circle cx="22" cy="12" r="1"/>',
+  clone:'<circle cx="9" cy="9" r="5"/><path d="M15 15l5 5M15 20l5-5"/>',
+  aireplace:'<circle cx="9" cy="9" r="4"/><path d="M4 5l4 4M14 5l-4 4"/><path d="M15 15l5 5M15 20l5-5"/>',
+  extend:'<rect x="3" y="3" width="8" height="8"/><path d="M15 3h6v6M21 15v6h-6M3 15v6h6"/>',
+  movement:'<path d="M3 12c3-3 6-3 9 0s6 3 9 0"/><path d="M3 16c3-3 6-3 9 0s6 3 9 0"/>',
+  selection:'<rect x="3" y="3" width="18" height="18" rx="1" stroke-dasharray="3 3"/>',
+  curve:'<path d="M3 21c5-10 8-15 18-18"/>',
+  adjust:'<line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/>',
+  blur:'<circle cx="12" cy="12" r="9" stroke-dasharray="2 4"/><circle cx="12" cy="12" r="5"/>',
+  tiltshift:'<line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="8" x2="21" y2="8" stroke-dasharray="3 3"/><line x1="3" y1="16" x2="21" y2="16" stroke-dasharray="3 3"/>',
+  resize:'<path d="M3 3v6M3 3h6M21 21v-6M21 21h-6"/><path d="M3 9l18 12M9 3L21 15"/>',
+  rotate:'<path d="M3 12a9 9 0 1 0 9-9"/><polyline points="3 3 3 9 9 9"/>',
+  aiimprove:'<path d="M12 2l2 7 7 2-7 2-2 7-2-7-7-2 7-2z"/><circle cx="19" cy="5" r="1.5" fill="currentColor"/><circle cx="5" cy="19" r="1.5" fill="currentColor"/>',
+  aiexpand:'<path d="M3 3h6v6H3zM15 3h6v6h-6zM3 15h6v6H3zM15 15h6v6h-6z" stroke-dasharray="2 2"/>',
+  plus:'<line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>',
+  check:'<polyline points="20 6 9 17 4 12"/>',
+  erase:'<path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L13 3.17a2 2 0 0 1 2.83 0l5 5a2 2 0 0 1 0 2.83L11 20"/>',
+  eye:'<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>',
+  eyeoff:'<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>',
+  palette:'<circle cx="12" cy="12" r="10"/><circle cx="8" cy="10" r="1.5"/><circle cx="16" cy="10" r="1.5"/><circle cx="8" cy="15" r="1.5"/><circle cx="16" cy="15" r="1.5"/>',
+  brush2:'<path d="M14.5 3.5l6 6L12 18l-6-6z"/><path d="M3 21l3-3"/>',
+  gomma:'<path d="M20 20H7L3 16a2 2 0 0 1 0-2.83L13 3.17a2 2 0 0 1 2.83 0l5 5a2 2 0 0 1 0 2.83L11 20"/>',
+  riempi:'<path d="M19 11l-8-8-8.6 8.6a2 2 0 0 0 0 2.8l5.2 5.2c.8.8 2 .8 2.8 0L19 11z"/><path d="M5 2l5 5"/><path d="M2 21h20"/>',
+  forma:'<circle cx="12" cy="12" r="9"/>',
+  oggetti:'<path d="M12 3l9 9-9 9-9-9 9-9z"/>',
+  color:'<circle cx="12" cy="12" r="10" fill="currentColor"/>'
+};
+
+function ic(name, size = 20) {
+  const isFilled = ['more','color'].includes(name);
+  return `<svg viewBox="0 0 24 24" width="${size}" height="${size}" ${isFilled ? 'fill="currentColor"' : 'fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"'}>${ICONS[name] || ''}</svg>`;
+}
+
+// ============ STATE ============
+const state = {
+  currentTool: null,       // es. 'shapes', 'brush', 'crop', 'text'
+  activeShape: 'rect',
+  activeBrush: 0,
+  activeSubmenu: 'Forme',
+  rotation: 0,
+  cropRatio: 'square',
+  layers: [],
+  activeLayerId: null,
+  imageLoaded: false
+};
+
+// ============ TOOLS DEFINITIONS ============
+const BOTTOM_TOOLS = [
+  {id:'tools', label:'Strumenti', icon:'tool', active:true},
+  {id:'effects', label:'Effetti', icon:'sparkles'},
+  {id:'retouch', label:'Ritocco', icon:'bandage'},
+  {id:'removebg', label:'Rimuovi Sf.', icon:'wand', pro:true},
+  {id:'sticker', label:'Adesivo', icon:'sticker'},
+  {id:'crop', label:'Ritaglia', icon:'crop'},
+  {id:'text', label:'Testo', icon:'text'},
+  {id:'addphoto', label:'Aggiungi fo...', icon:'addphoto'},
+  {id:'remove', label:'Rimuovi', icon:'remove', pro:true},
+  {id:'replay', label:'Replay', icon:'replay'},
+  {id:'fit', label:'Adatta', icon:'fit'},
+  {id:'brush', label:'Pennelli', icon:'brush'},
+  {id:'border', label:'Bordo', icon:'border'},
+  {id:'shapes', label:'Forme', icon:'shape'},
+  {id:'mask', label:'Maschera', icon:'mask'},
+  {id:'draw', label:'Disegna', icon:'draw'},
+  {id:'tryon', label:'Ai Try On', icon:'tryon'},
+  {id:'reflect', label:'Riflesso', icon:'reflect'},
+  {id:'maskform', label:'Masch. For...', icon:'maskform'},
+  {id:'frame', label:'Cornice', icon:'frame'},
+  {id:'callout', label:'Chiamata', icon:'callout'}
+];
+
+const TOOL_GRID_ITEMS = [
+  {id:'crop', label:'Ritaglia', icon:'crop'},
+  {id:'freecrop', label:'Libero', icon:'freecrop'},
+  {id:'shapecrop', label:'Ritaglia for...', icon:'shapecrop'},
+  {id:'dispersion', label:'Dispersione', icon:'dispersion'},
+  {id:'clone', label:'Clona', icon:'clone'},
+  {id:'aireplace', label:'Ai Sostituisci', icon:'aireplace', ai:true},
+  {id:'extend', label:'Estendi', icon:'extend'},
+  {id:'movement', label:'Movimento', icon:'movement'},
+  {id:'selection', label:'Selezione', icon:'selection'},
+  {id:'curve', label:'Curva', icon:'curve'},
+  {id:'adjust', label:'Regola', icon:'adjust'},
+  {id:'blur', label:'Sfocatura', icon:'blur'},
+  {id:'tiltshift', label:'Tilt-Shift', icon:'tiltshift'},
+  {id:'resize', label:'Ridimensiona', icon:'resize'},
+  {id:'rotate', label:'Ruota', icon:'rotate'},
+  {id:'aiimprove', label:'Ai Migliora', icon:'aiimprove', ai:true},
+  {id:'aiexpand', label:'Ai Espandi', icon:'aiexpand', ai:true}
+];
+
+// ============ CANVAS / DEMO ============
+const canvas = $('canvas');
+const overlay = $('overlay');
+const ctx = canvas.getContext('2d');
+const ovCtx = overlay.getContext('2d');
+const stage = $('stage');
+
+function createDemoImage() {
+  // Immagine demo 800x800 con cavallo stilizzato su sfondo a tessuto scuro
+  canvas.width = 800; canvas.height = 800;
+  overlay.width = 800; overlay.height = 800;
+
+  // Sfondo scuro con gradiente radiale
+  const grad = ctx.createRadialGradient(400, 400, 100, 400, 400, 600);
+  grad.addColorStop(0, '#2a2a35');
+  grad.addColorStop(1, '#050508');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 800, 800);
+
+  // Texture "tessuto" - rumore sottile
+  const imgData = ctx.getImageData(0, 0, 800, 800);
+  for (let i = 0; i < imgData.data.length; i += 4) {
+    const n = (Math.random() - 0.5) * 40;
+    imgData.data[i] = clamp(imgData.data[i] + n, 0, 255);
+    imgData.data[i+1] = clamp(imgData.data[i+1] + n, 0, 255);
+    imgData.data[i+2] = clamp(imgData.data[i+2] + n, 0, 255);
+  }
+  ctx.putImageData(imgData, 0, 0);
+
+  // Sfumatura diagonale per effetto tessuto
+  const diagGrad = ctx.createLinearGradient(0, 0, 800, 800);
+  diagGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+  diagGrad.addColorStop(0.5, 'rgba(255,255,255,0.03)');
+  diagGrad.addColorStop(1, 'rgba(0,0,0,0.5)');
+  ctx.fillStyle = diagGrad;
+  ctx.fillRect(0, 0, 800, 800);
+
+  // Cerchio/bordo scuro (outline)
+  ctx.fillStyle = '#1a1a1f';
+  ctx.beginPath();
+  ctx.arc(400, 600, 140, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Palla bianca
+  ctx.fillStyle = '#f5f2ea';
+  ctx.beginPath();
+  ctx.arc(400, 600, 130, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Linee della palla (stile pallone)
+  ctx.strokeStyle = '#2a2a30';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  ctx.arc(400, 600, 130, 0, Math.PI * 2);
+  ctx.stroke();
+  // Cuciture
+  ctx.beginPath();
+  ctx.moveTo(400, 470); ctx.lineTo(400, 530);
+  ctx.moveTo(340, 540); ctx.quadraticCurveTo(400, 590, 460, 540);
+  ctx.moveTo(340, 660); ctx.quadraticCurveTo(400, 610, 460, 660);
+  ctx.moveTo(270, 600); ctx.lineTo(340, 600);
+  ctx.moveTo(460, 600); ctx.lineTo(530, 600);
+  ctx.moveTo(320, 520); ctx.quadraticCurveTo(360, 570, 360, 630);
+  ctx.moveTo(480, 520); ctx.quadraticCurveTo(440, 570, 440, 630);
+  ctx.stroke();
+
+  // Cavallo stilizzato (silhouette semplificata)
+  ctx.fillStyle = '#f5f2ea';
+  ctx.strokeStyle = '#1a1a1f';
+  ctx.lineWidth = 8;
+  ctx.lineJoin = 'round';
+  ctx.beginPath();
+  // Testa
+  ctx.moveTo(430, 220);
+  ctx.quadraticCurveTo(470, 200, 490, 230);  // orecchie
+  ctx.quadraticCurveTo(500, 260, 480, 300);  // muso
+  ctx.quadraticCurveTo(460, 320, 430, 320);  // guancia
+  ctx.quadraticCurveTo(400, 300, 400, 280);  // collo alto
+  // Criniera
+  ctx.quadraticCurveTo(380, 260, 360, 240);
+  ctx.quadraticCurveTo(390, 240, 410, 260);
+  ctx.quadraticCurveTo(400, 220, 380, 200);
+  // Testa posteriore
+  ctx.quadraticCurveTo(420, 200, 440, 210);
+  // Corpo posteriore
+  ctx.quadraticCurveTo(380, 350, 350, 400);
+  ctx.quadraticCurveTo(300, 420, 270, 460); // coda
+  ctx.quadraticCurveTo(320, 450, 340, 470);
+  // Zampa posteriore
+  ctx.quadraticCurveTo(380, 500, 400, 500);
+  // Pancia
+  ctx.quadraticCurveTo(430, 490, 460, 460);
+  // Zampa anteriore sollevata
+  ctx.quadraticCurveTo(470, 420, 500, 400);
+  ctx.quadraticCurveTo(510, 380, 500, 360);
+  ctx.quadraticCurveTo(490, 380, 480, 400);
+  // Zampa anteriore giù
+  ctx.quadraticCurveTo(480, 450, 460, 500);
+  // Chiudi al collo
+  ctx.quadraticCurveTo(450, 400, 440, 340);
+  ctx.quadraticCurveTo(445, 310, 445, 300);
+  ctx.closePath();
+  ctx.fill();
+  ctx.stroke();
+
+  state.imageLoaded = true;
+  state.layers = [{id:'base', name:'Immagine base', visible:true}];
+  state.activeLayerId = 'base';
+  refreshLayersList();
+}
+
+// ============ RENDERIZZAZIONE UI ============
+function renderBottomToolbar() {
+  const tb = $('bottomToolbar');
+  tb.innerHTML = '';
+  BOTTOM_TOOLS.forEach((t, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'btool' + (i === 0 ? ' active' : '');
+    btn.dataset.tool = t.id;
+    btn.innerHTML = `
+      ${t.pro ? '<span class="btool-pro">PRO</span>' : ''}
+      ${ic(t.icon, 22)}
+      <span class="btool-label">${t.label}</span>
+    `;
+    btn.addEventListener('click', () => handleBottomTool(t.id));
+    tb.appendChild(btn);
+  });
+}
+
+function renderToolGrid() {
+  const gi = $('toolGridInner');
+  gi.innerHTML = '';
+  TOOL_GRID_ITEMS.forEach(t => {
+    const btn = document.createElement('button');
+    btn.className = 'grid-item' + (t.ai ? ' ai' : '');
+    btn.innerHTML = `${ic(t.icon, 24)}<span class="grid-item-label">${t.label}</span>`;
+    btn.addEventListener('click', () => {
+      closeToolGrid();
+      openTool(t.id);
+    });
+    gi.appendChild(btn);
+  });
+}
+
+function refreshLayersList() {
+  const list = $('layersList');
+  if (!list) return;
+  list.innerHTML = '';
+  state.layers.forEach(l => {
+    const row = document.createElement('div');
+    row.className = 'layer-row' + (l.id === state.activeLayerId ? ' active' : '');
+    row.innerHTML = `
+      <div class="layer-thumb">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="#666" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg>
+      </div>
+      <div class="layer-info">
+        <div class="layer-name">${l.name}</div>
+      </div>
+      <button class="layer-vis${l.visible ? ' on' : ''}" data-lid="${l.id}">
+        ${ic(l.visible ? 'eye' : 'eyeoff', 14)}
+      </button>
+    `;
+    row.addEventListener('click', e => {
+      if (e.target.closest('.layer-vis')) return;
+      state.activeLayerId = l.id;
+      refreshLayersList();
+    });
+    const vis = row.querySelector('.layer-vis');
+    vis.addEventListener('click', e => {
+      e.stopPropagation();
+      l.visible = !l.visible;
+      refreshLayersList();
+    });
+    list.appendChild(row);
+  });
+}
+
+// ============ TOOL HANDLERS ============
+function handleBottomTool(id) {
+  // Aggiorna highlight
+  document.querySelectorAll('.btool').forEach(b => b.classList.remove('active'));
+  const btn = document.querySelector(`.btool[data-tool="${id}"]`);
+  if (btn) btn.classList.add('active');
+
+  if (id === 'tools') {
+    toggleToolGrid();
+  } else if (['shapes','brush','crop','text','effects','adjust'].includes(id)) {
+    openTool(id);
+  } else {
+    showToast('Strumento in fase di sviluppo', 'info');
+  }
+}
+
+function toggleToolGrid() {
+  const g = $('toolGrid');
+  g.classList.toggle('open');
+}
+function closeToolGrid() {
+  $('toolGrid').classList.remove('open');
+}
+
+function openTool(id) {
+  state.currentTool = id;
+  switch(id) {
+    case 'crop': openCropTool(); break;
+    case 'shapes': openShapesTool(); break;
+    case 'brush': openBrushTool(); break;
+    case 'text': openTextTool(); break;
+    case 'effects': openEffectsTool(); break;
+    case 'adjust': openAdjustTool(); break;
+    default: showToast('Strumento ' + id + ' in sviluppo');
+  }
+}
+
+function enterToolMode() {
+  $('topbar').style.display = 'none';
+  $('topbarTool').style.display = 'flex';
+  $('bottomToolbar').classList.add('hidden');
+  $('fab').style.display = 'none';
+  $('layersFab').style.display = 'none';
+}
+
+function exitToolMode() {
+  $('topbar').style.display = 'flex';
+  $('topbarTool').style.display = 'none';
+  $('bottomToolbar').classList.remove('hidden');
+  $('fab').style.display = 'flex';
+  $('layersFab').style.display = 'flex';
+  const p = $('toolPanel');
+  p.classList.remove('open');
+  state.currentTool = null;
+  // reset rotation overlay
+  ovCtx.clearRect(0,0,overlay.width, overlay.height);
+}
+
+// ============ CROP TOOL ============
+function openCropTool() {
+  enterToolMode();
+  const panel = $('toolPanel');
+  panel.innerHTML = `
+    <div class="crop-panel">
+      <div class="rotate-slider-wrap">
+        <div class="rotate-badge">
+          <span id="rotValue">${state.rotation.toFixed(1)}°</span>
+          <button id="rotReset">${ic('close', 10)}</button>
+        </div>
+        <div class="rotate-track">
+          <div class="rotate-ticks">
+            <span>-45°</span><span>-30°</span><span>-15°</span><span>0°</span><span>15°</span><span>30°</span><span>45°</span>
+          </div>
+          <div class="rotate-needle" id="rotNeedle"></div>
+        </div>
+        <input type="range" id="rotSlider" min="-45" max="45" step="0.1" value="0" style="width:100%;accent-color:var(--accent);margin-top:4px">
+      </div>
+      <div class="ratio-row">
+        <button class="ratio-btn" data-ratio="free">
+          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2v14a2 2 0 0 0 2 2h14" stroke-dasharray="3 3"/><path d="M18 22V8a2 2 0 0 0-2-2H2" stroke-dasharray="3 3"/></svg>
+          Libero
+        </button>
+        <button class="ratio-btn active" data-ratio="square">
+          <div class="ratio-icon" style="width:16px;height:16px"></div>
+          Quadrato
+        </button>
+        <button class="ratio-btn" data-ratio="3:4">
+          <div class="ratio-icon" style="width:13px;height:17px"></div>
+          3:4
+        </button>
+        <button class="ratio-btn" data-ratio="9:16">
+          <div class="ratio-icon" style="width:10px;height:17px"></div>
+          9:16
+        </button>
+        <button class="ratio-btn" data-ratio="4:3">
+          <div class="ratio-icon" style="width:17px;height:13px"></div>
+          4:3
+        </button>
+        <button class="ratio-btn" data-ratio="16:9">
+          <div class="ratio-icon" style="width:17px;height:10px"></div>
+          16:9
+        </button>
+      </div>
+      <div class="crop-tabs">
+        <button class="crop-tab active">RITAGLIA</button>
+        <button class="crop-tab">RUOTA</button>
+        <button class="crop-tab">PROSPETTIVA</button>
+      </div>
+    </div>
+  `;
+  panel.classList.add('open');
+
+  // Rotation handling
+  const slider = $('rotSlider');
+  const needle = $('rotNeedle');
+  const rotVal = $('rotValue');
+  const updateRot = (v) => {
+    state.rotation = v;
+    rotVal.textContent = v.toFixed(1) + '°';
+    // needle pos: -45 → 0%, +45 → 100%
+    const pct = ((v + 45) / 90) * 100;
+    needle.style.left = pct + '%';
+    drawCropOverlay();
+  };
+  slider.addEventListener('input', e => updateRot(parseFloat(e.target.value)));
+  $('rotReset').addEventListener('click', () => { slider.value = 0; updateRot(0); });
+
+  // Ratio handling
+  document.querySelectorAll('.ratio-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.ratio-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.cropRatio = b.dataset.ratio;
+      drawCropOverlay();
+    });
+  });
+
+  // Tabs
+  document.querySelectorAll('.crop-tab').forEach(t => {
+    t.addEventListener('click', () => {
+      document.querySelectorAll('.crop-tab').forEach(x => x.classList.remove('active'));
+      t.classList.add('active');
+    });
+  });
+
+  updateRot(0);
+}
+
+function drawCropOverlay() {
+  ovCtx.clearRect(0, 0, overlay.width, overlay.height);
+  // Disegna cornice di ritaglio con rotazione
+  const pad = 80;
+  const size = Math.min(overlay.width, overlay.height) - pad * 2;
+  const cx = overlay.width / 2, cy = overlay.height / 2;
+
+  ovCtx.save();
+  ovCtx.translate(cx, cy);
+  ovCtx.rotate(state.rotation * Math.PI / 180);
+  ovCtx.translate(-cx, -cy);
+
+  // Sfondo scuro fuori dalla cornice
+  ovCtx.fillStyle = 'rgba(0,0,0,0.55)';
+  ovCtx.fillRect(0, 0, overlay.width, overlay.height);
+  // Buco
+  ovCtx.globalCompositeOperation = 'destination-out';
+  ovCtx.fillStyle = '#fff';
+  ovCtx.fillRect(cx - size/2, cy - size/2, size, size);
+  ovCtx.globalCompositeOperation = 'source-over';
+
+  // Bordo cornice
+  ovCtx.strokeStyle = '#fff';
+  ovCtx.lineWidth = 2;
+  ovCtx.strokeRect(cx - size/2, cy - size/2, size, size);
+
+  // Griglia terzi
+  ovCtx.strokeStyle = 'rgba(255,255,255,0.35)';
+  ovCtx.lineWidth = 1;
+  for (let i = 1; i < 3; i++) {
+    const p = i / 3;
+    ovCtx.beginPath();
+    ovCtx.moveTo(cx - size/2 + size*p, cy - size/2);
+    ovCtx.lineTo(cx - size/2 + size*p, cy + size/2);
+    ovCtx.stroke();
+    ovCtx.beginPath();
+    ovCtx.moveTo(cx - size/2, cy - size/2 + size*p);
+    ovCtx.lineTo(cx + size/2, cy - size/2 + size*p);
+    ovCtx.stroke();
+  }
+
+  // Maniglie angoli
+  ovCtx.fillStyle = '#fff';
+  ovCtx.strokeStyle = '#8b5cf6';
+  ovCtx.lineWidth = 2;
+  const hs = 10;
+  [[-1,-1],[1,-1],[-1,1],[1,1]].forEach(([dx,dy]) => {
+    const x = cx + dx*size/2;
+    const y = cy + dy*size/2;
+    ovCtx.beginPath();
+    ovCtx.arc(x, y, hs/2, 0, Math.PI*2);
+    ovCtx.fill();
+    ovCtx.stroke();
+  });
+  ovCtx.restore();
+}
+
+// ============ SHAPES TOOL ============
+function openShapesTool() {
+  enterToolMode();
+  const panel = $('toolPanel');
+  panel.innerHTML = `
+    <div class="shapes-strip">
+      <button class="shape-btn active" data-shape="circle">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/></svg>
+      </button>
+      <button class="shape-btn" data-shape="tri">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3L22 20H2z"/></svg>
+      </button>
+      <button class="shape-btn" data-shape="square">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/></svg>
+      </button>
+      <button class="shape-btn" data-shape="triangle">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 3L22 20H2z"/></svg>
+      </button>
+      <button class="shape-btn" data-shape="heart">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 21s-7-4.35-7-10a4.5 4.5 0 0 1 8-2.83A4.5 4.5 0 0 1 21 11c0 5.65-7 10-7 10z"/></svg>
+      </button>
+      <button class="shape-btn" data-shape="star">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      </button>
+      <button class="shape-btn" data-shape="pentagon">
+        <svg viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 22 10 18 22 6 22 2 10"/></svg>
+      </button>
+    </div>
+    <div class="submenu">
+      <button class="submenu-item active">${ic('shape',20)}<span class="submenu-label">Forme</span></button>
+      <button class="submenu-item">${ic('color',20)}<span class="submenu-label">Colore</span></button>
+      <button class="submenu-item">${ic('border',20)}<span class="submenu-label">Bordo</span></button>
+      <button class="submenu-item">${ic('sparkles',20)}<span class="submenu-label">Ombra</span></button>
+      <button class="submenu-item">${ic('mask',20)}<span class="submenu-label">Opacità</span></button>
+      <button class="submenu-item">${ic('maskform',20)}<span class="submenu-label">Maschera</span></button>
+    </div>
+  `;
+  panel.classList.add('open');
+
+  document.querySelectorAll('.shape-btn').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.shape-btn').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+      state.activeShape = b.dataset.shape;
+      drawShapeDemo(b.dataset.shape);
+    });
+  });
+
+  // Disegna un esempio di forma al centro
+  drawShapeDemo('circle');
+}
+
+function drawShapeDemo(shape) {
+  ovCtx.clearRect(0, 0, overlay.width, overlay.height);
+  const cx = overlay.width / 2, cy = overlay.height / 2;
+  const size = 200;
+
+  ovCtx.save();
+  ovCtx.translate(cx, cy);
+  ovCtx.fillStyle = '#8b5cf6';
+  ovCtx.strokeStyle = '#fff';
+  ovCtx.lineWidth = 3;
+
+  switch(shape) {
+    case 'circle':
+      ovCtx.beginPath();
+      ovCtx.arc(0, 0, size/2, 0, Math.PI*2);
+      ovCtx.fill(); ovCtx.stroke();
+      break;
+    case 'square':
+      ovCtx.beginPath();
+      ovCtx.roundRect(-size/2, -size/2, size, size, 8);
+      ovCtx.fill(); ovCtx.stroke();
+      break;
+    case 'tri':
+    case 'triangle':
+      ovCtx.beginPath();
+      ovCtx.moveTo(0, -size/2);
+      ovCtx.lineTo(size/2, size/2);
+      ovCtx.lineTo(-size/2, size/2);
+      ovCtx.closePath();
+      ovCtx.fill(); ovCtx.stroke();
+      break;
+    case 'heart':
+      ovCtx.beginPath();
+      const s = size / 2;
+      ovCtx.moveTo(0, s*0.7);
+      ovCtx.bezierCurveTo(-s*1.2, -s*0.3, -s*0.4, -s*1.1, 0, -s*0.4);
+      ovCtx.bezierCurveTo(s*0.4, -s*1.1, s*1.2, -s*0.3, 0, s*0.7);
+      ovCtx.fill(); ovCtx.stroke();
+      break;
+    case 'star':
+      ovCtx.beginPath();
+      for (let i = 0; i < 10; i++) {
+        const angle = (i / 10) * Math.PI*2 - Math.PI/2;
+        const r = i % 2 === 0 ? size/2 : size/4;
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        i === 0 ? ovCtx.moveTo(x, y) : ovCtx.lineTo(x, y);
+      }
+      ovCtx.closePath();
+      ovCtx.fill(); ovCtx.stroke();
+      break;
+    case 'pentagon':
+      ovCtx.beginPath();
+      for (let i = 0; i < 5; i++) {
+        const angle = (i / 5) * Math.PI*2 - Math.PI/2;
+        const x = Math.cos(angle) * size/2;
+        const y = Math.sin(angle) * size/2;
+        i === 0 ? ovCtx.moveTo(x, y) : ovCtx.lineTo(x, y);
+      }
+      ovCtx.closePath();
+      ovCtx.fill(); ovCtx.stroke();
+      break;
+  }
+  ovCtx.restore();
+}
+
+// ============ BRUSH TOOL ============
+function openBrushTool() {
+  enterToolMode();
+  const panel = $('toolPanel');
+  panel.innerHTML = `
+    <div class="brush-types" id="brushTypes"></div>
+    <div class="slider-row">
+      <label>Dimensione</label>
+      <input type="range" id="brushSize" min="1" max="200" value="30">
+      <span class="val" id="brushSizeVal">30</span>
+    </div>
+    <div class="submenu">
+      <button class="submenu-item active">${ic('palette',20)}<span class="submenu-label">Colore</span></button>
+      <button class="submenu-item">${ic('brush2',20)}<span class="submenu-label">Pennello</span></button>
+      <button class="submenu-item">${ic('gomma',20)}<span class="submenu-label">Gomma</span></button>
+      <button class="submenu-item">${ic('riempi',20)}<span class="submenu-label">Riempi</span></button>
+      <button class="submenu-item">${ic('forma',20)}<span class="submenu-label">Forma</span></button>
+      <button class="submenu-item">${ic('oggetti',20)}<span class="submenu-label">Oggetti</span></button>
+    </div>
+  `;
+  panel.classList.add('open');
+
+  const bt = $('brushTypes');
+  const brushPreviews = ['standard', 'watercolor', 'spray', 'marker', 'glitter', 'neon'];
+  brushPreviews.forEach((name, i) => {
+    const tile = document.createElement('button');
+    tile.className = 'brush-tile' + (i === 0 ? ' active' : '');
+    tile.innerHTML = `<div class="brush-preview" style="background:${i%2===0?'rgba(139,92,246,0.3)':'rgba(255,255,255,0.05)'}">
+      <div style="width:${10+i*3}px;height:${10+i*3}px;border-radius:50%;background:#fff;opacity:${0.4+i*0.1}"></div>
+    </div>`;
+    tile.addEventListener('click', () => {
+      document.querySelectorAll('.brush-tile').forEach(x => x.classList.remove('active'));
+      tile.classList.add('active');
+      state.activeBrush = i;
+    });
+    bt.appendChild(tile);
+  });
+
+  $('brushSize').addEventListener('input', e => {
+    $('brushSizeVal').textContent = e.target.value;
+  });
+}
+
+// ============ TEXT TOOL ============
+function openTextTool() {
+  enterToolMode();
+  const panel = $('toolPanel');
+  panel.innerHTML = `
+    <div class="text-panel">
+      <div class="text-panel-body">
+        <textarea class="text-input" placeholder="Scrivi qualcosa...">Doppio tocco per modificare</textarea>
+        <div class="font-row">
+          <button class="font-chip active" style="font-family:Inter,sans-serif">Inter</button>
+          <button class="font-chip" style="font-family:Georgia,serif">Georgia</button>
+          <button class="font-chip" style="font-family:'Times New Roman',serif">Times</button>
+          <button class="font-chip" style="font-family:Impact,fantasy">Impact</button>
+          <button class="font-chip" style="font-family:'Courier New',monospace">Courier</button>
+        </div>
+      </div>
+      <div class="submenu">
+        <button class="submenu-item active">${ic('text',20)}<span class="submenu-label">Font</span></button>
+        <button class="submenu-item">${ic('palette',20)}<span class="submenu-label">Colore</span></button>
+        <button class="submenu-item">${ic('border',20)}<span class="submenu-label">Tratto</span></button>
+        <button class="submenu-item">${ic('sparkles',20)}<span class="submenu-label">Ombra</span></button>
+        <button class="submenu-item">${ic('curve',20)}<span class="submenu-label">Piega</span></button>
+      </div>
+    </div>
+  `;
+  panel.classList.add('open');
+
+  document.querySelectorAll('.font-chip').forEach(b => {
+    b.addEventListener('click', () => {
+      document.querySelectorAll('.font-chip').forEach(x => x.classList.remove('active'));
+      b.classList.add('active');
+    });
+  });
+}
+
+// ============ EFFECTS TOOL ============
+function openEffectsTool() {
+  enterToolMode();
+  const panel = $('toolPanel');
+  panel.innerHTML = `
+    <div class="brush-types" style="padding:12px">
+      ${['Blur','Bianco e nero','Seppia','Vintage','Glitch','Neon'].map((name,i) => `
+        <button class="brush-tile" style="flex-direction:column;padding:4px">
+          <div style="width:40px;height:40px;border-radius:6px;background:${['#3a3a45','#888','#a88a5f','#5f4a3a','#ff2e93','#00f0ff'][i]};opacity:.7"></div>
+          <div style="font-size:8px;color:#9a9aa5;margin-top:2px">${name}</div>
+        </button>
+      `).join('')}
+    </div>
+    <div class="tool-actions">
+      <button class="btn-secondary" id="fxClose">Annulla</button>
+      <button class="btn-primary" id="fxApply">Applica</button>
+    </div>
+  `;
+  panel.classList.add('open');
+  $('fxClose').addEventListener('click', exitToolMode);
+  $('fxApply').addEventListener('click', () => {
+    showToast('Effetto applicato!');
+    exitToolMode();
+  });
+}
+
+// ============ ADJUST TOOL ============
+function openAdjustTool() {
+  enterToolMode();
+  const panel = $('toolPanel');
+  panel.innerHTML = `
+    <div style="padding:8px 0">
+      <div class="slider-row"><label>Luminosità</label><input type="range" min="-100" max="100" value="0"><span class="val">0</span></div>
+      <div class="slider-row"><label>Contrasto</label><input type="range" min="-100" max="100" value="0"><span class="val">0</span></div>
+      <div class="slider-row"><label>Saturazione</label><input type="range" min="-100" max="100" value="0"><span class="val">0</span></div>
+      <div class="slider-row"><label>Tonalità</label><input type="range" min="0" max="360" value="0"><span class="val">0</span></div>
+      <div class="slider-row"><label>Temperatura</label><input type="range" min="-100" max="100" value="0"><span class="val">0</span></div>
+    </div>
+    <div class="tool-actions">
+      <button class="btn-secondary" id="adjClose">Annulla</button>
+      <button class="btn-primary" id="adjApply">Applica</button>
+    </div>
+  `;
+  panel.classList.add('open');
+  $('adjClose').addEventListener('click', exitToolMode);
+  $('adjApply').addEventListener('click', () => {
+    showToast('Regolazioni applicate!');
+    exitToolMode();
+  });
+  document.querySelectorAll('.slider-row input').forEach(sl => {
+    sl.addEventListener('input', () => {
+      sl.parentElement.querySelector('.val').textContent = sl.value;
+    });
+  });
+}
+
+// ============ TOAST ============
+function showToast(msg, type = 'ok') {
+  const t = $('toast');
+  $('toastMsg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(showToast._t);
+  showToast._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+$('toastBtn').addEventListener('click', () => $('toast').classList.remove('show'));
+
+// ============ LAYERS PANEL ============
+$('layersFab').addEventListener('click', () => $('layersPanel').classList.toggle('open'));
+$('layersAdd').addEventListener('click', () => {
+  state.layers.push({id: 'l' + Date.now(), name: 'Livello ' + (state.layers.length + 1), visible: true});
+  refreshLayersList();
+});
+
+// ============ TOOL MODE CONTROLS ============
+$('tbBack').addEventListener('click', exitToolMode);
+$('tbConfirm').addEventListener('click', () => {
+  showToast('Modifiche confermate');
+  exitToolMode();
+});
+
+// ============ RESIZE HANDLING ============
+function updateStageSize() {
+  const area = document.querySelector('.canvas-area');
+  const rect = area.getBoundingClientRect();
+  const maxW = rect.width - 20;
+  const maxH = rect.height - 20;
+  const ratio = canvas.width / canvas.height;
+  let w = maxW, h = maxW / ratio;
+  if (h > maxH) { h = maxH; w = maxH * ratio; }
+  stage.style.width = w + 'px';
+  stage.style.height = h + 'px';
+}
+
+window.addEventListener('resize', updateStageSize);
+
+// ============ INIT ============
+function init() {
+  renderBottomToolbar();
+  renderToolGrid();
+  createDemoImage();
+  updateStageSize();
+  // show welcome toast (like "Taglio Libero è in Ritaglio")
+  setTimeout(() => {
+    showToast('Taglio Libero è in Ritaglio');
+  }, 1500);
+}
+
+init();
+
+})();
+</script>
+</body>
+</html>

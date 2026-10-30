@@ -1,0 +1,9 @@
+<resources>
+    <string name="app_name">Picsart Studio</string>
+    <string name="cd_undo">Annulla</string>
+    <string name="cd_redo">Ripeti</string>
+    <string name="cd_export">Esporta</string>
+    <string name="cd_share">Condividi</string>
+    <string name="cd_layers">Livelli</string>
+    <string name="cd_add_photo">Aggiungi foto</string>
+</resources>
