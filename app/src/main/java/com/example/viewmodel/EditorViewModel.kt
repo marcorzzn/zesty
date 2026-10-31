@@ -70,11 +70,15 @@ data class EditorUiState(
     val dispersionFade: Float = 50f,
     val cloneSourcePoint: PointF? = null,
     val cloneOffset: PointF? = null,
-    // Brush & Mask state
+    // Brush & Mask & Selective Paint (§23) state
     val brushStyle: BrushStyle = BrushStyle.STANDARD,
     val brushSize: Float = 28f,
     val brushOpacity: Float = 100f,
+    val brushHardness: Float = 65f, // 0..100 radial gradient falloff
     val brushColor: Int = Color.parseColor("#E0289A"),
+    val selectiveTargetFxKey: String? = null, // null = layer.maskBitmap, non-null = layer.effects[key].localMask
+    val showMaskHeatmap: Boolean = true,
+    val returnToolAfterSelective: String? = null,
     // Warp state
     val warpMode: WarpMode = WarpMode.PUSH,
     val warpRadius: Float = 95f,
@@ -107,11 +111,12 @@ class EditorViewModel : ViewModel() {
 
     private val undoStack = ArrayDeque<HistorySnapshot>()
     private val redoStack = ArrayDeque<HistorySnapshot>()
-    private val maxHistory = 25
+    private val maxHistory = 12 // Memory-safe cap on mobile devices (Bug 2 fix)
 
     private var renderJob: Job? = null
     private var warpBackupBitmap: Bitmap? = null
     private var lastBrushPoint: PointF? = null
+    private var strokeHasPushedHistory: Boolean = false // Bug 3 fix: pushHistory only on first paint move
     private val dispersionSelection = mutableListOf<PointF>()
 
     init {
@@ -1172,15 +1177,115 @@ class EditorViewModel : ViewModel() {
         showToast(if (horizontal) "Distribuiti orizzontalmente" else "Distribuiti verticalmente")
     }
 
-    // ============ 13 & 14. MASKS & BRUSHES ============
-    fun updateBrushSettings(style: BrushStyle? = null, size: Float? = null, opacity: Float? = null, color: Int? = null) {
+    // ============ 13, 14 & 23. MASKS, BRUSHES & UNIVERSAL SELECTIVE PAINT (§23) ============
+    fun updateBrushSettings(
+        style: BrushStyle? = null,
+        size: Float? = null,
+        opacity: Float? = null,
+        hardness: Float? = null,
+        color: Int? = null
+    ) {
         val s = _state.value
         _state.value = s.copy(
             brushStyle = style ?: s.brushStyle,
             brushSize = size ?: s.brushSize,
             brushOpacity = opacity ?: s.brushOpacity,
+            brushHardness = hardness ?: s.brushHardness,
             brushColor = color ?: s.brushColor
         )
+    }
+
+    /**
+     * Opens §23 Universal Selective Paint mode for either a specific Effect (`fxKey != null`)
+     * or the active layer's visibility (`fxKey == null`).
+     */
+    fun openSelectivePaintMode(fxKey: String?, initBlackMask: Boolean = true) {
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val lw = active.w.toInt().coerceAtLeast(4)
+        val lh = active.h.toInt().coerceAtLeast(4)
+
+        if (fxKey != null) {
+            val curCfg = active.effects[fxKey] ?: EffectConfig(enabled = true)
+            val mask = curCfg.localMask ?: Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).apply {
+                eraseColor(if (initBlackMask) Color.TRANSPARENT else Color.WHITE)
+            }
+            updateLayerEffect(fxKey, curCfg.copy(enabled = true, localMask = mask, localizing = true))
+        } else {
+            val mask = active.maskBitmap ?: Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).apply {
+                eraseColor(if (initBlackMask) Color.TRANSPARENT else Color.WHITE)
+            }
+            updateActiveLayer { it.copy(maskBitmap = mask, editingMask = true) }
+        }
+
+        _state.value = _state.value.copy(
+            returnToolAfterSelective = s.currentTool,
+            currentTool = "selective_mask",
+            selectiveTargetFxKey = fxKey,
+            brushStyle = BrushStyle.STANDARD,
+            showMaskHeatmap = true,
+            toastMessage = if (fxKey != null)
+                "Pittura Selettiva FX ($fxKey): dipingi dove applicare l'effetto"
+            else
+                "Localizza Visibilità Livello: dipingi con pennello o gomma"
+        )
+        rebuildCompositeImmediate()
+    }
+
+    fun exitSelectivePaintMode() {
+        val s = _state.value
+        val prevTool = s.returnToolAfterSelective ?: "effects"
+        _state.value = s.copy(
+            currentTool = prevTool,
+            selectiveTargetFxKey = null
+        )
+        rebuildCompositeImmediate()
+    }
+
+    fun toggleSelectiveHeatmap() {
+        _state.value = _state.value.copy(showMaskHeatmap = !_state.value.showMaskHeatmap)
+    }
+
+    fun fillSelectiveMask(fillWhite: Boolean) {
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val lw = active.w.toInt().coerceAtLeast(4)
+        val lh = active.h.toInt().coerceAtLeast(4)
+        val mask = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(if (fillWhite) Color.WHITE else Color.TRANSPARENT)
+        }
+        val fxKey = s.selectiveTargetFxKey
+        if (fxKey != null) {
+            val cfg = active.effects[fxKey] ?: return
+            updateLayerEffect(fxKey, cfg.copy(localMask = mask))
+        } else {
+            updateActiveLayer { it.copy(maskBitmap = mask) }
+        }
+        pushHistorySnapshot()
+        rebuildCompositeImmediate()
+    }
+
+    fun invertSelectiveMask() {
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val fxKey = s.selectiveTargetFxKey
+        if (fxKey != null) {
+            val cfg = active.effects[fxKey] ?: return
+            updateLayerEffect(fxKey, cfg.copy(localInverted = !cfg.localInverted))
+        } else {
+            invertActiveLayerMask()
+        }
+        pushHistorySnapshot()
+        rebuildCompositeImmediate()
+    }
+
+    fun removeEffectLocalization(fxKey: String) {
+        val active = _state.value.activeLayer ?: return
+        val cfg = active.effects[fxKey] ?: return
+        updateLayerEffect(fxKey, cfg.copy(localMask = null, localInverted = false, localizing = false))
+        pushHistorySnapshot()
+        rebuildCompositeImmediate()
+        showToast("Localizzazione rimossa: effetto applicato ovunque")
     }
 
     fun ensureActiveLayerHasMask() {
@@ -1231,17 +1336,19 @@ class EditorViewModel : ViewModel() {
             sampleColorAt(canvasX, canvasY)
             return
         }
+        // Bug 3 fix: reset strokeHasPushedHistory on pointerdown; push happens once on first paint stroke
+        strokeHasPushedHistory = false
 
         when (s.currentTool) {
             "pen" -> {
                 val active = s.activeLayer ?: return
                 val nx = ((canvasX - active.x) / active.w.coerceAtLeast(1f)).coerceIn(0f, 1f)
                 val ny = ((canvasY - active.y) / active.h.coerceAtLeast(1f)).coerceIn(0f, 1f)
-                // Check if tapping near an existing control point to drag it, else add point
                 val existingIdx = active.pathPoints.indexOfFirst {
                     hypot((it.x - nx) * active.w, (it.y - ny) * active.h) < 28f
                 }
                 if (existingIdx == -1) {
+                    pushHistorySnapshot()
                     updateActiveLayer { it.copy(pathPoints = it.pathPoints + NormPoint(nx, ny)) }
                     rebuildCompositeImmediate()
                 }
@@ -1270,7 +1377,7 @@ class EditorViewModel : ViewModel() {
                 dispersionSelection.add(PointF(canvasX, canvasY))
                 _state.value = s.copy(lassoPoints = dispersionSelection.toList())
             }
-            "brush", "mask" -> {
+            "brush", "mask", "selective_mask" -> {
                 lastBrushPoint = PointF(canvasX, canvasY)
                 paintBrushStroke(canvasX, canvasY, canvasX, canvasY)
             }
@@ -1288,6 +1395,12 @@ class EditorViewModel : ViewModel() {
         if (s.eyedropperActive) {
             sampleColorAt(canvasX, canvasY)
             return
+        }
+
+        // Bug 3 fix: pushHistorySnapshot ONCE on first pointermove of a painting gesture
+        if (!strokeHasPushedHistory && s.currentTool in listOf("brush", "mask", "selective_mask", "warp", "clone")) {
+            strokeHasPushedHistory = true
+            pushHistorySnapshot()
         }
 
         when (s.currentTool) {
@@ -1317,7 +1430,7 @@ class EditorViewModel : ViewModel() {
                 dispersionSelection.add(PointF(canvasX, canvasY))
                 _state.value = s.copy(lassoPoints = dispersionSelection.toList())
             }
-            "brush", "mask" -> {
+            "brush", "mask", "selective_mask" -> {
                 val prev = lastBrushPoint ?: PointF(canvasX, canvasY)
                 paintBrushStroke(prev.x, prev.y, canvasX, canvasY)
                 lastBrushPoint = PointF(canvasX, canvasY)
@@ -1333,7 +1446,7 @@ class EditorViewModel : ViewModel() {
     fun onCanvasPointerUp() {
         val s = _state.value
         lastBrushPoint = null
-        if (s.currentTool in listOf("brush", "mask", "warp", "clone", "pen")) {
+        if (s.currentTool in listOf("brush", "mask", "selective_mask", "warp", "clone", "pen")) {
             rebuildCompositeImmediate()
         }
     }
@@ -1351,16 +1464,30 @@ class EditorViewModel : ViewModel() {
         val active = s.activeLayer ?: return
         if (active.locked) return
 
-        val editingMask = s.currentTool == "mask" || active.editingMask
-        if (editingMask) {
+        val isSelectiveFx = s.currentTool == "selective_mask" && s.selectiveTargetFxKey != null
+        val editingLayerMask = (s.currentTool == "selective_mask" && s.selectiveTargetFxKey == null) ||
+                s.currentTool == "mask" || active.editingMask
+
+        if (editingLayerMask) {
             ensureActiveLayerHasMask()
-        } else {
+        } else if (!isSelectiveFx) {
             ensureActiveLayerRasterized()
         }
 
         val currentLayer = _state.value.activeLayer ?: return
-        val targetBmp = (if (editingMask) currentLayer.maskBitmap else currentLayer.bitmap)
-            ?.copy(Bitmap.Config.ARGB_8888, true) ?: return
+        val targetBmp: Bitmap = when {
+            isSelectiveFx -> {
+                val fxKey = s.selectiveTargetFxKey!!
+                val cfg = currentLayer.effects[fxKey] ?: EffectConfig(enabled = true)
+                (cfg.localMask ?: Bitmap.createBitmap(
+                    currentLayer.w.toInt().coerceAtLeast(4),
+                    currentLayer.h.toInt().coerceAtLeast(4),
+                    Bitmap.Config.ARGB_8888
+                )).copy(Bitmap.Config.ARGB_8888, true)
+            }
+            editingLayerMask -> currentLayer.maskBitmap?.copy(Bitmap.Config.ARGB_8888, true) ?: return
+            else -> currentLayer.bitmap?.copy(Bitmap.Config.ARGB_8888, true) ?: return
+        }
 
         val lx0 = x0 - currentLayer.x
         val ly0 = y0 - currentLayer.y
@@ -1368,25 +1495,41 @@ class EditorViewModel : ViewModel() {
         val ly1 = y1 - currentLayer.y
 
         val c = Canvas(targetBmp)
-        val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            style = Paint.Style.STROKE
-            strokeWidth = s.brushSize.coerceIn(1f, 200f)
-            strokeJoin = Paint.Join.ROUND
-            strokeCap = if (s.brushStyle == BrushStyle.CHISEL) Paint.Cap.SQUARE else Paint.Cap.ROUND
-        }
+        val radius = (s.brushSize / 2f).coerceIn(1f, 120f)
+        val alphaInt = (s.brushOpacity / 100f * 255).toInt().coerceIn(5, 255)
 
-        if (editingMask) {
-            // In mask mode: Eraser or black hides (DST_OUT), Brush shows (WHITE)
+        if (isSelectiveFx || editingLayerMask) {
+            // Paint with radial gradient falloff determined by brushHardness (0..100%)
+            val dist = hypot(lx1 - lx0, ly1 - ly0)
+            val steps = (dist / (radius * 0.35f).coerceAtLeast(2f)).toInt().coerceAtLeast(1)
+            val hardStop = (s.brushHardness / 100f).coerceIn(0.05f, 0.98f)
+            val dabPaint = Paint(Paint.ANTI_ALIAS_FLAG)
             if (s.brushStyle == BrushStyle.ERASER) {
-                p.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
-                p.color = Color.BLACK
-                p.alpha = (s.brushOpacity / 100f * 255).toInt().coerceIn(10, 255)
-            } else {
-                p.color = Color.WHITE
-                p.alpha = (s.brushOpacity / 100f * 255).toInt().coerceIn(10, 255)
+                dabPaint.xfermode = PorterDuffXfermode(PorterDuff.Mode.DST_OUT)
             }
-            c.drawLine(lx0, ly0, lx1, ly1, p)
+            for (i in 0..steps) {
+                val t = i.toFloat() / steps
+                val px = lx0 + (lx1 - lx0) * t
+                val py = ly0 + (ly1 - ly0) * t
+                dabPaint.shader = RadialGradient(
+                    px, py, radius.coerceAtLeast(2f),
+                    intArrayOf(
+                        Color.argb(alphaInt, 255, 255, 255),
+                        Color.argb(alphaInt, 255, 255, 255),
+                        Color.argb(0, 255, 255, 255)
+                    ),
+                    floatArrayOf(0f, hardStop, 1f),
+                    Shader.TileMode.CLAMP
+                )
+                c.drawCircle(px, py, radius, dabPaint)
+            }
         } else {
+            val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+                style = Paint.Style.STROKE
+                strokeWidth = s.brushSize.coerceIn(1f, 200f)
+                strokeJoin = Paint.Join.ROUND
+                strokeCap = if (s.brushStyle == BrushStyle.CHISEL) Paint.Cap.SQUARE else Paint.Cap.ROUND
+            }
             when (s.brushStyle) {
                 BrushStyle.ERASER -> {
                     p.xfermode = PorterDuffXfermode(PorterDuff.Mode.CLEAR)
@@ -1409,7 +1552,7 @@ class EditorViewModel : ViewModel() {
                 BrushStyle.SPRAY, BrushStyle.GLITTER -> {
                     p.style = Paint.Style.FILL
                     p.color = s.brushColor
-                    p.alpha = (s.brushOpacity / 100f * 255).toInt()
+                    p.alpha = alphaInt
                     val dots = if (s.brushStyle == BrushStyle.GLITTER) 14 else 28
                     val rad = s.brushSize * 0.6f
                     for (i in 0 until dots) {
@@ -1423,16 +1566,20 @@ class EditorViewModel : ViewModel() {
                 }
                 BrushStyle.STANDARD -> {
                     p.color = s.brushColor
-                    p.alpha = (s.brushOpacity / 100f * 255).toInt().coerceIn(1, 255)
+                    p.alpha = alphaInt
                     c.drawLine(lx0, ly0, lx1, ly1, p)
                 }
             }
         }
 
-        if (editingMask) {
-            updateActiveLayer { it.copy(maskBitmap = targetBmp) }
-        } else {
-            updateActiveLayer { it.copy(bitmap = targetBmp) }
+        when {
+            isSelectiveFx -> {
+                val fxKey = s.selectiveTargetFxKey!!
+                val cfg = currentLayer.effects[fxKey] ?: EffectConfig(enabled = true)
+                updateLayerEffect(fxKey, cfg.copy(localMask = targetBmp))
+            }
+            editingLayerMask -> updateActiveLayer { it.copy(maskBitmap = targetBmp) }
+            else -> updateActiveLayer { it.copy(bitmap = targetBmp) }
         }
         scheduleCompositeRebuild()
     }
@@ -1490,6 +1637,9 @@ class EditorViewModel : ViewModel() {
         if (active.type == LayerType.RASTER || active.type == LayerType.IMAGE) {
             if (active.bitmap != null) return
         }
+        // Bug 7 fix: notify user and push history snapshot before rasterizing a vector/text/shape layer
+        pushHistorySnapshot()
+        showToast("Livello '${active.name}' convertito in raster per la modifica pixel")
         val rendered = PixelEngine.renderSingleLayerBitmap(active, s.layers)
         updateActiveLayer {
             it.copy(

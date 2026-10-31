@@ -139,6 +139,21 @@ fun LayersSidePanel(state: EditorUiState, vm: EditorViewModel) {
                             Icon(Icons.Default.Delete, contentDescription = "Elimina", tint = Color(0xFFFF5C8A), modifier = Modifier.size(15.dp))
                         }
                     }
+
+                    // §23 Universal Layer Localization quick button
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        SmallChipButton(
+                            text = if (active.maskBitmap != null) "Modifica Maschera Locale" else "Localizza Visibilità",
+                            active = active.maskBitmap != null,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            vm.toggleLayersPanel()
+                            vm.openSelectivePaintMode(fxKey = null, initBlackMask = false)
+                        }
+                    }
                 }
                 HorizontalDivider(color = BorderCol)
             }

@@ -69,7 +69,10 @@ data class EffectConfig(
     val intensity: Float = 50f,     // 0..100
     val param1: Float = 30f,        // e.g. radius / shift / size
     val param2: Float = 50f,        // e.g. spread / blocks / angle
-    val colorHex: Int = 0xFF00F0FF.toInt()
+    val colorHex: Int = 0xFF00F0FF.toInt(),
+    val localMask: Bitmap? = null,
+    val localInverted: Boolean = false,
+    val localizing: Boolean = false
 )
 
 data class CurvePoint(val x: Float, val y: Float) // 0..1 normalized
@@ -143,7 +146,9 @@ data class EditorLayer(
     fun deepCopy(): EditorLayer = copy(
         bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, true),
         maskBitmap = maskBitmap?.copy(Bitmap.Config.ARGB_8888, true),
-        effects = effects.toMap(),
+        effects = effects.mapValues { (_, cfg) ->
+            cfg.copy(localMask = cfg.localMask?.copy(Bitmap.Config.ARGB_8888, true))
+        },
         pathPoints = pathPoints.toList(),
         curves = curves.copy(
             rgb = curves.rgb.toList(),

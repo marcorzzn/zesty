@@ -299,6 +299,7 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
                         "pen" -> PenAndBooleanPanel(state, vm)
                         "brush" -> BrushToolPanel(state, vm, isMaskMode = false)
                         "mask" -> BrushToolPanel(state, vm, isMaskMode = true)
+                        "selective_mask" -> SelectivePaintToolPanel(state, vm)
                         "fit" -> FitAndBorderPanel(state, vm, isBorderTab = false)
                         "border" -> FitAndBorderPanel(state, vm, isBorderTab = true)
                         "resize" -> ResizeCanvasPanel(state, vm)

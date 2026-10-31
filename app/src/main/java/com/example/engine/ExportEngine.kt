@@ -28,7 +28,7 @@ enum class ExportFormat(val ext: String, val mime: String, val label: String) {
     PNG("png", "image/png", "PNG (Lossless)"),
     JPG("jpg", "image/jpeg", "JPG (Compresso)"),
     SVG("svg", "image/svg+xml", "SVG (Vettoriale + Raster)"),
-    PDF("pdf", "application/pdf", "PDF (Documento)")
+    PDF("pdf", "application/pdf", "PDF (JPEG Embed %PDF-1.4)")
 }
 
 object ExportEngine {

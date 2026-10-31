@@ -635,23 +635,30 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
             }
         }
 
-        // Active FX Parameter Sliders + Toggle + Remove (X)
+        // Active FX Parameter Sliders + Toggle + Selective Localization (§23) + Remove (X)
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 14.dp, vertical = 4.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 14.dp, vertical = 4.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                Switch(
-                    checked = cfg.enabled,
-                    onCheckedChange = { vm.updateLayerEffect(key, cfg.copy(enabled = it)) },
-                    colors = SwitchDefaults.colors(checkedThumbColor = AccentPinkHi, checkedTrackColor = AccentPink)
-                )
-                Text(
-                    text = if (cfg.enabled) "Effetto Attivo" else "Effetto Disattivato",
-                    color = TextWhite,
-                    fontSize = 11.sp
-                )
+            Switch(
+                checked = cfg.enabled,
+                onCheckedChange = { vm.updateLayerEffect(key, cfg.copy(enabled = it)) },
+                colors = SwitchDefaults.colors(checkedThumbColor = AccentPinkHi, checkedTrackColor = AccentPink)
+            )
+            SmallChipButton(
+                text = if (cfg.localMask != null) "Localizza FX (Attivo)" else "Localizza FX",
+                active = cfg.localMask != null
+            ) {
+                vm.openSelectivePaintMode(fxKey = key, initBlackMask = cfg.localMask == null)
+            }
+            if (cfg.localMask != null) {
+                SmallChipButton("Applica ovunque") {
+                    vm.removeEffectLocalization(key)
+                }
             }
             SmallChipButton("Rimuovi FX (X)") { vm.removeLayerEffect(key) }
         }
@@ -1192,6 +1199,57 @@ fun BlendModeStrip(selected: BlendOption, onSelect: (BlendOption) -> Unit) {
                 active = bm == selected
             ) { onSelect(bm) }
         }
+    }
+}
+
+@Composable
+fun SelectivePaintToolPanel(state: EditorUiState, vm: EditorViewModel) {
+    val fxKey = state.selectiveTargetFxKey
+    val active = state.activeLayer
+    val isInverted = if (fxKey != null) {
+        active?.effects?.get(fxKey)?.localInverted == true
+    } else {
+        active?.maskInverted == true
+    }
+
+    Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 8.dp)) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .horizontalScroll(rememberScrollState())
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            SmallChipButton(
+                text = "Pennello (+)",
+                active = state.brushStyle != BrushStyle.ERASER
+            ) { vm.updateBrushSettings(style = BrushStyle.STANDARD) }
+            SmallChipButton(
+                text = "Gomma (-)",
+                active = state.brushStyle == BrushStyle.ERASER
+            ) { vm.updateBrushSettings(style = BrushStyle.ERASER) }
+            SmallChipButton(
+                text = if (state.showMaskHeatmap) "Overlay Rosso: ON" else "Overlay Rosso: OFF",
+                active = state.showMaskHeatmap
+            ) { vm.toggleSelectiveHeatmap() }
+            SmallChipButton(
+                text = if (isInverted) "Inverti: ON" else "Inverti",
+                active = isInverted
+            ) { vm.invertSelectiveMask() }
+            SmallChipButton("Applica a Tutto") { vm.fillSelectiveMask(true) }
+            SmallChipButton("Cancella Tutto") { vm.fillSelectiveMask(false) }
+            SmallChipButton("Esci (X)") { vm.exitSelectivePaintMode() }
+        }
+
+        CustomSliderRow("Dimensione", state.brushSize, 1f..200f, {
+            vm.updateBrushSettings(size = it)
+        }, "px")
+        CustomSliderRow("Opacità", state.brushOpacity, 5f..100f, {
+            vm.updateBrushSettings(opacity = it)
+        }, "%")
+        CustomSliderRow("Durezza Bordo", state.brushHardness, 5f..100f, {
+            vm.updateBrushSettings(hardness = it)
+        }, "%")
     }
 }
 

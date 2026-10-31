@@ -131,22 +131,36 @@ fun InteractiveCanvasStage(
                         return@awaitEachGesture
                     }
 
-                    // 2. Check if in Collage slot tap
+                    // 2. Check if in Collage slot tap or separator line drag (Bug 5 fix)
                     if (tool == "collage") {
                         val nx = (startCanvas.x / state.canvasW).coerceIn(0f, 1f)
                         val ny = (startCanvas.y / state.canvasH).coerceIn(0f, 1f)
-                        val slot = state.collageSlots.find {
-                            nx in it.left..it.right && ny in it.top..it.bottom
-                        }
-                        if (slot != null) {
-                            vm.selectCollageSlot(slot.id)
+                        val nearSplit = abs(nx - state.collageSplitRatio) < 0.06f
+                        if (nearSplit) {
+                            do {
+                                val event = awaitPointerEvent()
+                                val cur = event.changes.firstOrNull() ?: break
+                                if (cur.pressed) {
+                                    val cPt = toCanvasPt(cur.position)
+                                    val curNx = (cPt.x / state.canvasW).coerceIn(0.2f, 0.8f)
+                                    vm.updateCollageLayout(splitRatio = curNx)
+                                    cur.consume()
+                                }
+                            } while (event.changes.any { it.pressed })
+                        } else {
+                            val slot = state.collageSlots.find {
+                                nx in it.left..it.right && ny in it.top..it.bottom
+                            }
+                            if (slot != null) {
+                                vm.selectCollageSlot(slot.id)
+                            }
                         }
                         return@awaitEachGesture
                     }
 
-                    // 3. Direct painting/sampling tools (Brush, Mask, Warp, Clone, FreeCrop, Dispersion, Pen, Eyedropper)
+                    // 3. Direct painting/sampling tools (Brush, Mask, Selective Mask, Warp, Clone, FreeCrop, Dispersion, Pen, Eyedropper)
                     val isDirectPaintTool = state.eyedropperActive ||
-                            tool in listOf("brush", "mask", "warp", "clone", "freecrop", "dispersion", "pen")
+                            tool in listOf("brush", "mask", "selective_mask", "warp", "clone", "freecrop", "dispersion", "pen")
 
                     if (isDirectPaintTool) {
                         vm.onCanvasPointerDown(startCanvas.x, startCanvas.y)
@@ -286,6 +300,33 @@ fun InteractiveCanvasStage(
                     }
                 }
 
+                // §23 Selective Mask semi-transparent red heatmap overlay (alpha 0.4)
+                if (state.currentTool == "selective_mask" && state.showMaskHeatmap) {
+                    val activeLayer = state.activeLayer
+                    if (activeLayer != null) {
+                        val maskBmp = if (state.selectiveTargetFxKey != null) {
+                            activeLayer.effects[state.selectiveTargetFxKey]?.localMask
+                        } else {
+                            activeLayer.maskBitmap
+                        }
+                        if (maskBmp != null) {
+                            val lx = left + (activeLayer.x / state.canvasW) * stageW
+                            val ly = top + (activeLayer.y / state.canvasH) * stageH
+                            val lw = (activeLayer.w / state.canvasW) * stageW
+                            val lh = (activeLayer.h / state.canvasH) * stageH
+                            rotate(activeLayer.rotation, pivot = Offset(lx + lw / 2f, ly + lh / 2f)) {
+                                drawImage(
+                                    image = maskBmp.asImageBitmap(),
+                                    dstOffset = IntOffset(lx.roundToInt(), ly.roundToInt()),
+                                    dstSize = IntSize(lw.roundToInt().coerceAtLeast(1), lh.roundToInt().coerceAtLeast(1)),
+                                    alpha = 0.42f,
+                                    colorFilter = ColorFilter.tint(Color(0xFFFF1E42), BlendMode.Modulate)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Collage interactive overlay when collage tool open
                 if (state.currentTool == "collage") {
                     drawRect(
@@ -313,6 +354,24 @@ fun InteractiveCanvasStage(
                             style = Stroke(width = if (isSel) 3.dp.toPx() else 1.dp.toPx())
                         )
                     }
+                    // Bug 5 fix: visible draggable separator line + grip pill
+                    val splitX = left + state.collageSplitRatio * stageW
+                    drawLine(
+                        color = AccentPinkHi,
+                        start = Offset(splitX, top),
+                        end = Offset(splitX, top + stageH),
+                        strokeWidth = 3.dp.toPx()
+                    )
+                    drawCircle(
+                        color = Color.White,
+                        radius = 7.dp.toPx(),
+                        center = Offset(splitX, top + stageH / 2f)
+                    )
+                    drawCircle(
+                        color = AccentPink,
+                        radius = 4.5.dp.toPx(),
+                        center = Offset(splitX, top + stageH / 2f)
+                    )
                 }
 
                 // Crop / Perspective Overlay

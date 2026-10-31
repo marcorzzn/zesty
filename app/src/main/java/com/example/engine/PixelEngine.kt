@@ -261,13 +261,14 @@ object PixelEngine {
     }
 
     /**
-     * Renders a single layer's content at its bounding box (w x h), then applies mask, adjustments, curves, and FX.
+     * Renders a single layer's content at its bounding box (w x h), then applies mask, adjustments, curves, and FX
+     * supporting both global FX (Path A) and per-effect selective localMask (Path B).
      */
     fun renderSingleLayerBitmap(layer: EditorLayer, allLayers: List<EditorLayer> = emptyList()): Bitmap {
         val lw = layer.w.toInt().coerceAtLeast(4)
         val lh = layer.h.toInt().coerceAtLeast(4)
-        var bmp = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
+        val rawBmp = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+        val c = Canvas(rawBmp)
         val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
         when (layer.type) {
@@ -287,12 +288,55 @@ object PixelEngine {
             }
         }
 
-        // Apply adjustments, curves, and FX if present
-        if (!layer.adjust.isIdentity || !layer.curves.isIdentity || layer.effects.values.any { it.enabled }) {
-            bmp = applyPixelPipeline(bmp, layer.adjust, layer.curves, layer.effects)
+        // Apply base adjustments and curves first
+        var bmp = if (!layer.adjust.isIdentity || !layer.curves.isIdentity) {
+            applyPixelPipeline(rawBmp, layer.adjust, layer.curves, emptyMap())
+        } else {
+            rawBmp
         }
 
-        // Apply mask if present
+        // Apply enabled Effects (global or with selective localMask)
+        val enabledEffects = layer.effects.filterValues { it.enabled }
+        if (enabledEffects.isNotEmpty()) {
+            val hasLocalMask = enabledEffects.values.any { it.localMask != null }
+            if (!hasLocalMask) {
+                // Path A: Global effects
+                bmp = applyPixelPipeline(bmp, AdjustParams(), CurvesData(), enabledEffects)
+            } else {
+                // Path B: Each effect can be global or selectively masked with localMask
+                for ((fxKey, cfg) in enabledEffects) {
+                    val fxOnly = applyPixelPipeline(bmp, AdjustParams(), CurvesData(), mapOf(fxKey to cfg))
+                    val lMask = cfg.localMask
+                    if (lMask == null) {
+                        bmp = fxOnly
+                    } else {
+                        // Combine original bmp + masked fxOnly
+                        val fxMasked = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+                        val fmc = Canvas(fxMasked)
+                        fmc.drawBitmap(fxOnly, 0f, 0f, null)
+                        val mp = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+                        mp.xfermode = PorterDuffXfermode(
+                            if (cfg.localInverted) PorterDuff.Mode.DST_OUT else PorterDuff.Mode.DST_IN
+                        )
+                        fmc.drawBitmap(lMask, null, RectF(0f, 0f, lw.toFloat(), lh.toFloat()), mp)
+
+                        // Cut out masked area from original and draw fxMasked on top
+                        val combined = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+                        val cc = Canvas(combined)
+                        cc.drawBitmap(bmp, 0f, 0f, null)
+                        val cutPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
+                        cutPaint.xfermode = PorterDuffXfermode(
+                            if (cfg.localInverted) PorterDuff.Mode.DST_IN else PorterDuff.Mode.DST_OUT
+                        )
+                        cc.drawBitmap(lMask, null, RectF(0f, 0f, lw.toFloat(), lh.toFloat()), cutPaint)
+                        cc.drawBitmap(fxMasked, 0f, 0f, null)
+                        bmp = combined
+                    }
+                }
+            }
+        }
+
+        // Apply layer visibility mask if present (independent and multiplicative with effect localMask)
         layer.maskBitmap?.let { mask ->
             val masked = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
             val mc = Canvas(masked)
