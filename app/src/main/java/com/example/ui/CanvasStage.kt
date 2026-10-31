@@ -281,6 +281,33 @@ fun InteractiveCanvasStage(
                 val left = (size.width - stageW) / 2f
                 val top = (size.height - stageH) / 2f
 
+                // Draw alpha checkerboard behind canvas so transparent backgrounds are clearly visible
+                drawRect(
+                    color = Color(0xFF1A1A22),
+                    topLeft = Offset(left, top),
+                    size = Size(stageW, stageH)
+                )
+                val checkSize = 18.dp.toPx()
+                val cols = (stageW / checkSize).toInt().coerceAtLeast(1)
+                val rows = (stageH / checkSize).toInt().coerceAtLeast(1)
+                for (r in 0..rows) {
+                    for (c in 0..cols) {
+                        if ((r + c) % 2 == 0) {
+                            val cx = left + c * checkSize
+                            val cy = top + r * checkSize
+                            val cw = (left + stageW - cx).coerceAtMost(checkSize)
+                            val ch = (top + stageH - cy).coerceAtMost(checkSize)
+                            if (cw > 0f && ch > 0f) {
+                                drawRect(
+                                    color = Color(0xFF262632),
+                                    topLeft = Offset(cx, cy),
+                                    size = Size(cw, ch)
+                                )
+                            }
+                        }
+                    }
+                }
+
                 // Draw composite raster bitmap
                 state.compositeBitmap?.let { bmp ->
                     if (state.currentTool == "crop" || state.currentTool == "rotate") {

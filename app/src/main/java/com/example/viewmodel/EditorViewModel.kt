@@ -45,6 +45,9 @@ data class EditorUiState(
     val colorPickerTarget: String = "fill", // "fill", "stroke", "brush", "bg", "border", "grad2"
     val eyedropperActive: Boolean = false,
     val exportModalOpen: Boolean = false,
+    val newProjectModalOpen: Boolean = false,
+    val confirmLocalizeFxKey: String? = null,
+    val customFonts: List<String> = emptyList(),
     val renameLayerModalId: String? = null,
     // History
     val canUndo: Boolean = false,
@@ -120,34 +123,51 @@ class EditorViewModel : ViewModel() {
     private val dispersionSelection = mutableListOf<PointF>()
 
     init {
-        initDemoProject()
+        createNewProject(width = 800, height = 800, bgColor = Color.TRANSPARENT, loadDemo = false)
     }
 
-    fun initDemoProject() {
-        val demoBmp = PixelEngine.createDemoBitmap(800, 800)
+    fun openNewProjectModal(open: Boolean) {
+        _state.value = _state.value.copy(newProjectModalOpen = open)
+    }
+
+    fun createNewProject(width: Int, height: Int, bgColor: Int, loadDemo: Boolean = false) {
+        val safeW = width.coerceIn(64, 4096)
+        val safeH = height.coerceIn(64, 4096)
+        val bmp = if (loadDemo) {
+            PixelEngine.createDemoBitmap(safeW, safeH)
+        } else {
+            Bitmap.createBitmap(safeW, safeH, Bitmap.Config.ARGB_8888)
+        }
         val baseLayer = EditorLayer(
-            id = "layer_base",
-            type = LayerType.IMAGE,
-            name = "Immagine base",
+            id = "layer_base_${System.currentTimeMillis()}",
+            type = if (loadDemo) LayerType.IMAGE else LayerType.RASTER,
+            name = if (loadDemo) "Scena Demo" else "Livello 1",
             x = 0f,
             y = 0f,
-            w = 800f,
-            h = 800f,
-            bitmap = demoBmp
+            w = safeW.toFloat(),
+            h = safeH.toFloat(),
+            bitmap = bmp
         )
-        val defaultSlots = buildCollageSlots(2, 0.5f, listOf(demoBmp))
+        val defaultSlots = buildCollageSlots(2, 0.5f, listOf(bmp))
         _state.value = EditorUiState(
-            canvasW = 800,
-            canvasH = 800,
+            canvasW = safeW,
+            canvasH = safeH,
+            bgColor = bgColor,
+            customFonts = _state.value.customFonts,
             layers = listOf(baseLayer),
             activeLayerId = baseLayer.id,
             collageSlots = defaultSlots,
-            toastMessage = "Editor pronto: tutti i 21 strumenti e i livelli raster sono attivi"
+            newProjectModalOpen = false,
+            toastMessage = if (loadDemo) "Scena demo caricata (${safeW}×${safeH})" else "Nuova tela pronta (${safeW}×${safeH})"
         )
         undoStack.clear()
         redoStack.clear()
         pushHistorySnapshot()
         rebuildCompositeImmediate()
+    }
+
+    fun initDemoProject() {
+        createNewProject(width = 800, height = 800, bgColor = Color.parseColor("#08080C"), loadDemo = true)
     }
 
     // ============ HISTORY (UNDO / REDO) ============
@@ -314,7 +334,7 @@ class EditorViewModel : ViewModel() {
             else -> toolId
         }
 
-        // Auto-create layer or initialize tool specifics
+        // Auto-create layer or select existing layer of that type (Bug E fix)
         when (normalized) {
             "shapes", "sticker", "callout" -> {
                 val kind = when (toolId) {
@@ -324,19 +344,34 @@ class EditorViewModel : ViewModel() {
                 }
                 val active = s.activeLayer
                 if (active == null || active.type != LayerType.SHAPE) {
-                    addShapeLayer(kind)
+                    val existing = s.layers.lastOrNull { it.type == LayerType.SHAPE }
+                    if (existing != null && toolId == "shapes") {
+                        _state.value = _state.value.copy(activeLayerId = existing.id)
+                    } else {
+                        addShapeLayer(kind)
+                    }
                 }
             }
             "text" -> {
                 val active = s.activeLayer
                 if (active == null || active.type != LayerType.TEXT) {
-                    addTextLayer()
+                    val existing = s.layers.lastOrNull { it.type == LayerType.TEXT }
+                    if (existing != null) {
+                        _state.value = _state.value.copy(activeLayerId = existing.id)
+                    } else {
+                        addTextLayer()
+                    }
                 }
             }
             "pen" -> {
                 val active = s.activeLayer
                 if (active == null || active.type != LayerType.PATH) {
-                    addVectorPathLayer()
+                    val existing = s.layers.lastOrNull { it.type == LayerType.PATH }
+                    if (existing != null) {
+                        _state.value = _state.value.copy(activeLayerId = existing.id)
+                    } else {
+                        addVectorPathLayer()
+                    }
                 }
             }
             "warp" -> {
@@ -1196,6 +1231,67 @@ class EditorViewModel : ViewModel() {
     }
 
     /**
+     * Imports any downloaded .ttf / .otf font file from Uri, registers it in PixelEngine.customTypefaces,
+     * and applies it immediately to the active text layer.
+     */
+    fun importCustomFontFromUri(context: Context, uri: Uri) {
+        viewModelScope.launch(Dispatchers.IO) {
+            runCatching {
+                val fileName = uri.lastPathSegment
+                    ?.substringAfterLast('/')
+                    ?.substringBeforeLast('.')
+                    ?.replace(Regex("[^a-zA-Z0-9_ -]"), "")
+                    ?.takeIf { it.isNotBlank() }
+                    ?: "CustomFont_${System.currentTimeMillis() % 1000}"
+                val tempFile = java.io.File(context.cacheDir, "font_${System.currentTimeMillis()}.ttf")
+                context.contentResolver.openInputStream(uri)?.use { input ->
+                    tempFile.outputStream().use { output -> input.copyTo(output) }
+                }
+                val tf = Typeface.createFromFile(tempFile)
+                PixelEngine.customTypefaces[fileName] = tf
+                withContext(Dispatchers.Main) {
+                    val curFonts = _state.value.customFonts
+                    val updatedFonts = if (fileName in curFonts) curFonts else curFonts + fileName
+                    _state.value = _state.value.copy(
+                        customFonts = updatedFonts,
+                        toastMessage = "Font '$fileName' caricato e applicato"
+                    )
+                    updateActiveLayer { it.copy(fontFamily = fileName) }
+                    pushHistorySnapshot()
+                    rebuildCompositeImmediate()
+                }
+            }.onFailure {
+                withContext(Dispatchers.Main) {
+                    showToast("File font non valido (.ttf / .otf richiesto)")
+                }
+            }
+        }
+    }
+
+    /**
+     * UX confirmation before converting a global FX into a localized FX (when localMask == null).
+     */
+    fun requestLocalizeFx(fxKey: String) {
+        val active = _state.value.activeLayer ?: return
+        val curCfg = active.effects[fxKey]
+        if (curCfg?.localMask == null) {
+            _state.value = _state.value.copy(confirmLocalizeFxKey = fxKey)
+        } else {
+            openSelectivePaintMode(fxKey = fxKey, initBlackMask = false)
+        }
+    }
+
+    fun confirmLocalizeFx() {
+        val fxKey = _state.value.confirmLocalizeFxKey ?: return
+        _state.value = _state.value.copy(confirmLocalizeFxKey = null)
+        openSelectivePaintMode(fxKey = fxKey, initBlackMask = true)
+    }
+
+    fun dismissLocalizeFxModal() {
+        _state.value = _state.value.copy(confirmLocalizeFxKey = null)
+    }
+
+    /**
      * Opens §23 Universal Selective Paint mode for either a specific Effect (`fxKey != null`)
      * or the active layer's visibility (`fxKey == null`).
      */
@@ -1511,17 +1607,24 @@ class EditorViewModel : ViewModel() {
                 val t = i.toFloat() / steps
                 val px = lx0 + (lx1 - lx0) * t
                 val py = ly0 + (ly1 - ly0) * t
-                dabPaint.shader = RadialGradient(
-                    px, py, radius.coerceAtLeast(2f),
-                    intArrayOf(
-                        Color.argb(alphaInt, 255, 255, 255),
-                        Color.argb(alphaInt, 255, 255, 255),
-                        Color.argb(0, 255, 255, 255)
-                    ),
-                    floatArrayOf(0f, hardStop, 1f),
-                    Shader.TileMode.CLAMP
-                )
-                c.drawCircle(px, py, radius, dabPaint)
+                // Bug B fix: when hardness > 90%, draw solid circle without radial gradient
+                if (s.brushHardness > 90f) {
+                    dabPaint.shader = null
+                    dabPaint.color = Color.argb(alphaInt, 255, 255, 255)
+                    c.drawCircle(px, py, radius, dabPaint)
+                } else {
+                    dabPaint.shader = RadialGradient(
+                        px, py, radius.coerceAtLeast(2f),
+                        intArrayOf(
+                            Color.argb(alphaInt, 255, 255, 255),
+                            Color.argb(alphaInt, 255, 255, 255),
+                            Color.argb(0, 255, 255, 255)
+                        ),
+                        floatArrayOf(0f, hardStop, 1f),
+                        Shader.TileMode.CLAMP
+                    )
+                    c.drawCircle(px, py, radius, dabPaint)
+                }
             }
         } else {
             val p = Paint(Paint.ANTI_ALIAS_FLAG).apply {

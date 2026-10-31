@@ -171,9 +171,11 @@ object PixelEngine {
                 }
             }
             else -> {
-                paint.style = Paint.Style.FILL
-                paint.color = bgColor
-                canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+                if (Color.alpha(bgColor) > 0) {
+                    paint.style = Paint.Style.FILL
+                    paint.color = bgColor
+                    canvas.drawRect(0f, 0f, w.toFloat(), h.toFloat(), paint)
+                }
             }
         }
 
@@ -234,6 +236,26 @@ object PixelEngine {
         return out
     }
 
+    // Custom fonts loaded at runtime from .ttf/.otf files
+    val customTypefaces = mutableMapOf<String, Typeface>()
+
+    // Per-layer composition LRU cache to avoid redundant CPU pixel passes during slider drags (Bug C fix)
+    private val layerCompCache = android.util.LruCache<Int, Bitmap>(18)
+
+    private fun computeLayerCacheKey(layer: EditorLayer, allLayers: List<EditorLayer>): Int {
+        var result = layer.hashCode()
+        result = 31 * result + (layer.bitmap?.generationId ?: 0)
+        result = 31 * result + (layer.maskBitmap?.generationId ?: 0)
+        for ((_, cfg) in layer.effects) {
+            result = 31 * result + (cfg.localMask?.generationId ?: 0)
+        }
+        if (layer.type == LayerType.TEXT && layer.textOnPathLayerId != null) {
+            val pathL = allLayers.find { it.id == layer.textOnPathLayerId }
+            result = 31 * result + (pathL?.hashCode() ?: 0)
+        }
+        return result
+    }
+
     private fun applyBlendMode(paint: Paint, blend: BlendOption) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
             val bm = when (blend) {
@@ -262,9 +284,15 @@ object PixelEngine {
 
     /**
      * Renders a single layer's content at its bounding box (w x h), then applies mask, adjustments, curves, and FX
-     * supporting both global FX (Path A) and per-effect selective localMask (Path B).
+     * supporting both global FX (Path A) and per-effect selective localMask (Path B), with LRU caching (Bug C fix).
      */
     fun renderSingleLayerBitmap(layer: EditorLayer, allLayers: List<EditorLayer> = emptyList()): Bitmap {
+        val cacheKey = computeLayerCacheKey(layer, allLayers)
+        layerCompCache.get(cacheKey)?.let { cached ->
+            if (!cached.isRecycled && cached.width == layer.w.toInt().coerceAtLeast(4) && cached.height == layer.h.toInt().coerceAtLeast(4)) {
+                return cached
+            }
+        }
         val lw = layer.w.toInt().coerceAtLeast(4)
         val lh = layer.h.toInt().coerceAtLeast(4)
         val rawBmp = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
@@ -349,6 +377,7 @@ object PixelEngine {
             bmp = masked
         }
 
+        layerCompCache.put(cacheKey, bmp)
         return bmp
     }
 
@@ -485,11 +514,16 @@ object PixelEngine {
 
     private fun drawTextContent(c: Canvas, w: Float, h: Float, layer: EditorLayer, allLayers: List<EditorLayer>) {
         val tp = Paint(Paint.ANTI_ALIAS_FLAG)
-        val tf = when (layer.fontFamily.lowercase()) {
-            "georgia", "times", "serif" -> Typeface.create(Typeface.SERIF, if (layer.fontWeightBold) Typeface.BOLD else Typeface.NORMAL)
-            "courier", "monospace" -> Typeface.create(Typeface.MONOSPACE, if (layer.fontWeightBold) Typeface.BOLD else Typeface.NORMAL)
-            "impact" -> Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
-            else -> Typeface.create(Typeface.SANS_SERIF, if (layer.fontWeightBold) Typeface.BOLD else Typeface.NORMAL)
+        val customTf = customTypefaces[layer.fontFamily]
+        val tf = if (customTf != null) {
+            Typeface.create(customTf, if (layer.fontWeightBold) Typeface.BOLD else Typeface.NORMAL)
+        } else {
+            when (layer.fontFamily.lowercase()) {
+                "georgia", "times", "serif" -> Typeface.create(Typeface.SERIF, if (layer.fontWeightBold) Typeface.BOLD else Typeface.NORMAL)
+                "courier", "monospace" -> Typeface.create(Typeface.MONOSPACE, if (layer.fontWeightBold) Typeface.BOLD else Typeface.NORMAL)
+                "impact" -> Typeface.create(Typeface.SANS_SERIF, Typeface.BOLD)
+                else -> Typeface.create(Typeface.SANS_SERIF, if (layer.fontWeightBold) Typeface.BOLD else Typeface.NORMAL)
+            }
         }
         tp.typeface = tf
         tp.textSize = layer.fontSize.coerceIn(8f, 200f)
@@ -514,13 +548,13 @@ object PixelEngine {
             strokeJoin = Paint.Join.ROUND
         }
 
-        // Check if bound to a vector path layer
+        // Check if bound to a vector path layer (Bug D fix: map pathLayer coordinates into text layer local space)
         val targetPathLayer = layer.textOnPathLayerId?.let { pid -> allLayers.find { it.id == pid && it.pathPoints.size >= 2 } }
         if (targetPathLayer != null) {
             val vPath = Path()
             targetPathLayer.pathPoints.forEachIndexed { idx, pt ->
-                val px = pt.x * w
-                val py = pt.y * h
+                val px = (pt.x * targetPathLayer.w) + targetPathLayer.x - layer.x
+                val py = (pt.y * targetPathLayer.h) + targetPathLayer.y - layer.y
                 if (idx == 0) vPath.moveTo(px, py) else vPath.lineTo(px, py)
             }
             val cleanText = layer.text.replace("\n", " ")

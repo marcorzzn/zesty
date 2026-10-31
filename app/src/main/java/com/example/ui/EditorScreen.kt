@@ -100,6 +100,15 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
         }
     }
 
+    // Custom Font (.ttf / .otf) Document Picker
+    val fontPickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        if (uri != null) {
+            vm.importCustomFontFromUri(context, uri)
+        }
+    }
+
     // Handle system back when inside a tool or panel
     BackHandler(enabled = state.currentTool != null || state.toolGridOpen || state.layersPanelOpen) {
         when {
@@ -127,7 +136,7 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
             if (state.currentTool == null) {
                 MainTopBar(
                     state = state,
-                    onResetDemo = { vm.initDemoProject() },
+                    onResetDemo = { vm.openNewProjectModal(true) },
                     onUndo = { vm.undo() },
                     onRedo = { vm.redo() },
                     onFitZoom = { vm.resetViewportZoom() },
@@ -295,7 +304,13 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
                         "curve" -> CurvesToolPanel(state, vm)
                         "effects" -> EffectsToolPanel(state, vm)
                         "shapes", "sticker", "callout" -> ShapesToolPanel(state, vm)
-                        "text" -> TextToolPanel(state, vm)
+                        "text" -> TextToolPanel(
+                            state = state,
+                            vm = vm,
+                            onPickFontFile = {
+                                fontPickerLauncher.launch(arrayOf("font/*", "application/x-font-ttf", "application/x-font-opentype", "*/*"))
+                            }
+                        )
                         "pen" -> PenAndBooleanPanel(state, vm)
                         "brush" -> BrushToolPanel(state, vm, isMaskMode = false)
                         "mask" -> BrushToolPanel(state, vm, isMaskMode = true)
@@ -339,10 +354,12 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
             LayersSidePanel(state = state, vm = vm)
         }
 
-        // 5. MODALS (Color Picker, Export, Rename Layer)
+        // 5. MODALS (Color Picker, Export, Rename Layer, New Project, Confirm Localize FX)
         ColorPickerModal(state = state, vm = vm)
         ExportDialogModal(state = state, vm = vm)
         RenameLayerModal(state = state, vm = vm)
+        NewProjectModal(state = state, vm = vm)
+        ConfirmLocalizeFxModal(state = state, vm = vm)
 
         // 6. TOAST CARD (Matches HTML mockup .toast)
         val toastMsg = state.toastMessage

@@ -581,3 +581,222 @@ fun RenameLayerModal(state: EditorUiState, vm: EditorViewModel) {
         }
     }
 }
+
+// ============ NEW PROJECT MODAL (Any dimension, solid color or transparent background, or demo scene) ============
+@Composable
+fun NewProjectModal(state: EditorUiState, vm: EditorViewModel) {
+    if (!state.newProjectModalOpen) return
+    var widthText by remember { mutableStateOf(state.canvasW.toString()) }
+    var heightText by remember { mutableStateOf(state.canvasH.toString()) }
+    var isTransparent by remember { mutableStateOf(AndroidColor.alpha(state.bgColor) == 0) }
+    var customHex by remember {
+        mutableStateOf(
+            if (AndroidColor.alpha(state.bgColor) == 0) "#121217"
+            else String.format("#%06X", 0xFFFFFF and state.bgColor)
+        )
+    }
+
+    Dialog(onDismissRequest = { vm.openNewProjectModal(false) }) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(PanelDark)
+                .border(1.dp, BorderCol, RoundedCornerShape(16.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            Text("Nuovo Progetto", color = TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+
+            // Quick size presets
+            Row(
+                modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                listOf("800×800" to (800 to 800), "1080×1080" to (1080 to 1080), "1080×1350" to (1080 to 1350), "1920×1080" to (1920 to 1080)).forEach { (label, pair) ->
+                    SmallChipButton(label) {
+                        widthText = pair.first.toString()
+                        heightText = pair.second.toString()
+                    }
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = widthText,
+                    onValueChange = { widthText = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Larghezza (px)", fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextWhite,
+                        unfocusedTextColor = TextWhite,
+                        focusedBorderColor = AccentPink,
+                        unfocusedBorderColor = BorderCol
+                    )
+                )
+                OutlinedTextField(
+                    value = heightText,
+                    onValueChange = { heightText = it.filter { ch -> ch.isDigit() } },
+                    label = { Text("Altezza (px)", fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.weight(1f),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextWhite,
+                        unfocusedTextColor = TextWhite,
+                        focusedBorderColor = AccentPink,
+                        unfocusedBorderColor = BorderCol
+                    )
+                )
+            }
+
+            // Background mode: Transparent vs Solid Color
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                SmallChipButton(
+                    text = "Sfondo Trasparente",
+                    active = isTransparent,
+                    modifier = Modifier.weight(1f)
+                ) { isTransparent = true }
+                SmallChipButton(
+                    text = "Colore Solido",
+                    active = !isTransparent,
+                    modifier = Modifier.weight(1f)
+                ) { isTransparent = false }
+            }
+
+            if (!isTransparent) {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    listOf("#FFFFFF", "#000000", "#121217", "#E0289A", "#8B5CF6", "#00F0FF").forEach { swHex ->
+                        val swCol = runCatching { AndroidColor.parseColor(swHex) }.getOrDefault(AndroidColor.BLACK)
+                        Box(
+                            modifier = Modifier
+                                .size(28.dp)
+                                .clip(CircleShape)
+                                .background(Color(swCol))
+                                .border(1.dp, Color.White, CircleShape)
+                                .clickable { customHex = swHex }
+                        )
+                    }
+                }
+                OutlinedTextField(
+                    value = customHex,
+                    onValueChange = { customHex = it },
+                    label = { Text("Colore HEX (#RRGGBB)", fontSize = 11.sp) },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedTextColor = TextWhite,
+                        unfocusedTextColor = TextWhite,
+                        focusedBorderColor = AccentPink,
+                        unfocusedBorderColor = BorderCol
+                    )
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SmallChipButton(
+                    text = "Carica Scena Demo",
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val w = widthText.toIntOrNull()?.coerceIn(64, 4096) ?: 800
+                    val h = heightText.toIntOrNull()?.coerceIn(64, 4096) ?: 800
+                    vm.createNewProject(w, h, AndroidColor.parseColor("#08080C"), loadDemo = true)
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { vm.openNewProjectModal(false) },
+                    colors = ButtonDefaults.buttonColors(containerColor = Panel2),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Annulla", color = TextWhite)
+                }
+                Button(
+                    onClick = {
+                        val w = widthText.toIntOrNull()?.coerceIn(64, 4096) ?: 800
+                        val h = heightText.toIntOrNull()?.coerceIn(64, 4096) ?: 800
+                        val bg = if (isTransparent) {
+                            AndroidColor.TRANSPARENT
+                        } else {
+                            runCatching {
+                                AndroidColor.parseColor(if (customHex.startsWith("#")) customHex else "#$customHex")
+                            }.getOrDefault(AndroidColor.parseColor("#121217"))
+                        }
+                        vm.createNewProject(w, h, bg, loadDemo = false)
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
+                    modifier = Modifier.weight(1f).testTag("create_new_project_button")
+                ) {
+                    Text("Crea Tela", color = TextWhite)
+                }
+            }
+        }
+    }
+}
+
+// ============ CONFIRM LOCALIZE FX MODAL (§23 UX confirmation) ============
+@Composable
+fun ConfirmLocalizeFxModal(state: EditorUiState, vm: EditorViewModel) {
+    val fxKey = state.confirmLocalizeFxKey ?: return
+    Dialog(onDismissRequest = { vm.dismissLocalizeFxModal() }) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(16.dp))
+                .background(PanelDark)
+                .border(1.dp, BorderCol, RoundedCornerShape(16.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            Text(
+                text = "Localizza Effetto ($fxKey)",
+                color = TextWhite,
+                fontSize = 15.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Text(
+                text = "L'effetto diventerà locale. Le zone non dipinte torneranno all'originale. Continuare?",
+                color = TextDim,
+                fontSize = 13.sp
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(
+                    onClick = { vm.dismissLocalizeFxModal() },
+                    colors = ButtonDefaults.buttonColors(containerColor = Panel2),
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Text("Annulla", color = TextWhite)
+                }
+                Button(
+                    onClick = { vm.confirmLocalizeFx() },
+                    colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
+                    modifier = Modifier.weight(1f).testTag("confirm_localize_fx_button")
+                ) {
+                    Text("Continua", color = TextWhite)
+                }
+            }
+        }
+    }
+}
+

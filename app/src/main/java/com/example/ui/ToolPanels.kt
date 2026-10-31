@@ -653,7 +653,7 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
                 text = if (cfg.localMask != null) "Localizza FX (Attivo)" else "Localizza FX",
                 active = cfg.localMask != null
             ) {
-                vm.openSelectivePaintMode(fxKey = key, initBlackMask = cfg.localMask == null)
+                vm.requestLocalizeFx(key)
             }
             if (cfg.localMask != null) {
                 SmallChipButton("Applica ovunque") {
@@ -689,6 +689,9 @@ fun ShapesToolPanel(state: EditorUiState, vm: EditorViewModel) {
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
+                    SmallChipButton("+ Nuova Forma") {
+                        vm.addShapeLayer(ShapeKind.CIRCLE)
+                    }
                     ShapeKind.entries.forEach { kind ->
                         val isSel = active.shapeKind == kind
                         SmallChipButton(
@@ -789,9 +792,10 @@ fun ShapesToolPanel(state: EditorUiState, vm: EditorViewModel) {
 }
 
 @Composable
-fun TextToolPanel(state: EditorUiState, vm: EditorViewModel) {
+fun TextToolPanel(state: EditorUiState, vm: EditorViewModel, onPickFontFile: () -> Unit = {}) {
     val active = state.activeLayer ?: return
-    val fonts = listOf("Inter", "Arial", "Georgia", "Times", "Verdana", "Courier", "Impact")
+    val baseFonts = listOf("Inter", "Arial", "Georgia", "Times", "Verdana", "Courier", "Impact")
+    val fonts = state.customFonts + baseFonts.filterNot { it in state.customFonts }
 
     Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(top = 8.dp)) {
         when (state.textSubTab) {
@@ -820,6 +824,12 @@ fun TextToolPanel(state: EditorUiState, vm: EditorViewModel) {
                         .padding(horizontal = 12.dp, vertical = 8.dp),
                     horizontalArrangement = Arrangement.spacedBy(6.dp)
                 ) {
+                    SmallChipButton("+ Carica Font (.ttf/.otf)", active = true) {
+                        onPickFontFile()
+                    }
+                    SmallChipButton("+ Nuovo Testo") {
+                        vm.addTextLayer()
+                    }
                     fonts.forEach { f ->
                         val isSel = active.fontFamily == f
                         SmallChipButton(
