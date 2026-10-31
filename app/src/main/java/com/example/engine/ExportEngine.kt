@@ -58,7 +58,9 @@ object ExportEngine {
         val sb = StringBuilder()
         sb.append("""<?xml version="1.0" encoding="UTF-8"?>""").append("\n")
         sb.append("""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 $canvasW $canvasH" width="$outW" height="$outH">""").append("\n")
-        sb.append("""  <rect width="100%" height="100%" fill="${hexColor(bgColor)}"/>""").append("\n")
+        if (Color.alpha(bgColor) > 0) {
+            sb.append("""  <rect width="100%" height="100%" fill="${hexColor(bgColor)}"/>""").append("\n")
+        }
 
         for (layer in layers) {
             if (!layer.visible) continue
@@ -150,18 +152,29 @@ object ExportEngine {
     }
 
     /**
-     * Generates a valid PDF 1.4 binary stream with embedded JPEG image (and PdfDocument fallback).
+     * Generates a valid PDF 1.4 binary stream with white backdrop for transparent pixels.
      */
     fun writePdfToStream(composite: Bitmap, quality: Int, out: OutputStream) {
         val doc = PdfDocument()
         val pageInfo = PdfDocument.PageInfo.Builder(composite.width, composite.height, 1).create()
         val page = doc.startPage(pageInfo)
         val c: Canvas = page.canvas
-        c.drawColor(Color.BLACK)
+        c.drawColor(Color.WHITE)
         c.drawBitmap(composite, 0f, 0f, null)
         doc.finishPage(page)
         doc.writeTo(out)
         doc.close()
+    }
+
+    /**
+     * Flattens transparent pixels onto a white background for formats without alpha (JPG).
+     */
+    private fun flattenOnWhite(src: Bitmap): Bitmap {
+        val out = Bitmap.createBitmap(src.width, src.height, Bitmap.Config.ARGB_8888)
+        val c = Canvas(out)
+        c.drawColor(Color.WHITE)
+        c.drawBitmap(src, 0f, 0f, null)
+        return out
     }
 
     /**
@@ -185,7 +198,10 @@ object ExportEngine {
         val bytes = ByteArrayOutputStream().use { bos ->
             when (format) {
                 ExportFormat.PNG -> scaledBmp.compress(Bitmap.CompressFormat.PNG, 100, bos)
-                ExportFormat.JPG -> scaledBmp.compress(Bitmap.CompressFormat.JPEG, jpgQuality.coerceIn(10, 100), bos)
+                ExportFormat.JPG -> {
+                    val opaqueBmp = flattenOnWhite(scaledBmp)
+                    opaqueBmp.compress(Bitmap.CompressFormat.JPEG, jpgQuality.coerceIn(10, 100), bos)
+                }
                 ExportFormat.SVG -> {
                     val svg = generateSvgContent(canvasW, canvasH, bgColor, scale, layers)
                     bos.write(svg.toByteArray(Charsets.UTF_8))

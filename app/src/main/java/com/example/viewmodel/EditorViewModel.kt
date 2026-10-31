@@ -1237,12 +1237,19 @@ class EditorViewModel : ViewModel() {
     fun importCustomFontFromUri(context: Context, uri: Uri) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
-                val fileName = uri.lastPathSegment
+                val baseName = uri.lastPathSegment
                     ?.substringAfterLast('/')
                     ?.substringBeforeLast('.')
                     ?.replace(Regex("[^a-zA-Z0-9_ -]"), "")
+                    ?.trim()
                     ?.takeIf { it.isNotBlank() }
                     ?: "CustomFont_${System.currentTimeMillis() % 1000}"
+                val curFonts = _state.value.customFonts
+                val fileName = if (baseName in curFonts || PixelEngine.customTypefaces.containsKey(baseName)) {
+                    "${baseName}_${curFonts.size + 1}"
+                } else {
+                    baseName
+                }
                 val tempFile = java.io.File(context.cacheDir, "font_${System.currentTimeMillis()}.ttf")
                 context.contentResolver.openInputStream(uri)?.use { input ->
                     tempFile.outputStream().use { output -> input.copyTo(output) }
@@ -1250,8 +1257,7 @@ class EditorViewModel : ViewModel() {
                 val tf = Typeface.createFromFile(tempFile)
                 PixelEngine.customTypefaces[fileName] = tf
                 withContext(Dispatchers.Main) {
-                    val curFonts = _state.value.customFonts
-                    val updatedFonts = if (fileName in curFonts) curFonts else curFonts + fileName
+                    val updatedFonts = curFonts + fileName
                     _state.value = _state.value.copy(
                         customFonts = updatedFonts,
                         toastMessage = "Font '$fileName' caricato e applicato"
