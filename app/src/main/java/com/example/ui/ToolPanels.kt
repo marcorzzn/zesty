@@ -6,7 +6,12 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -564,114 +569,168 @@ fun CurvesToolPanel(state: EditorUiState, vm: EditorViewModel) {
     }
 }
 
-// ============ 7. EFFECTS (FX) PANEL ============
+// ============ 7. EFFECTS (170 FILTERS FX) PANEL ============
 @Composable
 fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
-    val fxList = listOf(
-        "blur" to "Sfocatura",
-        "bw" to "B&N",
-        "sepia" to "Seppia",
-        "invert" to "Inverti",
-        "glitch" to "Glitch RGB",
-        "neon" to "Neon Glow",
-        "vignette" to "Vignetta",
-        "grain" to "Grana Film"
-    )
     val active = state.activeLayer
-    val key = state.selectedFxKey
-    val cfg = active?.effects?.get(key) ?: EffectConfig()
+    val categories = listOf("Popolari", "Tutti", "B&N", "Vintage", "Colore", "PopArt", "Sfocatura", "Luce", "Disegno")
+    val filters = remember(state.filterCategory) {
+        PixelEngine.getFiltersByCategory(state.filterCategory)
+    }
 
-    Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 8.dp)) {
-        // Horizontal FX tiles
+    LaunchedEffect(active?.id) {
+        vm.generateFilterThumbnails()
+    }
+
+    Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 6.dp)) {
+        // 1. Categories Chips Row
         Row(
             modifier = Modifier
                 .fillMaxWidth()
                 .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 6.dp),
+                .padding(horizontal = 12.dp, vertical = 4.dp),
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            categories.forEach { cat ->
+                val isSelected = state.filterCategory == cat
+                Box(
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(if (isSelected) AccentPink else Panel2)
+                        .clickable { vm.setEffectCategory(cat) }
+                        .padding(horizontal = 12.dp, vertical = 6.dp)
+                ) {
+                    Text(
+                        text = cat,
+                        fontSize = 11.sp,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
+                        color = TextWhite
+                    )
+                }
+            }
+        }
+
+        // 2. Filter Thumbnails LazyRow (170 JSON Filters)
+        LazyRow(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(vertical = 4.dp),
+            contentPadding = PaddingValues(horizontal = 12.dp),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            fxList.forEach { (fxKey, label) ->
-                val isSelected = key == fxKey
-                val isEnabled = active?.effects?.get(fxKey)?.enabled == true
+            items(filters, key = { it.id }) { f ->
+                val isSelected = active?.activeFilterId == f.id
+                val thumb = state.filterThumbnails[f.id]
                 Column(
                     modifier = Modifier
-                        .width(64.dp)
+                        .width(68.dp)
                         .clip(RoundedCornerShape(8.dp))
                         .background(if (isSelected) Panel3 else Panel2)
                         .border(
                             width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) AccentPink else if (isEnabled) ActivePurple else BorderCol,
+                            color = if (isSelected) AccentPink else BorderCol,
                             shape = RoundedCornerShape(8.dp)
                         )
-                        .clickable { vm.selectFxKey(fxKey) }
-                        .padding(6.dp),
+                        .clickable { vm.selectEffectFilter(f.id) }
+                        .padding(4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(36.dp)
+                            .size(56.dp)
                             .clip(RoundedCornerShape(6.dp))
-                            .background(
-                                when (fxKey) {
-                                    "blur" -> Color(0xFF3A3A45)
-                                    "bw" -> Color(0xFF888888)
-                                    "sepia" -> Color(0xFFA88A5F)
-                                    "invert" -> Color(0xFF4361EE)
-                                    "glitch" -> Color(0xFFFF2E93)
-                                    "neon" -> Color(0xFF00F0FF)
-                                    "vignette" -> Color(0xFF2B2D42)
-                                    else -> Color(0xFF6C757D)
-                                }
-                            ),
+                            .background(Color(0xFF262632)),
                         contentAlignment = Alignment.Center
                     ) {
-                        if (isEnabled) {
-                            Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(16.dp))
+                        if (thumb != null && !thumb.isRecycled) {
+                            Image(
+                                bitmap = thumb.asImageBitmap(),
+                                contentDescription = f.label,
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = f.id.take(3).uppercase(),
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = TextMute
+                            )
+                        }
+                        if (isSelected) {
+                            Box(
+                                modifier = Modifier
+                                    .align(Alignment.TopEnd)
+                                    .padding(2.dp)
+                                    .size(16.dp)
+                                    .clip(CircleShape)
+                                    .background(AccentPink),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
+                            }
                         }
                     }
                     Spacer(Modifier.height(4.dp))
-                    Text(label, fontSize = 9.sp, color = TextWhite, maxLines = 1)
+                    Text(
+                        text = f.label,
+                        fontSize = 9.sp,
+                        color = if (isSelected) AccentPinkHi else TextWhite,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis
+                    )
                 }
             }
         }
 
-        // Active FX Parameter Sliders + Toggle + Selective Localization (§23) + Remove (X)
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 14.dp, vertical = 4.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Switch(
-                checked = cfg.enabled,
-                onCheckedChange = { vm.updateLayerEffect(key, cfg.copy(enabled = it)) },
-                colors = SwitchDefaults.colors(checkedThumbColor = AccentPinkHi, checkedTrackColor = AccentPink)
+        // 3. Real-time Controls when a Filter is Active
+        if (active?.activeFilterId != null) {
+            val blendModes = listOf("Normal", "Multiply", "Screen", "Overlay", "SoftLight", "Darken", "Lighten")
+
+            CustomSliderRow(
+                label = "Intensità / Dissolvenza",
+                value = active.activeFilterFade,
+                valueRange = 0f..100f,
+                onValueChange = { vm.setEffectFade(it) },
+                suffix = "%"
             )
-            SmallChipButton(
-                text = if (cfg.localMask != null) "Localizza FX (Attivo)" else "Localizza FX",
-                active = cfg.localMask != null
+
+            // Blend Mode Chips Row
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 12.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
-                vm.requestLocalizeFx(key)
-            }
-            if (cfg.localMask != null) {
-                SmallChipButton("Applica ovunque") {
-                    vm.removeEffectLocalization(key)
+                blendModes.forEach { bm ->
+                    val isSel = active.activeFilterBlend.equals(bm, ignoreCase = true)
+                    SmallChipButton(
+                        text = bm,
+                        active = isSel
+                    ) {
+                        vm.setEffectBlendMode(bm)
+                    }
                 }
             }
-            SmallChipButton("Rimuovi FX (X)") { vm.removeLayerEffect(key) }
-        }
 
-        CustomSliderRow("Intensità", cfg.intensity, 0f..100f, {
-            vm.updateLayerEffect(key, cfg.copy(enabled = true, intensity = it))
-        }, "%")
-        CustomSliderRow("Raggio / Scala", cfg.param1, 1f..100f, {
-            vm.updateLayerEffect(key, cfg.copy(enabled = true, param1 = it))
-        })
-        CustomSliderRow("Diffusione", cfg.param2, 0f..100f, {
-            vm.updateLayerEffect(key, cfg.copy(enabled = true, param2 = it))
-        })
+            // Actions row: Applica Definitivo, Annulla, Localizza FX
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 14.dp, vertical = 6.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                SmallChipButton("Applica Definitivo", active = true) {
+                    vm.applyCurrentEffectPermanently()
+                }
+                SmallChipButton("Annulla Filtro") {
+                    vm.cancelCurrentEffect()
+                }
+                SmallChipButton("Localizza con Pennello") {
+                    vm.requestLocalizeFx("filter")
+                }
+            }
+        }
     }
 }
 

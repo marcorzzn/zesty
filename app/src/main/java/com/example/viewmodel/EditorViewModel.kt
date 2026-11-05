@@ -100,6 +100,9 @@ data class EditorUiState(
     val collageCornerRadius: Float = 16f,
     val collageSlots: List<CollageSlot> = emptyList(),
     val activeCollageSlotId: Int = 0,
+    // 170 Filters UI state
+    val filterCategory: String = "Popolari",
+    val filterThumbnails: Map<String, Bitmap> = emptyMap(),
     // Toast notification
     val toastMessage: String? = null
 ) {
@@ -715,6 +718,11 @@ class EditorViewModel : ViewModel() {
         scheduleCompositeRebuild()
     }
 
+    fun deleteActiveLayer() {
+        val activeId = _state.value.activeLayerId ?: return
+        deleteLayer(activeId)
+    }
+
     fun resizeActiveLayerHandle(handleIndex: Int, dx: Float, dy: Float) {
         val active = _state.value.activeLayer ?: return
         if (active.locked) return
@@ -723,15 +731,47 @@ class EditorViewModel : ViewModel() {
             var ny = l.y
             var nw = l.w
             var nh = l.h
+            val ratio = (l.w / l.h).coerceIn(0.02f, 50f)
+
             when (handleIndex) {
-                0 -> { nx += dx; ny += dy; nw -= dx; nh -= dy } // Top-Left
-                1 -> { ny += dy; nh -= dy }                     // Top-Center
-                2 -> { ny += dy; nw += dx; nh -= dy }           // Top-Right
-                3 -> { nw += dx }                               // Right-Center
-                4 -> { nw += dx; nh += dy }                     // Bottom-Right
-                5 -> { nh += dy }                               // Bottom-Center
-                6 -> { nx += dx; nw -= dx; nh += dy }           // Left-Bottom
-                7 -> { nx += dx; nw -= dx }                     // Left-Center
+                0 -> { // Top-Left (Proportional corner)
+                    val delta = if (abs(dx) > abs(dy * ratio)) -dx else -dy * ratio
+                    nw = (l.w + delta).coerceAtLeast(32f)
+                    nh = nw / ratio
+                    nx = l.x + (l.w - nw)
+                    ny = l.y + (l.h - nh)
+                }
+                1 -> { // Top-Center (Free height)
+                    ny += dy
+                    nh = (nh - dy).coerceAtLeast(32f)
+                }
+                2 -> { // Top-Right (Proportional corner)
+                    val delta = if (abs(dx) > abs(dy * ratio)) dx else -dy * ratio
+                    nw = (l.w + delta).coerceAtLeast(32f)
+                    nh = nw / ratio
+                    ny = l.y + (l.h - nh)
+                }
+                3 -> { // Right-Center (Free width)
+                    nw = (nw + dx).coerceAtLeast(32f)
+                }
+                4 -> { // Bottom-Right (Proportional corner)
+                    val delta = if (abs(dx) > abs(dy * ratio)) dx else dy * ratio
+                    nw = (l.w + delta).coerceAtLeast(32f)
+                    nh = nw / ratio
+                }
+                5 -> { // Bottom-Center (Free height)
+                    nh = (nh + dy).coerceAtLeast(32f)
+                }
+                6 -> { // Bottom-Left (Proportional corner)
+                    val delta = if (abs(dx) > abs(dy * ratio)) -dx else dy * ratio
+                    nw = (l.w + delta).coerceAtLeast(32f)
+                    nh = nw / ratio
+                    nx = l.x + (l.w - nw)
+                }
+                7 -> { // Left-Center (Free width)
+                    nx += dx
+                    nw = (nw - dx).coerceAtLeast(32f)
+                }
             }
             l.copy(
                 x = nx,
@@ -1062,6 +1102,85 @@ class EditorViewModel : ViewModel() {
     }
 
     // ============ 7. EFFECTS (FX) ============
+    // ============ 170 FILTER FX ENGINE ============
+    fun selectEffectFilter(filterId: String) {
+        val active = _state.value.activeLayer ?: return
+        val newId = if (active.activeFilterId == filterId) null else filterId
+        updateActiveLayer { it.copy(activeFilterId = newId) }
+        scheduleCompositeRebuild()
+    }
+
+    fun setEffectFade(fade: Float) {
+        val active = _state.value.activeLayer ?: return
+        if (active.activeFilterId == null) return
+        updateActiveLayer { it.copy(activeFilterFade = fade) }
+        scheduleCompositeRebuild()
+    }
+
+    fun setEffectBlendMode(blendMode: String) {
+        val active = _state.value.activeLayer ?: return
+        if (active.activeFilterId == null) return
+        updateActiveLayer { it.copy(activeFilterBlend = blendMode) }
+        scheduleCompositeRebuild()
+    }
+
+    fun setEffectCategory(category: String) {
+        _state.value = _state.value.copy(filterCategory = category)
+        generateFilterThumbnails()
+    }
+
+    fun applyCurrentEffectPermanently() {
+        val active = _state.value.activeLayer ?: return
+        val filterId = active.activeFilterId ?: return
+        val bmp = active.bitmap ?: return
+        val filtered = PixelEngine.applyEffectFilter(bmp, filterId, active.activeFilterFade, active.activeFilterBlend)
+        updateActiveLayer {
+            it.copy(
+                bitmap = filtered,
+                activeFilterId = null,
+                activeFilterFade = 0f,
+                activeFilterBlend = "Normal"
+            )
+        }
+        pushHistorySnapshot()
+        rebuildCompositeImmediate()
+        showToast("Filtro applicato")
+    }
+
+    fun cancelCurrentEffect() {
+        updateActiveLayer {
+            it.copy(
+                activeFilterId = null,
+                activeFilterFade = 0f,
+                activeFilterBlend = "Normal"
+            )
+        }
+        scheduleCompositeRebuild()
+    }
+
+    fun generateFilterThumbnails() {
+        val active = _state.value.activeLayer ?: return
+        val srcBmp = active.bitmap ?: return
+        viewModelScope.launch(Dispatchers.Default) {
+            try {
+                val thumbSize = 64
+                val scaled = Bitmap.createScaledBitmap(srcBmp, thumbSize, thumbSize, true)
+                val filters = PixelEngine.getFiltersByCategory(_state.value.filterCategory)
+                val map = mutableMapOf<String, Bitmap>()
+                for (f in filters) {
+                    val res = PixelEngine.applyEffectFilter(scaled, f.id, 0f, "Normal")
+                    map[f.id] = res
+                }
+                scaled.recycle()
+                withContext(Dispatchers.Main) {
+                    _state.value = _state.value.copy(filterThumbnails = map)
+                }
+            } catch (e: Exception) {
+                // Ignore any thumbnail generation exception
+            }
+        }
+    }
+
     fun selectFxKey(key: String) {
         _state.value = _state.value.copy(selectedFxKey = key)
         val active = _state.value.activeLayer ?: return

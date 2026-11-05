@@ -20,6 +20,13 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.MyApplication">
+
+        <meta-data
+            android:name="author"
+            android:value="Marco Razzano" />
+        <meta-data
+            android:name="copyright"
+            android:value="Copyright 2026 Marco Razzano. All rights reserved." />
         
         <activity
             android:name=".MainActivity"

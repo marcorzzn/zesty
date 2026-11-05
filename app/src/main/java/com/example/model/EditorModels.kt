@@ -75,6 +75,17 @@ data class EffectConfig(
     val localizing: Boolean = false
 )
 
+data class EffectFilter(
+    val id: String,
+    val name: String,
+    val label: String,
+    val category: String = "FX",
+    val defaultFade: Float = 0f,
+    val defaultBlendMode: String = "Normal",
+    val algorithm: String = "color_matrix",
+    val jsonFile: String? = null
+)
+
 data class CurvePoint(val x: Float, val y: Float) // 0..1 normalized
 
 data class CurvesData(
@@ -113,6 +124,10 @@ data class EditorLayer(
     val adjust: AdjustParams = AdjustParams(),
     val curves: CurvesData = CurvesData(),
     val effects: Map<String, EffectConfig> = emptyMap(),
+    // 170 Filter FX properties
+    val activeFilterId: String? = null,
+    val activeFilterFade: Float = 0f,
+    val activeFilterBlend: String = "Normal",
     // Shape properties
     val shapeKind: ShapeKind = ShapeKind.CIRCLE,
     val fillColor: Int = 0xFF8B5CF6.toInt(),

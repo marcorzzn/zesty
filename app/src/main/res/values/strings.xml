@@ -1,5 +1,7 @@
 <resources>
-    <string name="app_name">Picsart Studio</string>
+    <string name="app_name">Pixart</string>
+    <string name="app_author">Marco Razzano</string>
+    <string name="app_copyright">Copyright 2026 Marco Razzano</string>
     <string name="cd_undo">Annulla</string>
     <string name="cd_redo">Ripeti</string>
     <string name="cd_export">Esporta</string>

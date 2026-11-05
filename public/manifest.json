@@ -1,7 +1,9 @@
 {
-  "name": "Picsart Studio AI",
-  "short_name": "Picsart",
-  "description": "Editor Fotografico & Studio Creativo a Livelli con Shader WebGL",
+  "name": "Pixart",
+  "short_name": "Pixart",
+  "version": "1.0.0-beta.1",
+  "author": "Marco Razzano",
+  "description": "Pixart - Editor Fotografico Creativo a Livelli, Filtri & Shader di Marco Razzano",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

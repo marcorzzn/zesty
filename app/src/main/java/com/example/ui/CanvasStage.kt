@@ -19,7 +19,9 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
@@ -36,6 +38,7 @@ fun InteractiveCanvasStage(
     vm: EditorViewModel,
     modifier: Modifier = Modifier
 ) {
+    val haptic = LocalHapticFeedback.current
     var boxW by remember { mutableFloatStateOf(800f) }
     var boxH by remember { mutableFloatStateOf(800f) }
 
@@ -504,33 +507,62 @@ fun InteractiveCanvasStage(
                     }
                 }
 
-                // Active Layer Bounding Box + 8 Resize Handles + Top Rotation Knob
-                if (active != null && state.currentTool !in listOf("crop", "rotate", "collage") && state.layers.size > 1) {
+                // Active Layer Bounding Box + Quick Delete 'X' + 8 Resize Handles + Rotation Knob with Icon
+                if (active != null && state.currentTool !in listOf("crop", "rotate", "collage") &&
+                    (state.layers.size > 1 || active.type != LayerType.RASTER || active.bitmap != null)) {
                     val lx = left + (active.x / state.canvasW) * stageW
                     val ly = top + (active.y / state.canvasH) * stageH
                     val lw = (active.w / state.canvasW) * stageW
                     val lh = (active.h / state.canvasH) * stageH
 
                     rotate(active.rotation, pivot = Offset(lx + lw / 2f, ly + lh / 2f)) {
+                        // Main selection bounding box
                         drawRect(
-                            color = ActivePurple.copy(alpha = 0.85f),
+                            color = ActivePurple.copy(alpha = 0.9f),
                             topLeft = Offset(lx, ly),
                             size = Size(lw, lh),
                             style = Stroke(width = 1.5.dp.toPx())
                         )
 
-                        // Rotation stem & knob
-                        val knobCenter = Offset(lx + lw / 2f, ly - 22.dp.toPx())
+                        // Top Rotation Knob with rotation symbol affordance
+                        val knobCenter = Offset(lx + lw / 2f, ly - 24.dp.toPx())
                         drawLine(ActivePurple, Offset(lx + lw / 2f, ly), knobCenter, 1.5.dp.toPx())
-                        drawCircle(Color.White, radius = 6.dp.toPx(), center = knobCenter)
-                        drawCircle(AccentPink, radius = 4.dp.toPx(), center = knobCenter)
+                        drawCircle(Color.White, radius = 9.dp.toPx(), center = knobCenter)
+                        drawCircle(AccentPink, radius = 7.dp.toPx(), center = knobCenter)
+                        // Rotation curved arrow indicator inside knob
+                        drawArc(
+                            color = Color.White,
+                            startAngle = 40f,
+                            sweepAngle = 280f,
+                            useCenter = false,
+                            topLeft = Offset(knobCenter.x - 4.dp.toPx(), knobCenter.y - 4.dp.toPx()),
+                            size = Size(8.dp.toPx(), 8.dp.toPx()),
+                            style = Stroke(1.5.dp.toPx())
+                        )
 
-                        // 8 Resize Handles
+                        // 8 Resize Handles (Corners are rounded squares for proportional scaling affordance)
                         val handles = getLayerHandlePoints(lx, ly, lw, lh)
-                        handles.forEach { hPt ->
-                            drawCircle(Color.White, radius = 5.dp.toPx(), center = hPt)
-                            drawCircle(ActivePurple, radius = 3.5.dp.toPx(), center = hPt)
+                        handles.forEachIndexed { i, hPt ->
+                            if (i in listOf(0, 2, 4, 6)) {
+                                // Diagonal corners (Proportional aspect ratio handles)
+                                if (i != 0) { // Corner 0 has the delete 'X' button
+                                    drawCircle(Color.White, radius = 6.dp.toPx(), center = hPt)
+                                    drawCircle(ActivePurple, radius = 4.dp.toPx(), center = hPt)
+                                }
+                            } else {
+                                // Side handles (Free stretch)
+                                drawCircle(Color.White, radius = 4.5.dp.toPx(), center = hPt)
+                                drawCircle(Color(0xFF8B5CF6), radius = 3.dp.toPx(), center = hPt)
+                            }
                         }
+
+                        // Quick Action Delete 'X' badge at Top-Left corner (Index 0)
+                        val delCenter = Offset(lx, ly)
+                        drawCircle(Color(0xFFE53935), radius = 11.dp.toPx(), center = delCenter)
+                        drawCircle(Color.White, radius = 11.dp.toPx(), center = delCenter, style = Stroke(1.5.dp.toPx()))
+                        val xArm = 4.5.dp.toPx()
+                        drawLine(Color.White, Offset(delCenter.x - xArm, delCenter.y - xArm), Offset(delCenter.x + xArm, delCenter.y + xArm), 2.dp.toPx())
+                        drawLine(Color.White, Offset(delCenter.x + xArm, delCenter.y - xArm), Offset(delCenter.x - xArm, delCenter.y + xArm), 2.dp.toPx())
                     }
                 }
             }

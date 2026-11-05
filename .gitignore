@@ -22,3 +22,6 @@ materiale picsart/
 
 # Asset generati automaticamente dal task Gradle syncWebAppAssets da public/
 /app/src/main/assets/www/
+.idea/
+pixart_old.zip
+*.apk

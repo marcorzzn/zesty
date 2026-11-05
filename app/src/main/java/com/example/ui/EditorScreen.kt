@@ -23,7 +23,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -89,6 +91,7 @@ private val GRID_TOOLS = listOf(
 fun PicsartEditorScreen(vm: EditorViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
     var pickingForCollage by remember { mutableStateOf(false) }
 
     // Zero-permission Android Photo Picker
@@ -137,8 +140,8 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
                 MainTopBar(
                     state = state,
                     onResetDemo = { vm.openNewProjectModal(true) },
-                    onUndo = { vm.undo() },
-                    onRedo = { vm.redo() },
+                    onUndo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.undo() },
+                    onRedo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.redo() },
                     onFitZoom = { vm.resetViewportZoom() },
                     onExport = { vm.openExportModal(true) },
                     onShare = { vm.shareImage(context) }
@@ -147,8 +150,8 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
                 ToolModeTopBar(
                     state = state,
                     onCancel = { vm.closeCurrentTool(confirm = false) },
-                    onUndo = { vm.undo() },
-                    onRedo = { vm.redo() },
+                    onUndo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.undo() },
+                    onRedo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.redo() },
                     onToggleEraser = {
                         val next = if (state.brushStyle == BrushStyle.ERASER) BrushStyle.STANDARD else BrushStyle.ERASER
                         vm.updateBrushSettings(style = next)
@@ -187,7 +190,7 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
                 // Layers FAB (top-right, matches HTML mockup .layers-fab)
                 if (state.currentTool == null) {
                     IconButton(
-                        onClick = { vm.toggleLayersPanel() },
+                        onClick = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.toggleLayersPanel() },
                         modifier = Modifier
                             .align(Alignment.TopEnd)
                             .padding(end = 12.dp, top = 8.dp)
