@@ -142,3 +142,20 @@ dependencies {
   // "ksp"(libs.androidx.room.compiler)
   // "ksp"(libs.moshi.kotlin.codegen)
 }
+
+
+// =========================================================================
+// ASSET SYNC AUTOMATICO (Single Source of Truth)
+// Copia automaticamente la cartella public/ in app/src/main/assets/www
+// durante il ciclo di build di Gradle, evitando qualsiasi duplicazione manuale.
+// =========================================================================
+val syncWebAppAssets = tasks.register<Sync>("syncWebAppAssets") {
+  description = "Copia automatica degli asset da public/ a app/src/main/assets/www"
+  from(file("${project.rootDir}/public"))
+  into(file("${project.projectDir}/src/main/assets/www"))
+  exclude("**/.DS_Store", "**/Thumbs.db")
+}
+
+tasks.named("preBuild") {
+  dependsOn(syncWebAppAssets)
+}

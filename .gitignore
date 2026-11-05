@@ -16,3 +16,9 @@
 local.properties
 .env
 debug.keystore
+
+# Materiale locale privato
+materiale picsart/
+
+# Asset generati automaticamente dal task Gradle syncWebAppAssets da public/
+/app/src/main/assets/www/
