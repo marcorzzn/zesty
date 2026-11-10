@@ -25,3 +25,6 @@ materiale picsart/
 .idea/
 pixart_old.zip
 *.apk
+
+# Materiale di terzi tenuto solo come riferimento locale (escluso da git e dalla build)
+materiale terzi/

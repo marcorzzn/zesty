@@ -181,7 +181,7 @@ fun LayersSidePanel(state: EditorUiState, vm: EditorViewModel) {
             Text(
                 text = "Tocco prolungato sul nome per rinominare • Spunta per selez. multipla",
                 color = TextMute,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 modifier = Modifier.padding(10.dp)
             )
         }
@@ -209,7 +209,7 @@ private fun LayerRowItem(
         modifier = Modifier
             .fillMaxWidth()
             .clip(RoundedCornerShape(8.dp))
-            .background(if (isActive) ActivePurple.copy(alpha = 0.2f) else Panel2)
+            .background(if (isActive) AccentPink.copy(alpha = 0.18f) else Panel2)
             .border(
                 width = 1.dp,
                 color = if (isActive) ActivePurple else BorderCol,
@@ -258,7 +258,7 @@ private fun LayerRowItem(
             Text(
                 text = "${layer.blend.label} • ${(layer.opacity * 100).roundToInt()}%",
                 color = TextDim,
-                fontSize = 9.sp,
+                fontSize = 11.sp,
                 maxLines = 1
             )
         }
@@ -434,7 +434,7 @@ fun ColorPickerModal(state: EditorUiState, vm: EditorViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Applica", color = TextWhite)
+                    Text("Applica", color = OnAccent)
                 }
             }
         }
@@ -469,8 +469,8 @@ fun ExportDialogModal(state: EditorUiState, vm: EditorViewModel) {
                         .fillMaxWidth()
                         .padding(vertical = 3.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (active) ActivePurple.copy(alpha = 0.25f) else Panel2)
-                        .border(1.dp, if (active) ActivePurple else BorderCol, RoundedCornerShape(8.dp))
+                        .background(if (active) AccentPink.copy(alpha = 0.18f) else Panel2)
+                        .border(1.dp, if (active) AccentPink else BorderCol, RoundedCornerShape(8.dp))
                         .clickable { format = fmt }
                         .padding(10.dp),
                     verticalAlignment = Alignment.CenterVertically,
@@ -478,7 +478,7 @@ fun ExportDialogModal(state: EditorUiState, vm: EditorViewModel) {
                 ) {
                     Text(fmt.label, color = TextWhite, fontSize = 12.sp, fontWeight = FontWeight.Medium)
                     if (active) {
-                        Icon(Icons.Default.Check, contentDescription = null, tint = AccentPinkHi, modifier = Modifier.size(16.dp))
+                        Icon(Icons.Default.Check, contentDescription = null, tint = AccentPink, modifier = Modifier.size(16.dp))
                     }
                 }
             }
@@ -524,7 +524,7 @@ fun ExportDialogModal(state: EditorUiState, vm: EditorViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
                     modifier = Modifier.weight(1f).testTag("confirm_export_button")
                 ) {
-                    Text("Scarica ${format.ext.uppercase()}", color = TextWhite)
+                    Text("Scarica ${format.ext.uppercase()}", color = OnAccent)
                 }
             }
         }
@@ -575,7 +575,7 @@ fun RenameLayerModal(state: EditorUiState, vm: EditorViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
                     modifier = Modifier.weight(1f)
                 ) {
-                    Text("Salva", color = TextWhite)
+                    Text("Salva", color = OnAccent)
                 }
             }
         }
@@ -584,7 +584,7 @@ fun RenameLayerModal(state: EditorUiState, vm: EditorViewModel) {
 
 // ============ NEW PROJECT MODAL (Any dimension, solid color or transparent background, or demo scene) ============
 @Composable
-fun NewProjectModal(state: EditorUiState, vm: EditorViewModel) {
+fun NewProjectModal(state: EditorUiState, vm: EditorViewModel, onOpenPhoto: () -> Unit = {}) {
     if (!state.newProjectModalOpen) return
     var widthText by remember { mutableStateOf(state.canvasW.toString()) }
     var heightText by remember { mutableStateOf(state.canvasH.toString()) }
@@ -606,7 +606,20 @@ fun NewProjectModal(state: EditorUiState, vm: EditorViewModel) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(10.dp)
         ) {
-            Text("Nuovo Progetto", color = TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            Text("Nuovo progetto", color = TextWhite, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+
+            // Strada principale: la foto diventa la tela, con le sue dimensioni
+            Button(
+                onClick = { vm.openNewProjectModal(false); onOpenPhoto() },
+                colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
+                modifier = Modifier.fillMaxWidth().height(48.dp)
+            ) {
+                Icon(Icons.Default.AddPhotoAlternate, contentDescription = null, tint = OnAccent, modifier = Modifier.size(20.dp))
+                Spacer(Modifier.width(8.dp))
+                Text("Apri una foto", color = OnAccent, fontWeight = FontWeight.Bold)
+            }
+            Text("La tela prende le dimensioni della foto.", color = TextMute, fontSize = 11.sp)
+            Text("Oppure crea una tela vuota", color = TextDim, fontSize = 12.sp, fontWeight = FontWeight.Medium, modifier = Modifier.padding(top = 6.dp))
 
             // Quick size presets
             Row(
@@ -745,7 +758,7 @@ fun NewProjectModal(state: EditorUiState, vm: EditorViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
                     modifier = Modifier.weight(1f).testTag("create_new_project_button")
                 ) {
-                    Text("Crea Tela", color = TextWhite)
+                    Text("Crea Tela", color = OnAccent)
                 }
             }
         }
@@ -767,13 +780,13 @@ fun ConfirmLocalizeFxModal(state: EditorUiState, vm: EditorViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             Text(
-                text = "Localizza Effetto ($fxKey)",
+                text = if (fxKey == EditorViewModel.FILTER_FX_KEY) "Applica il filtro a una zona" else "Localizza Effetto ($fxKey)",
                 color = TextWhite,
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "L'effetto diventerà locale. Le zone non dipinte torneranno all'originale. Continuare?",
+                text = "L'effetto resterà solo nella zona che definisci con pennello, forme, lazo o poligono; il resto torna all'originale. Potrai cancellare con la gomma o sottrarre forme. Continuare?",
                 color = TextDim,
                 fontSize = 13.sp
             )
@@ -793,7 +806,7 @@ fun ConfirmLocalizeFxModal(state: EditorUiState, vm: EditorViewModel) {
                     colors = ButtonDefaults.buttonColors(containerColor = AccentPink),
                     modifier = Modifier.weight(1f).testTag("confirm_localize_fx_button")
                 ) {
-                    Text("Continua", color = TextWhite)
+                    Text("Continua", color = OnAccent)
                 }
             }
         }

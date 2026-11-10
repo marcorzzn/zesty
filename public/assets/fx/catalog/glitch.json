@@ -1,0 +1,100 @@
+{
+  "category": "glitch",
+  "effects": [
+    { "id": "glitch_classic", "label": "Glitch",
+      "params": [
+        { "id": "amount", "label": "Intensità", "default": 50 },
+        { "id": "shift", "label": "Spostamento", "min": 0.5, "max": 20, "default": 6, "step": 0.5 },
+        { "id": "slices", "label": "Fasce", "min": 2, "max": 80, "default": 18 },
+        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
+      ],
+      "steps": [{ "op": "glitch", "amount": "$amount", "shift": "$shift", "slices": "$slices", "split": 0.6 }] },
+    { "id": "glitch_rgb", "label": "Separazione RGB",
+      "params": [{ "id": "amount", "label": "Distanza", "min": 0.1, "max": 5, "default": 0.8, "step": 0.1 }, { "id": "angle", "label": "Direzione", "min": 0, "max": 360, "default": 0 }],
+      "steps": [{ "op": "rgb_shift", "amount": "$amount", "angle": "$angle" }] },
+    { "id": "glitch_vhs", "label": "VHS",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "adjust", "saturation": -10, "fade": 10, "contrast": -5 },
+        { "op": "blur", "radius": 0.2 },
+        { "op": "rgb_shift", "amount": "0.2 + $amount * 0.006" },
+        { "op": "glitch", "amount": "$amount * 0.4", "shift": 2, "slices": 40, "split": 0.3 },
+        { "op": "scanlines", "spacing": 0.5, "thickness": 40, "opacity": 25 },
+        { "op": "grain", "amount": "$amount * 0.4", "mono": false }
+      ] },
+    { "id": "glitch_crt", "label": "Monitor CRT",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "bulge", "strength": 15, "radius": 100 },
+        { "op": "rgb_shift", "amount": 0.3 },
+        { "op": "scanlines", "spacing": 0.45, "thickness": 50, "opacity": "$amount * 0.6" },
+        { "op": "glow", "threshold": 55, "radius": 1.2, "strength": 50 },
+        { "op": "vignette", "amount": 55, "radius": 55, "softness": 40 }
+      ] },
+    { "id": "glitch_datamosh", "label": "Datamosh",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "glitch", "amount": "$amount", "shift": 14, "slices": 10, "split": 1.5 },
+        { "op": "layer", "steps": [{ "op": "pixelate", "size": 3 }, { "op": "channel_swap", "order": "gbr" }], "mask": { "type": "linear", "position": 0.6, "width": 0.7, "feather": 0.05, "angle": 0 }, "opacity": "$amount / 140" },
+        { "op": "glitch", "amount": "$amount * 0.5", "shift": 4, "slices": 60, "split": 0.4 }
+      ] },
+    { "id": "glitch_8bit", "label": "8 bit",
+      "params": [{ "id": "size", "label": "Pixel", "min": 0.3, "max": 5, "default": 1.2, "step": 0.1 }, { "id": "levels", "label": "Colori", "min": 2, "max": 8, "default": 4 }],
+      "steps": [
+        { "op": "adjust", "saturation": 30, "contrast": 10 },
+        { "op": "pixelate", "size": "$size" },
+        { "op": "dither", "mode": "bayer", "levels": "$levels", "mono": false, "size": "$size * 0.5" }
+      ] },
+    { "id": "glitch_handheld", "label": "Retrò verde",
+      "params": [{ "id": "size", "label": "Pixel", "min": 0.3, "max": 4, "default": 0.8, "step": 0.1 }],
+      "steps": [
+        { "op": "pixelate", "size": "$size" },
+        { "op": "posterize", "levels": 4 },
+        { "op": "gradient_map", "stops": [[0, "#102a12"], [0.33, "#2f5c2c"], [0.66, "#7a9a2a"], [1, "#b8cc6a"]] }
+      ] },
+    { "id": "glitch_digital_waves", "label": "Onde digitali",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
+      "steps": [
+        { "op": "ripple", "mode": "horizontal", "amplitude": "$amount * 0.03", "wavelength": 3 },
+        { "op": "rgb_shift", "amount": "$amount * 0.012", "angle": 0 }
+      ] },
+    { "id": "glitch_scan", "label": "Linee di scansione",
+      "params": [{ "id": "spacing", "label": "Spaziatura", "min": 0.3, "max": 3, "default": 0.7, "step": 0.1 }, { "id": "opacity", "label": "Intensità", "default": 50 }],
+      "steps": [{ "op": "scanlines", "spacing": "$spacing", "thickness": 50, "opacity": "$opacity" }] },
+    { "id": "glitch_broken_glass", "label": "Vetro rotto",
+      "params": [{ "id": "size", "label": "Frammenti", "min": 2, "max": 20, "default": 7 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "crystallize", "size": "$size", "border": 15, "borderColor": "#f0f4f8" },
+        { "op": "rgb_shift", "amount": 0.5, "angle": 30 }
+      ] },
+    { "id": "glitch_thermal", "label": "Termocamera",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }],
+      "steps": [
+        { "op": "blur", "radius": 0.4 },
+        { "op": "gradient_map", "stops": [[0, "#000010"], [0.2, "#3b0f70"], [0.45, "#c3195d"], [0.7, "#ff7e00"], [0.88, "#ffff66"], [1, "#ffffff"]], "opacity": "$amount / 100" }
+      ] },
+    { "id": "glitch_xray", "label": "Raggi X",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }],
+      "steps": [
+        { "op": "invert" },
+        { "op": "gradient_map", "stops": [[0, "#000814"], [0.6, "#4a7fb0"], [1, "#e8f6ff"]], "opacity": "$amount / 100" },
+        { "op": "glow", "threshold": 60, "radius": 2, "strength": 40 }
+      ] },
+    { "id": "glitch_night_vision", "label": "Visore notturno",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "adjust", "exposure": 30, "contrast": 20 },
+        { "op": "gradient_map", "stops": [[0, "#000a00"], [0.6, "#2fbf3a"], [1, "#d8ffd0"]] },
+        { "op": "grain", "amount": "$amount * 0.5" },
+        { "op": "scanlines", "spacing": 0.4, "thickness": 40, "opacity": 20 },
+        { "op": "vignette", "amount": 80, "radius": 45, "roundness": 100 }
+      ] },
+    { "id": "glitch_neon_shift", "label": "Neon sfasato",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "gradient_map", "stops": [[0, "#0d0221"], [0.5, "#ff2a6d"], [1, "#05d9e8"]], "opacity": 0.7 },
+        { "op": "rgb_shift", "amount": "$amount * 0.02", "angle": 45 },
+        { "op": "glow", "threshold": 50, "radius": 2, "strength": 50 }
+      ] }
+  ]
+}

@@ -18,7 +18,7 @@
   <rect x="24" y="24" width="464" height="464" rx="112" fill="url(#bgGrad)" filter="url(#dropShadow)" />
   <rect x="24" y="24" width="464" height="232" rx="112" fill="url(#glowGrad)" />
 
-  <!-- Logo Picsart "P" Stilizzato -->
+  <!-- Logo Zesty "P" stilizzato -->
   <g transform="translate(106, 86)">
     <!-- Asta Verticale -->
     <rect x="30" y="30" width="60" height="280" rx="30" fill="#ffffff" />

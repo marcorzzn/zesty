@@ -1,0 +1,103 @@
+{
+  "category": "correzione",
+  "effects": [
+    { "id": "auto_fix", "label": "Auto correzione",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }],
+      "steps": [
+        { "op": "auto_levels", "clip": 0.4, "amount": "$amount" },
+        { "op": "white_balance", "amount": "$amount * 0.6" },
+        { "op": "adjust", "vibrance": "$amount * 0.15" }
+      ] },
+    { "id": "enhance", "label": "Migliora",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "auto_levels", "clip": 0.3, "mode": "luma", "amount": "$amount" },
+        { "op": "clarity", "amount": "$amount * 0.4", "radius": 4 },
+        { "op": "adjust", "vibrance": "$amount * 0.3" },
+        { "op": "sharpen", "amount": "$amount * 0.6", "radius": 0.3 }
+      ] },
+    { "id": "clarity", "label": "Chiarezza",
+      "params": [
+        { "id": "amount", "label": "Intensità", "min": -100, "max": 100, "default": 50 },
+        { "id": "radius", "label": "Raggio", "min": 1, "max": 12, "default": 4, "step": 0.5 }
+      ],
+      "steps": [{ "op": "clarity", "amount": "$amount", "radius": "$radius" }] },
+    { "id": "sharpen", "label": "Nitidezza",
+      "params": [
+        { "id": "amount", "label": "Quantità", "min": 0, "max": 300, "default": 80 },
+        { "id": "radius", "label": "Raggio", "min": 0.1, "max": 2, "default": 0.35, "step": 0.05 },
+        { "id": "threshold", "label": "Soglia", "min": 0, "max": 30, "default": 2 }
+      ],
+      "steps": [{ "op": "sharpen", "amount": "$amount", "radius": "$radius", "threshold": "$threshold" }] },
+    { "id": "denoise", "label": "Riduci rumore",
+      "params": [
+        { "id": "strength", "label": "Forza", "default": 40 },
+        { "id": "radius", "label": "Raggio", "min": 0.5, "max": 4, "default": 1.2, "step": 0.1 }
+      ],
+      "steps": [{ "op": "smooth", "radius": "$radius", "strength": "$strength * 0.6" }] },
+    { "id": "hdr_natural", "label": "HDR naturale",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "clarity", "amount": "$amount * 0.9", "radius": 6 },
+        { "op": "adjust", "shadows": "$amount * 0.4", "highlights": "-$amount * 0.4", "vibrance": "$amount * 0.2" },
+        { "op": "sharpen", "amount": "$amount * 0.5", "radius": 0.3 }
+      ] },
+    { "id": "hdr_dramatic", "label": "HDR drammatico",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "clarity", "amount": "$amount * 1.4", "radius": 3 },
+        { "op": "clarity", "amount": "$amount * 0.8", "radius": 10 },
+        { "op": "adjust", "shadows": "$amount * 0.6", "highlights": "-$amount * 0.6", "saturation": "$amount * 0.15", "contrast": 10 },
+        { "op": "sharpen", "amount": "$amount", "radius": 0.3 }
+      ] },
+    { "id": "exposure", "label": "Esposizione",
+      "params": [
+        { "id": "exposure", "label": "Esposizione", "min": -100, "max": 100, "default": 20 },
+        { "id": "gamma", "label": "Gamma", "min": 0.3, "max": 3, "default": 1, "step": 0.05 },
+        { "id": "blacks", "label": "Neri", "min": -100, "max": 100, "default": 0 }
+      ],
+      "steps": [{ "op": "adjust", "exposure": "$exposure", "gamma": "$gamma", "blacks": "$blacks" }] },
+    { "id": "white_balance", "label": "Bilanciamento del bianco",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }],
+      "steps": [{ "op": "white_balance", "amount": "$amount" }] },
+    { "id": "temp_tint", "label": "Temperatura e tinta",
+      "params": [
+        { "id": "temperature", "label": "Temperatura", "min": -100, "max": 100, "default": 25 },
+        { "id": "tint", "label": "Tinta", "min": -100, "max": 100, "default": 0 }
+      ],
+      "steps": [{ "op": "adjust", "temperature": "$temperature", "tint": "$tint" }] },
+    { "id": "shadows_highlights", "label": "Ombre e luci",
+      "params": [
+        { "id": "shadows", "label": "Ombre", "min": -100, "max": 100, "default": 40 },
+        { "id": "highlights", "label": "Luci", "min": -100, "max": 100, "default": -30 },
+        { "id": "whites", "label": "Bianchi", "min": -100, "max": 100, "default": 0 },
+        { "id": "blacks", "label": "Neri", "min": -100, "max": 100, "default": 0 }
+      ],
+      "steps": [{ "op": "adjust", "shadows": "$shadows", "highlights": "$highlights", "whites": "$whites", "blacks": "$blacks" }] },
+    { "id": "dehaze", "label": "Rimuovi foschia",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
+      "steps": [
+        { "op": "levels", "inBlack": "$amount * 0.45", "gamma": "1 - $amount * 0.002" },
+        { "op": "clarity", "amount": "$amount * 0.6", "radius": 8 },
+        { "op": "adjust", "saturation": "$amount * 0.25", "contrast": "$amount * 0.1" }
+      ] },
+    { "id": "vibrance", "label": "Vividezza",
+      "params": [
+        { "id": "vibrance", "label": "Vividezza", "min": -100, "max": 100, "default": 40 },
+        { "id": "saturation", "label": "Saturazione", "min": -100, "max": 100, "default": 0 }
+      ],
+      "steps": [{ "op": "adjust", "vibrance": "$vibrance", "saturation": "$saturation" }] },
+    { "id": "lift_shadows", "label": "Schiarisci ombre",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "adjust", "shadows": "$amount", "blacks": "$amount * 0.2" },
+        { "op": "clarity", "amount": "$amount * 0.2", "radius": 5 }
+      ] },
+    { "id": "pop_colors", "label": "Ravviva",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
+      "steps": [
+        { "op": "curves", "rgb": [[0, 0], [64, "64 - $amount * 0.18"], [192, "192 + $amount * 0.18"], [255, 255]] },
+        { "op": "adjust", "vibrance": "$amount * 0.5", "saturation": "$amount * 0.1" }
+      ] }
+  ]
+}

@@ -22,6 +22,6 @@ dependencyResolutionManagement {
   }
 }
 
-rootProject.name = "Picsart Studio"
+rootProject.name = "Zesty"
 
 include(":app")

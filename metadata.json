@@ -1,7 +1,7 @@
 {
-  "name": "Pixart",
+  "name": "Zesty",
   "author": "Marco Razzano",
-  "description": "Pixart di Marco Razzano - Editor fotografico professionale multi-livello con ritaglio prospettico, fluidifica, curve RGB, maschere, pennelli, effetti, operazioni booleane, collage ed esportazione PNG/JPG/SVG/PDF.",
+  "description": "Zesty di Marco Razzano - Editor fotografico professionale multi-livello con ritaglio prospettico, fluidifica, curve RGB, maschere, pennelli, effetti, operazioni booleane, collage ed esportazione PNG/JPG/SVG/PDF.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -1,0 +1,101 @@
+{
+  "category": "vintage",
+  "effects": [
+    { "id": "vintage_classic", "label": "Vintage",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "matrix", "m": [0.9, 0.45, 0.1, 0, 18, 0.3, 0.8, 0.1, 0, 14, 0.2, 0.3, 0.5, 0, 32, 0, 0, 0, 1, 0], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 12 },
+        { "op": "vignette", "amount": 35, "radius": 60 }
+      ] },
+    { "id": "vintage_ivory", "label": "Avorio",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "matrix", "m": [1.02, 0.18, 0.08, 0, 22, 0.15, 0.98, 0.08, 0, 22, 0.08, 0.18, 0.78, 0, 14, 0, 0, 0, 1, 0], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 15, "contrast": -8 }
+      ] },
+    { "id": "vintage_amber", "label": "Ambra calda",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "tint", "color": "#ffae42", "amount": "$amount * 0.4" },
+        { "op": "curves", "rgb": [[0, 18], [128, 134], [255, 240]] },
+        { "op": "adjust", "temperature": "$amount * 0.3" }
+      ] },
+    { "id": "vintage_70s", "label": "Anni '70",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 25], [128, 150], [255, 240]], "g": [[0, 20], [128, 135], [255, 225]], "b": [[0, 35], [128, 100], [255, 175]], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 18, "saturation": -10 },
+        { "op": "grain", "amount": 20 }
+      ] },
+    { "id": "vintage_50s", "label": "Anni '50",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "adjust", "saturation": "-$amount * 0.35", "fade": "$amount * 0.3", "contrast": -10 },
+        { "op": "split_tone", "shadows": "#4a6a8a", "highlights": "#ffe4c8", "amount": "$amount * 0.4" }
+      ] },
+    { "id": "vintage_postcard", "label": "Cartolina",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "saturation": "$amount * 0.2", "fade": 20, "brightness": 6 },
+        { "op": "split_tone", "shadows": "#3b6e8f", "highlights": "#ffd6a5", "amount": 30 },
+        { "op": "texture", "kind": "paper", "amount": "$amount * 0.4", "blend": "multiply", "opacity": 0.5 },
+        { "op": "vignette", "amount": 30, "radius": 65 }
+      ] },
+    { "id": "vintage_old_photo", "label": "Foto antica",
+      "params": [{ "id": "amount", "label": "Usura", "default": 60 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "gradient_map", "stops": [[0, "#2a1d12"], [0.55, "#94775a"], [1, "#efe2c9"]] },
+        { "op": "texture", "kind": "paper", "amount": 50, "blend": "multiply", "opacity": "$amount / 120" },
+        { "op": "dust", "amount": "$amount * 0.7" },
+        { "op": "vignette", "amount": 55, "radius": 50, "color": "#3a2615" }
+      ] },
+    { "id": "vintage_daguerreotype", "label": "Dagherrotipo",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "gradient_map", "stops": [[0, "#0c0f12"], [0.5, "#6b7682"], [1, "#e8eef2"]] },
+        { "op": "blur", "radius": 1.5, "mask": { "type": "radial", "radius": 0.28, "feather": 0.3, "invert": true } },
+        { "op": "dust", "amount": "$amount * 0.6" },
+        { "op": "vignette", "amount": "$amount", "radius": 42, "softness": 45, "roundness": 100 }
+      ] },
+    { "id": "vintage_faded_rose", "label": "Rosa sbiadito",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 30], [255, 250]], "g": [[0, 15], [255, 230]], "b": [[0, 30], [255, 235]], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 20, "saturation": -15 }
+      ] },
+    { "id": "vintage_dusk", "label": "Tramonto antico",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "gradient", "type": "linear", "angle": 90, "stops": [[0, "#ff9a4a"], [1, "#5a2a6a"]], "blend": "soft-light", "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 10 },
+        { "op": "vignette", "amount": 40, "radius": 55, "color": "#2a1030" }
+      ] },
+    { "id": "vintage_memories", "label": "Ricordi",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "fade": "$amount * 0.4", "saturation": "-$amount * 0.3", "temperature": 15 },
+        { "op": "layer", "steps": [{ "op": "blur", "radius": 2 }], "blend": "screen", "opacity": 0.3 },
+        { "op": "vignette", "amount": 30, "radius": 60, "color": "#fff4e0" }
+      ] },
+    { "id": "vintage_paper", "label": "Carta antica",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "gradient_map", "stops": [[0, "#3b2a1a"], [1, "#f3e6c8"]], "opacity": 0.7 },
+        { "op": "texture", "kind": "paper", "scale": 1.5, "amount": "$amount", "blend": "multiply" },
+        { "op": "vignette", "amount": 40, "radius": 55, "color": "#6b4a2a" }
+      ] },
+    { "id": "vintage_sunbleached", "label": "Sole scolorito",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "adjust", "brightness": "$amount * 0.2", "saturation": "-$amount * 0.4", "fade": "$amount * 0.3", "temperature": 12 },
+        { "op": "curves", "b": [[0, 30], [255, 220]] }
+      ] },
+    { "id": "vintage_mint", "label": "Menta retrò",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "split_tone", "shadows": "#1f6b5a", "highlights": "#fff1d6", "amount": "$amount * 0.5" },
+        { "op": "adjust", "fade": 15, "saturation": -10 }
+      ] }
+  ]
+}

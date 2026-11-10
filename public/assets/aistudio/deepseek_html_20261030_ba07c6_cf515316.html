@@ -6,14 +6,14 @@
 <meta name="theme-color" content="#0b0b0e">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Picsart">
-<title>Picsart Studio</title>
+<meta name="apple-mobile-web-app-title" content="Zesty">
+<title>Zesty</title>
 <link rel="manifest" href="../../manifest.json">
 <link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
 <link rel="apple-touch-icon" href="../icons/icon-192.png">
 <style>
 /* ==========================================================================
-   PICSART MOBILE 1:1 DESIGN SYSTEM
+   ZESTY MOBILE DESIGN SYSTEM
    Authentic colors, fonts, bottom sheets, checkerboard canvas, and controls
    ========================================================================== */
 
@@ -21,7 +21,7 @@
   --bg: #0b0b0e;
   --surface: #141419;
   --surface-raised: #1c1c22;
-  --panel: #1e1e1e;             /* Autentico colore scuro Picsart per i Bottom Sheet */
+  --panel: #1e1e1e;             /* Colore scuro per i Bottom Sheet */
   --panel-elevated: #25252c;
   --border: rgba(255, 255, 255, 0.10);
   --border-light: rgba(255, 255, 255, 0.18);
@@ -29,11 +29,11 @@
   --text-dim: #9ea0aa;
   --text-mute: #8e919f;
   
-  /* Brand Accents Picsart */
-  --accent: #e0289a;            /* Picsart Magenta iconico */
+  /* Brand Accents */
+  --accent: #e0289a;            /* Magenta principale */
   --accent-hi: #ff3dad;
   --accent-glow: rgba(224, 40, 154, 0.45);
-  --active: #8b5cf6;            /* Viola Picsart per selezione tool */
+  --active: #8b5cf6;            /* Viola per selezione tool */
   --pro: linear-gradient(135deg, #e0289a, #8b5cf6);
   
   /* Elevazioni & Ombre native */
@@ -43,42 +43,42 @@
 
 /* ============ AUTHENTIC FONTS (Estratti dall'APK) ============ */
 @font-face {
-  font-family: 'PicsartDisplay';
+  font-family: 'ZestyDisplay';
   src: url('../fonts/font_1.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'PicsartSans';
+  font-family: 'ZestySans';
   src: url('../fonts/font_3.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'PicsartFont1';
+  font-family: 'ZestyFont1';
   src: url('../fonts/font_1.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'PicsartFont2';
+  font-family: 'ZestyFont2';
   src: url('../fonts/font_2.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'PicsartFont3';
+  font-family: 'ZestyFont3';
   src: url('../fonts/font_3.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'PicsartFont5';
+  font-family: 'ZestyFont5';
   src: url('../fonts/font_5.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'PicsartFont10';
+  font-family: 'ZestyFont10';
   src: url('../fonts/font_10.ttf') format('truetype');
   font-display: swap;
 }
 @font-face {
-  font-family: 'PicsartFont15';
+  font-family: 'ZestyFont15';
   src: url('../fonts/font_15.ttf') format('truetype');
   font-display: swap;
 }
@@ -95,7 +95,7 @@ html, body {
   padding: 0;
   height: 100%;
   overflow: hidden;
-  font-family: 'PicsartSans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  font-family: 'ZestySans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
   font-size: 14px;
   color: var(--text);
   background: var(--bg);
@@ -197,7 +197,7 @@ svg {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   border-radius: 20px;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 11px;
   font-weight: 600;
   color: #ffffff;
@@ -214,7 +214,7 @@ svg {
   color: var(--accent);
 }
 
-/* Pulsante Conferma / Check Picsart Magenta */
+/* Pulsante Conferma / Check Magenta */
 .tb-icon.check {
   background: linear-gradient(135deg, #e0289a, #b01a75);
   color: #ffffff;
@@ -322,7 +322,7 @@ svg {
 .stage.brushing { cursor: crosshair !important; }
 
 /* ==========================================================================
-   2. BOTTOM TOOLBAR (Scorrimento Orizzontale, Icone Grandi & Accento Picsart)
+   2. BOTTOM TOOLBAR (Scorrimento Orizzontale, Icone Grandi & Accento)
    ========================================================================== */
 .bottom-toolbar {
   position: relative;
@@ -405,7 +405,7 @@ svg {
   right: 6px;
   background: var(--pro);
   color: #fff;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 7.5px;
   font-weight: 800;
   padding: 1.5px 4.5px;
@@ -454,7 +454,7 @@ svg {
   right: 0;
   bottom: 0;
   z-index: 35;
-  background: #1e1e1e; /* Sfondo scuro autentico Picsart */
+  background: #1e1e1e; /* Sfondo scuro */
   border-top-left-radius: 24px;
   border-top-right-radius: 24px;
   border-top: 1px solid rgba(255, 255, 255, 0.14);
@@ -567,7 +567,7 @@ svg {
   right: 12px;
   background: var(--pro);
   color: #fff;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 7px;
   font-weight: 800;
   padding: 1px 4px;
@@ -597,7 +597,7 @@ svg {
   background: linear-gradient(135deg, #e0289a, #b01a75);
   color: #fff;
   border-radius: 12px;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-weight: 700;
   font-size: 13px;
   letter-spacing: 0.02em;
@@ -633,7 +633,7 @@ svg {
   transform: scale(0.97);
 }
 
-/* --- Slider & Regolazioni Personalizzate Picsart --- */
+/* --- Slider & Regolazioni Personalizzate --- */
 .slider-row {
   display: flex;
   align-items: center;
@@ -655,7 +655,7 @@ svg {
   outline: none;
 }
 .slider-row .val {
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 11px;
   color: #fff;
   min-width: 36px;
@@ -683,7 +683,7 @@ svg {
   background: rgba(255, 255, 255, 0.08);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 20px;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 12px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -799,7 +799,7 @@ svg {
   flex: 1;
   padding: 10px;
   text-align: center;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 11px;
   font-weight: 700;
   color: var(--text-mute);
@@ -970,7 +970,7 @@ svg {
 }
 .shader-badge {
   font-size: 8px;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-weight: 700;
   background: var(--pro);
   color: #fff;
@@ -1257,7 +1257,7 @@ svg {
   align-items: center;
   justify-content: space-between;
   border-bottom: 1px solid var(--border);
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1397,7 +1397,7 @@ svg {
   justify-content: space-between;
 }
 .export-title {
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 18px;
   font-weight: 700;
   color: #fff;
@@ -1442,13 +1442,13 @@ svg {
   border: 1px solid var(--border);
   border-radius: 12px;
   color: var(--text-dim);
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 13px;
   font-weight: 700;
   transition: all 0.15s ease;
 }
 .format-pill span {
-  font-family: 'PicsartSans', sans-serif;
+  font-family: 'ZestySans', sans-serif;
   font-size: 9px;
   font-weight: 400;
   color: var(--text-mute);
@@ -1472,7 +1472,7 @@ svg {
 }
 .export-info-val {
   color: #fff;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
 }
@@ -1482,7 +1482,7 @@ svg {
   background: linear-gradient(135deg, #e0289a, #b01a75);
   color: #fff;
   border-radius: 14px;
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-size: 14px;
   font-weight: 700;
   display: flex;
@@ -1557,7 +1557,7 @@ svg {
 .toast-btn {
   align-self: flex-start;
   color: var(--active);
-  font-family: 'PicsartDisplay', sans-serif;
+  font-family: 'ZestyDisplay', sans-serif;
   font-weight: 700;
   font-size: 13px;
   padding: 4px 0;
@@ -1573,7 +1573,7 @@ svg {
 <body>
 <div id="app">
 
-  <!-- TOP BAR (Picsart Mobile 1:1) -->
+  <!-- TOP BAR -->
   <header class="topbar" id="topbar">
     <button class="tb-icon" data-act="close" title="Chiudi" aria-label="Chiudi editor">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -1603,7 +1603,7 @@ svg {
     </button>
   </header>
 
-  <!-- TOP BAR (tool mode - Picsart Mobile 1:1) -->
+  <!-- TOP BAR (tool mode) -->
   <header class="topbar" id="topbarTool" style="display:none">
     <button class="tb-icon" id="tbBack" title="Annulla" aria-label="Annulla strumento">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
@@ -2145,7 +2145,7 @@ function createDemoImage() {
 }
 
 // ============ EFFETTI CSS DI BASE (approssimazioni scritte per Zesty; da sostituire con il catalogo Zesty FX) ============
-const PICSART_EFFECTS = [
+const APP_EFFECTS = [
   { id: 'none', name: 'Originale', category: 'Tutti', css: 'none' },
   { id: 'BlackAndWhite', name: 'B&W', category: 'B&W', css: 'grayscale(100%)', blend: 'normal' },
   { id: 'BWFilm', name: 'B&W Film', category: 'B&W', css: 'grayscale(100%) contrast(140%) brightness(90%)', blend: 'normal' },
@@ -2175,7 +2175,7 @@ function renderLayerWithFilter(layer, targetCtx, drawContentFn, width, height) {
     return;
   }
 
-  const fx = PICSART_EFFECTS.find(f => f.id === layer.filter.id);
+  const fx = APP_EFFECTS.find(f => f.id === layer.filter.id);
   if (!fx) {
     drawContentFn(targetCtx);
     return;
@@ -2819,7 +2819,7 @@ function drawCropOverlay() {
     ovCtx.stroke();
   }
 
-  // 4. Maniglie d'angolo a 'L' in stile nativo Picsart (spesse 3.5px)
+  // 4. Maniglie d'angolo a 'L' in stile nativo (spesse 3.5px)
   const bLen = Math.min(22, crop.width / 4, crop.height / 4);
   ovCtx.strokeStyle = '#ffffff';
   ovCtx.lineWidth = 3.5;
@@ -3525,9 +3525,9 @@ function openTextTool() {
         <textarea class="text-input" id="textContent" placeholder="Scrivi qualcosa...">Doppio tocco per modificare</textarea>
         <div class="font-row">
           <button class="font-chip active" data-font="Inter, sans-serif" style="font-family:Inter,sans-serif">Default</button>
-          <button class="font-chip" data-font="PicsartFont1, sans-serif" style="font-family:'PicsartFont1',sans-serif">Picsart 1</button>
-          <button class="font-chip" data-font="PicsartFont2, sans-serif" style="font-family:'PicsartFont2',sans-serif">Picsart 2</button>
-          <button class="font-chip" data-font="PicsartFont3, sans-serif" style="font-family:'PicsartFont3',sans-serif">Picsart 3</button>
+          <button class="font-chip" data-font="ZestyFont1, sans-serif" style="font-family:'ZestyFont1',sans-serif">Font 1</button>
+          <button class="font-chip" data-font="ZestyFont2, sans-serif" style="font-family:'ZestyFont2',sans-serif">Font 2</button>
+          <button class="font-chip" data-font="ZestyFont3, sans-serif" style="font-family:'ZestyFont3',sans-serif">Font 3</button>
           <button class="font-chip" data-font="Impact, fantasy" style="font-family:Impact,fantasy">Impact</button>
         </div>
       </div>
@@ -3656,8 +3656,8 @@ function openEffectsTool() {
     const strip = $('fxStrip');
     strip.innerHTML = '';
     const filtered = currentCategory === 'Tutti' 
-      ? PICSART_EFFECTS 
-      : PICSART_EFFECTS.filter(f => f.category === currentCategory || f.id === 'none');
+      ? APP_EFFECTS 
+      : APP_EFFECTS.filter(f => f.category === currentCategory || f.id === 'none');
 
     filtered.forEach(fx => {
       const card = document.createElement('button');
@@ -4240,7 +4240,7 @@ function exportComposition(format = 'image/png', quality = 0.92) {
     }
     const ext = format === 'image/jpeg' ? 'jpg' : (format === 'image/webp' ? 'webp' : 'png');
     const timestamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, '');
-    const filename = `picsart_${timestamp}.${ext}`;
+    const filename = `zesty_${timestamp}.${ext}`;
 
     // Ponte Nativo Android (se eseguito dentro l'APK WebView)
     if (window.AndroidBridge && typeof window.AndroidBridge.saveImageToGallery === 'function') {
@@ -4321,7 +4321,7 @@ if (topbarShareBtn) {
 const topbarCloseBtn = document.querySelector('.topbar [data-act="close"]');
 if (topbarCloseBtn) {
   topbarCloseBtn.addEventListener('click', () => {
-    showToast('Picsart Studio — Progetto attivo');
+    showToast('Zesty — Progetto attivo');
   });
 }
 

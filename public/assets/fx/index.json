@@ -1,0 +1,41 @@
+{
+  "format": "pixart-fx",
+  "version": 1,
+  "about": "Catalogo effetti di Pixart. Ogni file elenca effetti composti da operazioni primitive (vedi README.md). Aggiungere un effetto = aggiungere una voce JSON.",
+  "categories": [
+    { "id": "correzione", "label": "Correzione" },
+    { "id": "bn", "label": "B&N" },
+    { "id": "pellicola", "label": "Pellicola" },
+    { "id": "vintage", "label": "Vintage" },
+    { "id": "cinema", "label": "Cinema" },
+    { "id": "colore", "label": "Colore" },
+    { "id": "popart", "label": "Pop Art" },
+    { "id": "disegno", "label": "Disegno" },
+    { "id": "sfocatura", "label": "Sfocatura" },
+    { "id": "distorsione", "label": "Distorsione" },
+    { "id": "glitch", "label": "Glitch & Retro" },
+    { "id": "luce", "label": "Luce" },
+    { "id": "texture", "label": "Texture & Grana" },
+    { "id": "atmosfera", "label": "Atmosfera" },
+    { "id": "pattern", "label": "Pattern" },
+    { "id": "ritratto", "label": "Ritratto" }
+  ],
+  "files": [
+    "catalog/correzione.json",
+    "catalog/bn.json",
+    "catalog/pellicola.json",
+    "catalog/vintage.json",
+    "catalog/cinema.json",
+    "catalog/colore.json",
+    "catalog/popart.json",
+    "catalog/disegno.json",
+    "catalog/sfocatura.json",
+    "catalog/distorsione.json",
+    "catalog/glitch.json",
+    "catalog/luce.json",
+    "catalog/texture.json",
+    "catalog/atmosfera.json",
+    "catalog/pattern.json",
+    "catalog/ritratto.json"
+  ]
+}

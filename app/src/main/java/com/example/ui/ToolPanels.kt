@@ -33,6 +33,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.engine.MaskGeometry
 import com.example.engine.PixelEngine
 import com.example.model.*
 import com.example.viewmodel.EditorUiState
@@ -40,18 +41,25 @@ import com.example.viewmodel.EditorViewModel
 import kotlin.math.hypot
 import kotlin.math.roundToInt
 
-// Design tokens from the HTML mockup
-val BgBlack = Color(0xFF000000)
-val PanelDark = Color(0xFF0D0D10)
-val Panel2 = Color(0xFF16161A)
-val Panel3 = Color(0xFF1C1C22)
-val BorderCol = Color(0xFF26262E)
-val TextWhite = Color(0xFFFFFFFF)
-val TextDim = Color(0xFF9A9AA5)
-val TextMute = Color(0xFF5C5C66)
-val AccentPink = Color(0xFFE0289A)
-val AccentPinkHi = Color(0xFFFF3DAD)
-val ActivePurple = Color(0xFF8B5CF6)
+// Palette "Grafite calda" (docs/UI_PRINCIPLES.md §5): neutri appena caldi, contorno della foto grigio medio,
+// tre agrumi per i soli ruoli che devono saltare all'occhio. Contrasti misurati (WCAG 2.2) sull'isola #1F1D1A.
+val BgBlack = Color(0xFF1F1D1A)      // isola e pannelli
+val PanelDark = Color(0xFF23211D)    // menu e pannello laterale
+val Panel2 = Color(0xFF2A2722)       // superficie interna (selettori, chip)
+val Panel3 = Color(0xFF35322D)       // superficie in rilievo
+val BorderCol = Color(0xFF77716A)    // bordi dei controlli e cursore vuoto: 3,5:1 (minimo per i controlli 3:1)
+val DividerCol = Color(0xFF36332E)   // separatori decorativi
+val TextWhite = Color(0xFFF1ECE4)    // testo 14,3:1
+val TextDim = Color(0xFFBDB6AA)      // testo secondario 8,4:1
+val TextMute = Color(0xFFA39C90)     // testo terziario 6,2:1 (4,7:1 sul rilievo)
+val AccentPink = Color(0xFFFF8A1F)   // ARANCIO: azione principale e selezione (testo scuro sopra 7,7:1)
+val AccentPinkHi = Color(0xFFF7D774) // LIMONE: stato attivo, valori (12:1)
+val ActivePurple = Color(0xFF9EE05A) // LIME: solo maniglie e punti modificabili sulla foto
+val OnAccent = Color(0xFF1E1407)     // testo e icone sopra arancio, limone o lime
+// Contorno della foto: grigio medio quasi neutro, per giudicare i colori senza dominanti
+val StageSurround = Color(0xFF2E2C29)
+val StageCheckA = Color(0xFF34322F)  // scacchiera delle zone trasparenti
+val StageFrame = Color(0xFF45423D)   // filo attorno alla foto
 
 @Composable
 fun CustomSliderRow(
@@ -142,7 +150,7 @@ fun CropToolPanel(state: EditorUiState, vm: EditorViewModel) {
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     listOf("-45°", "-30°", "-15°", "0°", "15°", "30°", "45°").forEach { tick ->
-                        Text(tick, color = TextMute, fontSize = 9.sp)
+                        Text(tick, color = TextMute, fontSize = 11.sp)
                     }
                 }
                 Slider(
@@ -201,7 +209,7 @@ fun CropToolPanel(state: EditorUiState, vm: EditorViewModel) {
                     Column(
                         modifier = Modifier
                             .clip(RoundedCornerShape(8.dp))
-                            .background(if (active) ActivePurple else Color.White.copy(alpha = 0.05f))
+                            .background(if (active) AccentPink else Panel2)
                             .clickable { vm.setCropRatio(key) }
                             .padding(horizontal = 12.dp, vertical = 8.dp),
                         horizontalAlignment = Alignment.CenterHorizontally
@@ -209,10 +217,10 @@ fun CropToolPanel(state: EditorUiState, vm: EditorViewModel) {
                         Box(
                             modifier = Modifier
                                 .size(16.dp, 14.dp)
-                                .border(1.5.dp, if (active) TextWhite else TextDim, RoundedCornerShape(2.dp))
+                                .border(1.5.dp, if (active) OnAccent else TextDim, RoundedCornerShape(2.dp))
                         )
                         Spacer(Modifier.height(4.dp))
-                        Text(label, fontSize = 10.sp, color = if (active) TextWhite else TextDim)
+                        Text(label, fontSize = 11.sp, color = if (active) OnAccent else TextDim)
                     }
                 }
             }
@@ -563,17 +571,19 @@ fun CurvesToolPanel(state: EditorUiState, vm: EditorViewModel) {
         Text(
             text = "Tocca per aggiungere un punto • Trascina per curvare • Doppio tocco per rimuovere",
             color = TextMute,
-            fontSize = 9.sp,
+            fontSize = 11.sp,
             modifier = Modifier.padding(top = 4.dp)
         )
     }
 }
 
-// ============ 7. EFFECTS (170 FILTERS FX) PANEL ============
+// ============ 7. EFFECTS PANEL (catalogo Zesty FX) ============
+// Principi: docs/UI_PRINCIPLES.md — collezioni scorrevoli (categorie, miniature), parametri sotto,
+// azioni (zona, rendi definitivo, rimuovi) nella barra superiore.
 @Composable
 fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
     val active = state.activeLayer
-    val categories = listOf("Popolari", "Tutti", "B&N", "Vintage", "Colore", "PopArt", "Sfocatura", "Luce", "Disegno")
+    val categories = remember { PixelEngine.getFilterCategories() }
     val filters = remember(state.filterCategory) {
         PixelEngine.getFiltersByCategory(state.filterCategory)
     }
@@ -582,99 +592,50 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
         vm.generateFilterThumbnails()
     }
 
-    Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 6.dp)) {
-        // 1. Categories Chips Row
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            categories.forEach { cat ->
-                val isSelected = state.filterCategory == cat
-                Box(
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(16.dp))
-                        .background(if (isSelected) AccentPink else Panel2)
-                        .clickable { vm.setEffectCategory(cat) }
-                        .padding(horizontal = 12.dp, vertical = 6.dp)
-                ) {
-                    Text(
-                        text = cat,
-                        fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                        color = TextWhite
-                    )
-                }
+    Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 4.dp)) {
+        // 1. Categorie
+        PxCollectionRow {
+            categories.forEach { (catId, catLabel) ->
+                PxChip(catLabel, selected = state.filterCategory == catId) { vm.setEffectCategory(catId) }
             }
         }
 
-        // 2. Filter Thumbnails LazyRow (170 JSON Filters)
+        // 2. Miniature dei filtri della categoria
         LazyRow(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            contentPadding = PaddingValues(horizontal = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
+            modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+            contentPadding = PaddingValues(horizontal = Px.Gutter),
+            horizontalArrangement = Arrangement.spacedBy(Px.Gap)
         ) {
             items(filters, key = { it.id }) { f ->
                 val isSelected = active?.activeFilterId == f.id
                 val thumb = state.filterThumbnails[f.id]
                 Column(
                     modifier = Modifier
-                        .width(68.dp)
+                        .width(64.dp)
                         .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) Panel3 else Panel2)
-                        .border(
-                            width = if (isSelected) 2.dp else 1.dp,
-                            color = if (isSelected) AccentPink else BorderCol,
-                            shape = RoundedCornerShape(8.dp)
-                        )
-                        .clickable { vm.selectEffectFilter(f.id) }
-                        .padding(4.dp),
+                        .clickable { vm.selectEffectFilter(f.id) },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     Box(
                         modifier = Modifier
-                            .size(56.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color(0xFF262632)),
+                            .size(64.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Panel2)
+                            .border(if (isSelected) 2.dp else 0.dp, if (isSelected) Px.Accent else Color.Transparent, RoundedCornerShape(8.dp)),
                         contentAlignment = Alignment.Center
                     ) {
                         if (thumb != null && !thumb.isRecycled) {
-                            Image(
-                                bitmap = thumb.asImageBitmap(),
-                                contentDescription = f.label,
-                                modifier = Modifier.fillMaxSize()
-                            )
+                            Image(bitmap = thumb.asImageBitmap(), contentDescription = f.label, modifier = Modifier.fillMaxSize())
                         } else {
-                            Text(
-                                text = f.id.take(3).uppercase(),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = TextMute
-                            )
-                        }
-                        if (isSelected) {
-                            Box(
-                                modifier = Modifier
-                                    .align(Alignment.TopEnd)
-                                    .padding(2.dp)
-                                    .size(16.dp)
-                                    .clip(CircleShape)
-                                    .background(AccentPink),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Icon(Icons.Default.Check, contentDescription = null, tint = Color.White, modifier = Modifier.size(10.dp))
-                            }
+                            Text(f.label.take(2), fontSize = 12.sp, fontWeight = FontWeight.Bold, color = TextMute)
                         }
                     }
                     Spacer(Modifier.height(4.dp))
                     Text(
                         text = f.label,
-                        fontSize = 9.sp,
-                        color = if (isSelected) AccentPinkHi else TextWhite,
+                        fontSize = 11.sp,
+                        color = if (isSelected) AccentPinkHi else TextDim,
+                        fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -682,57 +643,40 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
             }
         }
 
-        // 3. Real-time Controls when a Filter is Active
+        // 3. Regolazioni del filtro attivo (scorrono in verticale se sono molte)
         if (active?.activeFilterId != null) {
-            val blendModes = listOf("Normal", "Multiply", "Screen", "Overlay", "SoftLight", "Darken", "Lighten")
-
-            CustomSliderRow(
-                label = "Intensità / Dissolvenza",
-                value = active.activeFilterFade,
-                valueRange = 0f..100f,
-                onValueChange = { vm.setEffectFade(it) },
-                suffix = "%"
-            )
-
-            // Blend Mode Chips Row
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-                    .padding(horizontal = 12.dp, vertical = 4.dp),
-                horizontalArrangement = Arrangement.spacedBy(6.dp)
-            ) {
-                blendModes.forEach { bm ->
-                    val isSel = active.activeFilterBlend.equals(bm, ignoreCase = true)
-                    SmallChipButton(
-                        text = bm,
-                        active = isSel
-                    ) {
-                        vm.setEffectBlendMode(bm)
-                    }
-                }
+            PxPanel(maxHeight = 210.dp) {
+                PxSlider(
+                    label = "Intensità",
+                    value = 100f - active.activeFilterFade,
+                    range = 0f..100f,
+                    onChange = { vm.setEffectFade(100f - it) },
+                    suffix = "%"
+                )
+                FxParamControls(
+                    effectId = active.activeFilterId,
+                    overrides = active.activeFilterParams,
+                    onChange = { id, v -> vm.setEffectParam(id, v) }
+                )
+                PxDropdownRow(
+                    label = "Fusione",
+                    options = FILTER_BLEND_OPTIONS.map { it.second },
+                    selected = FILTER_BLEND_OPTIONS.indexOfFirst { it.first.equals(active.activeFilterBlend, ignoreCase = true) }.coerceAtLeast(0),
+                    onSelect = { vm.setEffectBlendMode(FILTER_BLEND_OPTIONS[it].first) }
+                )
             }
-
-            // Actions row: Applica Definitivo, Annulla, Localizza FX
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                SmallChipButton("Applica Definitivo", active = true) {
-                    vm.applyCurrentEffectPermanently()
-                }
-                SmallChipButton("Annulla Filtro") {
-                    vm.cancelCurrentEffect()
-                }
-                SmallChipButton("Localizza con Pennello") {
-                    vm.requestLocalizeFx("filter")
-                }
-            }
+        } else {
+            PxHint("Scegli un filtro: lo vedi subito sulla foto")
         }
     }
 }
+
+/** Metodi di fusione del filtro: id per il motore, etichetta per l'utente. */
+val FILTER_BLEND_OPTIONS = listOf(
+    "Normal" to "Normale", "Multiply" to "Moltiplica", "Screen" to "Scherma", "Overlay" to "Sovrapponi",
+    "SoftLight" to "Luce soffusa", "HardLight" to "Luce intensa", "Darken" to "Scurisci", "Lighten" to "Schiarisci",
+    "ColorDodge" to "Scherma colore", "Difference" to "Differenza", "Color" to "Colore", "Luminosity" to "Luminosità"
+)
 
 // ============ 8 & 9. SHAPES & TEXT PANELS ============
 @Composable
@@ -1271,54 +1215,49 @@ fun BlendModeStrip(selected: BlendOption, onSelect: (BlendOption) -> Unit) {
     }
 }
 
+/**
+ * Zona di un filtro, di un effetto o della visibilità del livello.
+ * Principi: docs/UI_PRINCIPLES.md — un selettore per lo strumento, sotto solo le sue regolazioni;
+ * ＋/−, evidenzia e le azioni sull'intera zona stanno nella barra superiore. Tutto in diretta.
+ */
 @Composable
 fun SelectivePaintToolPanel(state: EditorUiState, vm: EditorViewModel) {
-    val fxKey = state.selectiveTargetFxKey
-    val active = state.activeLayer
-    val isInverted = if (fxKey != null) {
-        active?.effects?.get(fxKey)?.localInverted == true
-    } else {
-        active?.maskInverted == true
-    }
+    val tool = state.maskTool
+    val tools = listOf(
+        MaskTool.BRUSH to PxOption("Pennello", Icons.Default.Brush),
+        MaskTool.SHAPE to PxOption("Forma", Icons.Default.Category),
+        MaskTool.LASSO to PxOption("Lazo", Icons.Default.Gesture),
+        MaskTool.POLYGON to PxOption("Poligono", Icons.Default.Timeline)
+    )
 
-    Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 8.dp)) {
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .horizontalScroll(rememberScrollState())
-                .padding(horizontal = 12.dp, vertical = 4.dp),
-            horizontalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            SmallChipButton(
-                text = "Pennello (+)",
-                active = state.brushStyle != BrushStyle.ERASER
-            ) { vm.updateBrushSettings(style = BrushStyle.STANDARD) }
-            SmallChipButton(
-                text = "Gomma (-)",
-                active = state.brushStyle == BrushStyle.ERASER
-            ) { vm.updateBrushSettings(style = BrushStyle.ERASER) }
-            SmallChipButton(
-                text = if (state.showMaskHeatmap) "Overlay Rosso: ON" else "Overlay Rosso: OFF",
-                active = state.showMaskHeatmap
-            ) { vm.toggleSelectiveHeatmap() }
-            SmallChipButton(
-                text = if (isInverted) "Inverti: ON" else "Inverti",
-                active = isInverted
-            ) { vm.invertSelectiveMask() }
-            SmallChipButton("Applica a Tutto") { vm.fillSelectiveMask(true) }
-            SmallChipButton("Cancella Tutto") { vm.fillSelectiveMask(false) }
-            SmallChipButton("Esci (X)") { vm.exitSelectivePaintMode() }
+    Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 6.dp)) {
+        PxSegmented(
+            options = tools.map { it.second },
+            selected = tools.indexOfFirst { it.first == tool }.coerceAtLeast(0),
+            onSelect = { vm.setMaskTool(tools[it].first) }
+        )
+        when (tool) {
+            MaskTool.BRUSH -> {
+                PxSlider("Dimensione", state.brushSize, 1f..200f, { vm.updateBrushSettings(size = it) }, "px")
+                PxSlider("Durezza", state.brushHardness, 5f..100f, { vm.updateBrushSettings(hardness = it) }, "%")
+                PxSlider("Opacità", state.brushOpacity, 5f..100f, { vm.updateBrushSettings(opacity = it) }, "%")
+            }
+            MaskTool.SHAPE -> {
+                PxCollectionRow {
+                    MaskGeometry.SHAPES.forEach { k -> PxChip(k.label, selected = state.maskShapeKind == k) { vm.setMaskShapeKind(k) } }
+                }
+                PxSlider("Sfumatura", state.maskFeather, 0f..80f, { vm.setMaskFeather(it) }, "px")
+                PxHint("Trascina il centro per spostare, gli angoli per ridimensionare, il pallino viola per ruotare")
+            }
+            MaskTool.LASSO -> {
+                PxSlider("Sfumatura", state.maskFeather, 0f..80f, { vm.setMaskFeather(it) }, "px")
+                PxHint("Disegna il contorno, poi trascina i punti per modellarlo")
+            }
+            MaskTool.POLYGON -> {
+                PxSlider("Sfumatura", state.maskFeather, 0f..80f, { vm.setMaskFeather(it) }, "px")
+                PxHint("Tocca per aggiungere punti, tocca un lato per inserirne uno, trascinali per modellare")
+            }
         }
-
-        CustomSliderRow("Dimensione", state.brushSize, 1f..200f, {
-            vm.updateBrushSettings(size = it)
-        }, "px")
-        CustomSliderRow("Opacità", state.brushOpacity, 5f..100f, {
-            vm.updateBrushSettings(opacity = it)
-        }, "%")
-        CustomSliderRow("Durezza Bordo", state.brushHardness, 5f..100f, {
-            vm.updateBrushSettings(hardness = it)
-        }, "%")
     }
 }
 
@@ -1332,15 +1271,15 @@ fun SmallChipButton(
     Box(
         modifier = modifier
             .clip(RoundedCornerShape(18.dp))
-            .background(if (active) ActivePurple else Panel2)
-            .border(1.dp, if (active) ActivePurple else BorderCol, RoundedCornerShape(18.dp))
+            .background(if (active) Px.Accent else Panel2)
+            .border(1.dp, if (active) Px.Accent else BorderCol, RoundedCornerShape(18.dp))
             .clickable(onClick = onClick)
             .padding(horizontal = 12.dp, vertical = 7.dp),
         contentAlignment = Alignment.Center
     ) {
         Text(
             text = text,
-            color = if (active) TextWhite else TextDim,
+            color = if (active) OnAccent else TextDim,
             fontSize = 11.sp,
             fontWeight = FontWeight.Medium
         )

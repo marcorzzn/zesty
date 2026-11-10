@@ -193,7 +193,7 @@ object ExportEngine {
     ): Result<Pair<String, Long>> = runCatching {
         val scaledBmp = scaleBitmap(composite, scale)
         val timestamp = System.currentTimeMillis()
-        val fileName = "PicsartStudio_$timestamp.${format.ext}"
+        val fileName = "Zesty_$timestamp.${format.ext}"
 
         val bytes = ByteArrayOutputStream().use { bos ->
             when (format) {
@@ -227,9 +227,9 @@ object ExportEngine {
                 put(
                     MediaStore.MediaColumns.RELATIVE_PATH,
                     if (format == ExportFormat.PNG || format == ExportFormat.JPG)
-                        Environment.DIRECTORY_PICTURES + "/PicsartStudio"
+                        Environment.DIRECTORY_PICTURES + "/Zesty"
                     else
-                        Environment.DIRECTORY_DOWNLOADS + "/PicsartStudio"
+                        Environment.DIRECTORY_DOWNLOADS + "/Zesty"
                 )
             }
             val uri: Uri? = resolver.insert(collection, values)
@@ -250,7 +250,7 @@ object ExportEngine {
 
     fun shareCurrentImage(context: Context, composite: Bitmap) {
         runCatching {
-            val file = File(context.cacheDir, "picsart_share.png")
+            val file = File(context.cacheDir, "zesty_share.png")
             FileOutputStream(file).use { out ->
                 composite.compress(Bitmap.CompressFormat.PNG, 100, out)
             }

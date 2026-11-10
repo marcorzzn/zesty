@@ -1,9 +1,9 @@
 {
-  "name": "Pixart",
-  "short_name": "Pixart",
+  "name": "Zesty",
+  "short_name": "Zesty",
   "version": "1.0.0-beta.1",
   "author": "Marco Razzano",
-  "description": "Pixart - Editor Fotografico Creativo a Livelli, Filtri & Shader di Marco Razzano",
+  "description": "Zesty - Editor Fotografico Creativo a Livelli, Filtri & Shader di Marco Razzano",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",

@@ -124,10 +124,14 @@ data class EditorLayer(
     val adjust: AdjustParams = AdjustParams(),
     val curves: CurvesData = CurvesData(),
     val effects: Map<String, EffectConfig> = emptyMap(),
-    // 170 Filter FX properties
+    // Filtro del catalogo Zesty FX (public/assets/fx) e valori dei suoi parametri
     val activeFilterId: String? = null,
     val activeFilterFade: Float = 0f,
     val activeFilterBlend: String = "Normal",
+    val activeFilterParams: Map<String, Float> = emptyMap(),
+    // Zona del filtro: alpha 255 = filtro pieno, 0 = foto originale (null = filtro ovunque)
+    val activeFilterMask: Bitmap? = null,
+    val activeFilterMaskInverted: Boolean = false,
     // Shape properties
     val shapeKind: ShapeKind = ShapeKind.CIRCLE,
     val fillColor: Int = 0xFF8B5CF6.toInt(),
@@ -161,6 +165,7 @@ data class EditorLayer(
     fun deepCopy(): EditorLayer = copy(
         bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, true),
         maskBitmap = maskBitmap?.copy(Bitmap.Config.ARGB_8888, true),
+        activeFilterMask = activeFilterMask?.copy(Bitmap.Config.ARGB_8888, true),
         effects = effects.mapValues { (_, cfg) ->
             cfg.copy(localMask = cfg.localMask?.copy(Bitmap.Config.ARGB_8888, true))
         },
@@ -196,6 +201,27 @@ enum class BrushStyle(val label: String) {
     GLITTER("Glitter"),
     ERASER("Gomma")
 }
+
+/** Strumenti per definire la zona di un effetto o la visibilità di un livello. */
+enum class MaskTool(val label: String) {
+    BRUSH("Pennello"),
+    SHAPE("Forma"),
+    LASSO("Lazo"),
+    POLYGON("Poligono")
+}
+
+/**
+ * Forma geometrica in bozza (coordinate della tela): si sposta, ridimensiona e ruota con le maniglie,
+ * poi si conferma con "Aggiungi" o "Sottrai".
+ */
+data class MaskShapeDraft(
+    val kind: ShapeKind,
+    val cx: Float,
+    val cy: Float,
+    val w: Float,
+    val h: Float,
+    val rotation: Float = 0f
+)
 
 enum class WarpMode(val label: String) {
     PUSH("Spingi"),

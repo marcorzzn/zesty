@@ -5,15 +5,16 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
-import com.example.ui.PicsartEditorScreen
+import com.example.fx.FxEngine
+import com.example.ui.ZestyEditorScreen
 import com.example.ui.theme.MyApplicationTheme
 import com.example.viewmodel.EditorViewModel
 
 /**
- * Pixart - Activity Principale Nativa
+ * Zesty - Activity Principale Nativa
  * Autore: Marco Razzano
  * 
- * Esegue l'editor grafico professionale PicsartEditorScreen in Jetpack Compose nativo,
+ * Esegue l'editor grafico professionale ZestyEditorScreen in Jetpack Compose nativo,
  * con gestione dello stato multi-livello in EditorViewModel e rendering grafico hardware.
  */
 class MainActivity : ComponentActivity() {
@@ -22,10 +23,12 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Catalogo effetti condiviso con la web app (assets/www/assets/fx)
+        FxEngine.load(applicationContext)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme(darkTheme = true, dynamicColor = false) {
-                PicsartEditorScreen(vm = editorViewModel)
+                ZestyEditorScreen(vm = editorViewModel)
             }
         }
     }

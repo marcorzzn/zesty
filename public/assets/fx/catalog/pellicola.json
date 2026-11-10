@@ -1,0 +1,127 @@
+{
+  "category": "pellicola",
+  "effects": [
+    { "id": "film_warm", "label": "Pellicola calda",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }, { "id": "grain", "label": "Grana", "default": 20 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 12], [128, 142], [255, 250]], "g": [[0, 6], [128, 131], [255, 244]], "b": [[0, 22], [128, 116], [255, 224]], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 15, "saturation": -5 },
+        { "op": "grain", "amount": "$grain" }
+      ] },
+    { "id": "film_cool", "label": "Pellicola fredda",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }, { "id": "grain", "label": "Grana", "default": 20 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 4], [128, 120], [255, 240]], "g": [[0, 10], [128, 130], [255, 248]], "b": [[0, 26], [128, 142], [255, 255]], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 12, "saturation": -10 },
+        { "op": "grain", "amount": "$grain" }
+      ] },
+    { "id": "film_portrait400", "label": "Ritratto 400",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }],
+      "steps": [
+        { "op": "adjust", "contrast": -12, "saturation": -12, "temperature": 8, "fade": 10 },
+        { "op": "curves", "r": [[0, 8], [128, 136], [255, 252]], "b": [[0, 14], [255, 236]] },
+        { "op": "split_tone", "shadows": "#3a5a6a", "highlights": "#ffd8b8", "amount": 20 },
+        { "op": "grain", "amount": 12 }
+      ] },
+    { "id": "film_slide", "label": "Diapositiva",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "adjust", "contrast": "$amount * 0.4", "saturation": "$amount * 0.4" },
+        { "op": "split_tone", "shadows": "#1d3c66", "highlights": "#ffe2b0", "amount": "$amount * 0.4" },
+        { "op": "vignette", "amount": 20, "radius": 70 }
+      ] },
+    { "id": "film_expired", "label": "Scaduta",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 30], [128, 150], [255, 235]], "g": [[0, 20], [128, 120], [255, 230]], "b": [[0, 50], [128, 125], [255, 200]], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": "$amount * 0.4", "saturation": -15 },
+        { "op": "grain", "amount": 35, "size": 0.2 },
+        { "op": "texture", "kind": "clouds", "scale": 3, "amount": 25, "blend": "soft-light" },
+        { "op": "vignette", "amount": 35, "radius": 60 }
+      ] },
+    { "id": "film_instant", "label": "Istantanea",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "curves", "rgb": [[0, 30], [128, 135], [255, 235]], "b": [[0, 40], [255, 215]], "opacity": "$amount / 100" },
+        { "op": "split_tone", "shadows": "#2d5a4a", "highlights": "#ffd9a0", "amount": "$amount * 0.35" },
+        { "op": "adjust", "saturation": -10, "fade": 10 },
+        { "op": "vignette", "amount": 25, "radius": 60 }
+      ] },
+    { "id": "film_cross", "label": "Cross process",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 0], [64, 40], [192, 222], [255, 255]], "g": [[0, 0], [64, 52], [192, 212], [255, 255]], "b": [[0, 40], [255, 198]], "opacity": "$amount / 100" },
+        { "op": "adjust", "saturation": 15 }
+      ] },
+    { "id": "film_bleach", "label": "Sbianca",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "layer", "steps": [{ "op": "mono" }], "blend": "overlay", "opacity": "$amount / 100" },
+        { "op": "adjust", "saturation": "-$amount * 0.4", "contrast": "$amount * 0.2" }
+      ] },
+    { "id": "film_lomo", "label": "Lomo",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "vignette", "label": "Vignetta", "default": 70 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 0], [70, 55], [190, 215], [255, 255]], "g": [[0, 0], [70, 60], [190, 210], [255, 255]], "b": [[0, 20], [255, 225]], "opacity": "$amount / 100" },
+        { "op": "adjust", "saturation": "$amount * 0.35", "contrast": "$amount * 0.2" },
+        { "op": "vignette", "amount": "$vignette", "radius": 45, "softness": 55 }
+      ] },
+    { "id": "film_toy", "label": "Fotocamera giocattolo",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "saturation": "$amount * 0.4", "contrast": "$amount * 0.3" },
+        { "op": "blur", "radius": 1.2, "mask": { "type": "radial", "radius": 0.3, "feather": 0.3, "invert": true } },
+        { "op": "gradient", "type": "radial", "cx": 0.05, "cy": 0.1, "radius": 60, "stops": [[0, "#ff6a00"], [1, "#ff6a0000"]], "blend": "screen", "opacity": "$amount / 140" },
+        { "op": "vignette", "amount": 75, "radius": 40, "softness": 50 }
+      ] },
+    { "id": "film_golden", "label": "Pellicola dorata",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 10], [128, 145], [255, 255]], "g": [[0, 5], [128, 132], [255, 245]], "b": [[0, 0], [128, 105], [255, 210]], "opacity": "$amount / 100" },
+        { "op": "adjust", "vibrance": 15, "fade": 8 },
+        { "op": "grain", "amount": 15 }
+      ] },
+    { "id": "film_aqua", "label": "Pellicola acqua",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 0], [128, 118], [255, 240]], "g": [[0, 15], [128, 138], [255, 250]], "b": [[0, 25], [128, 140], [255, 245]], "opacity": "$amount / 100" },
+        { "op": "adjust", "fade": 12, "saturation": -8 }
+      ] },
+    { "id": "film_faded", "label": "Sbiadita",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
+      "steps": [{ "op": "adjust", "fade": "$amount * 0.9", "saturation": "-$amount * 0.5", "contrast": "-$amount * 0.15" }] },
+    { "id": "film_negative", "label": "Negativo",
+      "params": [],
+      "steps": [{ "op": "invert" }] },
+    { "id": "film_orange_mask", "label": "Negativo colore",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 100 }],
+      "steps": [
+        { "op": "invert" },
+        { "op": "tint", "color": "#ff8a3c", "amount": "$amount * 0.45" },
+        { "op": "adjust", "fade": 15 }
+      ] },
+    { "id": "film_super8", "label": "Super 8",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 75 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 20], [128, 145], [255, 245]], "b": [[0, 10], [255, 205]] },
+        { "op": "adjust", "fade": 20, "saturation": 10 },
+        { "op": "blur", "radius": 0.25 },
+        { "op": "grain", "amount": "$amount * 0.55", "size": 0.3 },
+        { "op": "dust", "amount": "$amount * 0.4" },
+        { "op": "vignette", "amount": 55, "radius": 50, "roundness": 60 }
+      ] },
+    { "id": "film_heavy_grain", "label": "Grana forte",
+      "params": [{ "id": "amount", "label": "Grana", "default": 70 }, { "id": "size", "label": "Dimensione", "min": 0.05, "max": 1, "default": 0.25, "step": 0.05 }],
+      "steps": [
+        { "op": "adjust", "contrast": 10, "fade": 6 },
+        { "op": "grain", "amount": "$amount", "size": "$size" }
+      ] },
+    { "id": "film_halation", "label": "Alone rosso",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "glow", "threshold": 68, "radius": 2, "strength": "$amount", "color": "#ff5a3a" },
+        { "op": "adjust", "fade": 8 },
+        { "op": "grain", "amount": 15 }
+      ] }
+  ]
+}

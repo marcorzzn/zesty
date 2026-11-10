@@ -7,6 +7,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.engine.ExportEngine
 import com.example.engine.ExportFormat
+import com.example.engine.MaskGeometry
 import com.example.engine.PixelEngine
 import com.example.model.*
 import kotlinx.coroutines.Dispatchers
@@ -81,6 +82,13 @@ data class EditorUiState(
     val brushColor: Int = Color.parseColor("#E0289A"),
     val selectiveTargetFxKey: String? = null, // null = layer.maskBitmap, non-null = layer.effects[key].localMask
     val showMaskHeatmap: Boolean = true,
+    // Strumenti zona: pennello, gomma, forme con maniglie, lazo, poligono modellabile
+    val maskTool: MaskTool = MaskTool.BRUSH,
+    val maskShapeKind: ShapeKind = ShapeKind.CIRCLE,
+    val maskShapeDraft: MaskShapeDraft? = null,
+    val maskPolyPoints: List<PointF> = emptyList(), // tela; chiuso automaticamente
+    val maskSubtract: Boolean = false, // modalità − : il pennello cancella, forme/lazo/poligono tolgono zona
+    val maskFeather: Float = 6f, // sfumatura bordo forme/lazo (unita' tela)
     val returnToolAfterSelective: String? = null,
     // Warp state
     val warpMode: WarpMode = WarpMode.PUSH,
@@ -125,8 +133,70 @@ class EditorViewModel : ViewModel() {
     private var strokeHasPushedHistory: Boolean = false // Bug 3 fix: pushHistory only on first paint move
     private val dispersionSelection = mutableListOf<PointF>()
 
+    /** Unita' della tela per pixel dello schermo: rende costante la presa delle maniglie a ogni zoom. */
+    var touchToCanvas: Float = 1f
+
+    private enum class MaskDrag { NONE, CREATE, MOVE, CORNER, ROTATE, POINT, LASSO }
+    private var maskDrag = MaskDrag.NONE
+    private var maskDragIndex = -1
+    private var maskDragAnchor: PointF? = null
+    private var maskDragLast: PointF? = null
+    private var maskStrokeDirty = false
+    /** Zona confermata su cui si sovrappone in anteprima la forma o il contorno in bozza. */
+    private var maskBase: Bitmap? = null
+    /** Zona all'ingresso nello strumento: ✕ la ripristina. */
+    private var maskOnEnter: Bitmap? = null
+
+    companion object {
+        /** Chiave della maschera del filtro del catalogo (separata dagli FX classici). */
+        const val FILTER_FX_KEY = "filter"
+    }
+
     init {
-        createNewProject(width = 800, height = 800, bgColor = Color.TRANSPARENT, loadDemo = false)
+        createNewProject(width = 1080, height = 1080, bgColor = Color.TRANSPARENT, loadDemo = false)
+        // all'avvio si sceglie: aprire una foto (la tela prende le sue dimensioni) o una tela vuota
+        _state.value = _state.value.copy(newProjectModalOpen = true, toastMessage = null)
+    }
+
+    /** Progetto appena creato e mai modificato: una sola tela vuota, nessuna azione in cronologia. */
+    private fun isPristineProject(): Boolean {
+        val s = _state.value
+        return undoStack.size <= 1 && s.layers.size == 1 && s.layers[0].type == LayerType.RASTER
+    }
+
+    /**
+     * La foto diventa il progetto: tela = dimensioni della foto, la foto è il livello di base
+     * (nessun livello trasparente di dimensione diversa sotto).
+     */
+    private fun startProjectFromPhoto(original: Bitmap) {
+        // tela di lavoro: stesse proporzioni della foto, lato lungo al massimo 2048 px per restare fluidi
+        val maxSide = max(original.width, original.height)
+        val photo = if (maxSide > 2048) {
+            val k = 2048f / maxSide
+            Bitmap.createScaledBitmap(original, (original.width * k).roundToInt().coerceAtLeast(1), (original.height * k).roundToInt().coerceAtLeast(1), true)
+        } else original
+        val w = photo.width; val h = photo.height
+        val base = EditorLayer(
+            id = "layer_base_${System.currentTimeMillis()}",
+            type = LayerType.IMAGE,
+            name = "Foto",
+            x = 0f, y = 0f, w = w.toFloat(), h = h.toFloat(),
+            bitmap = photo
+        )
+        _state.value = EditorUiState(
+            canvasW = w,
+            canvasH = h,
+            bgColor = Color.TRANSPARENT,
+            customFonts = _state.value.customFonts,
+            layers = listOf(base),
+            activeLayerId = base.id,
+            collageSlots = buildCollageSlots(2, 0.5f, listOf(photo)),
+            newProjectModalOpen = false
+        )
+        undoStack.clear()
+        redoStack.clear()
+        pushHistorySnapshot()
+        rebuildCompositeImmediate()
     }
 
     fun openNewProjectModal(open: Boolean) {
@@ -174,6 +244,14 @@ class EditorViewModel : ViewModel() {
     }
 
     // ============ HISTORY (UNDO / REDO) ============
+    /** Annulla/Ripeti lavorano su stati confermati: una bozza di zona in corso viene lasciata cadere. */
+    private fun dropMaskDraft() {
+        maskBase = null
+        if (_state.value.maskShapeDraft != null || _state.value.maskPolyPoints.isNotEmpty()) {
+            _state.value = _state.value.copy(maskShapeDraft = null, maskPolyPoints = emptyList())
+        }
+    }
+
     fun pushHistorySnapshot() {
         val s = _state.value
         val snap = HistorySnapshot(
@@ -198,6 +276,7 @@ class EditorViewModel : ViewModel() {
     }
 
     fun undo() {
+        dropMaskDraft()
         if (undoStack.size <= 1) {
             showToast("Nessuna azione precedente da annullare")
             return
@@ -206,10 +285,10 @@ class EditorViewModel : ViewModel() {
         redoStack.addLast(current)
         val prev = undoStack.last()
         restoreSnapshot(prev)
-        showToast("Annullato (${undoStack.size - 1} step disponibili)")
     }
 
     fun redo() {
+        dropMaskDraft()
         if (redoStack.isEmpty()) {
             showToast("Nessuna azione da ripristinare")
             return
@@ -217,7 +296,6 @@ class EditorViewModel : ViewModel() {
         val next = redoStack.removeLast()
         undoStack.addLast(next)
         restoreSnapshot(next)
-        showToast("Ripristinato")
     }
 
     /**
@@ -281,28 +359,56 @@ class EditorViewModel : ViewModel() {
         _state.value = _state.value.copy(compositeBitmap = bmp)
     }
 
+    private val renderLock = Any()
+    private var renderRunning = false
+    private var renderPending = false
+
+    /**
+     * Anteprima in diretta: un rendering in corso non viene annullato (a ogni movimento del dito
+     * sarebbe lavoro perso e la foto non si aggiornerebbe mai): si segna che serve un nuovo giro
+     * e lo si esegue con l'ultimo stato appena il precedente è pronto.
+     */
     fun scheduleCompositeRebuild() {
-        renderJob?.cancel()
+        synchronized(renderLock) {
+            if (renderRunning) { renderPending = true; return }
+            renderRunning = true
+            renderPending = false
+        }
         renderJob = viewModelScope.launch(Dispatchers.Default) {
-            val s = _state.value
-            val bmp = PixelEngine.renderComposite(
-                canvasW = s.canvasW,
-                canvasH = s.canvasH,
-                bgColor = s.bgColor,
-                fitBgMode = s.fitBgMode,
-                borderOuter = s.borderOuter,
-                borderInner = s.borderInner,
-                borderRadius = s.borderRadius,
-                borderColor = s.borderColor,
-                layers = s.layers
-            )
-            withContext(Dispatchers.Main) {
-                _state.value = _state.value.copy(compositeBitmap = bmp)
+            try {
+                while (true) {
+                    val s = _state.value
+                    val bmp = PixelEngine.renderComposite(
+                        canvasW = s.canvasW,
+                        canvasH = s.canvasH,
+                        bgColor = s.bgColor,
+                        fitBgMode = s.fitBgMode,
+                        borderOuter = s.borderOuter,
+                        borderInner = s.borderInner,
+                        borderRadius = s.borderRadius,
+                        borderColor = s.borderColor,
+                        layers = s.layers
+                    )
+                    withContext(Dispatchers.Main) {
+                        _state.value = _state.value.copy(compositeBitmap = bmp)
+                    }
+                    synchronized(renderLock) {
+                        if (!renderPending) { renderRunning = false; return@launch }
+                        renderPending = false
+                    }
+                }
+            } finally {
+                synchronized(renderLock) { renderRunning = false }
             }
         }
     }
 
     // ============ TOOL NAVIGATION ============
+    /** Famiglia di strumenti mostrata (null = nessuna aperta). */
+    fun selectFamily(id: String?) {
+        _state.value = _state.value.copy(activeBottomTab = id ?: "", toolGridOpen = false)
+    }
+
     fun selectBottomTool(id: String) {
         _state.value = _state.value.copy(activeBottomTab = id)
         when (id) {
@@ -506,7 +612,7 @@ class EditorViewModel : ViewModel() {
             y = (s.canvasH - h) / 2f,
             w = w,
             h = h,
-            text = "Picsart Studio",
+            text = "Zesty",
             fontFamily = "Inter",
             fontSize = 52f,
             fillColor = Color.WHITE,
@@ -549,7 +655,7 @@ class EditorViewModel : ViewModel() {
         rebuildCompositeImmediate()
     }
 
-    fun importImageFromUri(context: Context, uri: Uri, forCollageSlot: Boolean = false) {
+    fun importImageFromUri(context: Context, uri: Uri, forCollageSlot: Boolean = false, asNewProject: Boolean = false) {
         viewModelScope.launch(Dispatchers.IO) {
             runCatching {
                 val input = context.contentResolver.openInputStream(uri) ?: return@runCatching
@@ -573,6 +679,10 @@ class EditorViewModel : ViewModel() {
 
                 withContext(Dispatchers.Main) {
                     val s = _state.value
+                    if (!forCollageSlot && s.currentTool != "collage" && (asNewProject || isPristineProject())) {
+                        startProjectFromPhoto(safeBmp)
+                        return@withContext
+                    }
                     if (forCollageSlot || s.currentTool == "collage") {
                         val updatedSlots = s.collageSlots.map { slot ->
                             if (slot.id == s.activeCollageSlotId) slot.copy(bitmap = safeBmp) else slot
@@ -723,6 +833,14 @@ class EditorViewModel : ViewModel() {
         deleteLayer(activeId)
     }
 
+    /** Imposta posizione, dimensione e rotazione del livello attivo (gesti con TransformGeometry). */
+    fun setActiveLayerBox(b: com.example.engine.TransformGeometry.Box) {
+        val active = _state.value.activeLayer ?: return
+        if (active.locked) return
+        updateActiveLayer { it.copy(x = b.x, y = b.y, w = b.w.coerceIn(16f, 8192f), h = b.h.coerceIn(16f, 8192f), rotation = b.rotation) }
+        scheduleCompositeRebuild()
+    }
+
     fun resizeActiveLayerHandle(handleIndex: Int, dx: Float, dy: Float) {
         val active = _state.value.activeLayer ?: return
         if (active.locked) return
@@ -807,7 +925,6 @@ class EditorViewModel : ViewModel() {
             viewOffsetY = 0f,
             viewRotation = 0f
         )
-        showToast("Vista adattata allo schermo")
     }
 
     // ============ PROPERTIES: OPACITY & BLEND MODES ============
@@ -1106,7 +1223,24 @@ class EditorViewModel : ViewModel() {
     fun selectEffectFilter(filterId: String) {
         val active = _state.value.activeLayer ?: return
         val newId = if (active.activeFilterId == filterId) null else filterId
-        updateActiveLayer { it.copy(activeFilterId = newId) }
+        // cambiando filtro si ripartono dai valori predefiniti del catalogo
+        updateActiveLayer { it.copy(activeFilterId = newId, activeFilterParams = emptyMap()) }
+        scheduleCompositeRebuild()
+    }
+
+    /** Modifica un parametro del filtro attivo (cursore, colore, scelta o interruttore). */
+    fun setEffectParam(paramId: String, value: Float) {
+        val active = _state.value.activeLayer ?: return
+        if (active.activeFilterId == null) return
+        updateActiveLayer { it.copy(activeFilterParams = it.activeFilterParams + (paramId to value)) }
+        scheduleCompositeRebuild()
+    }
+
+    /** Riporta i parametri del filtro attivo ai valori predefiniti. */
+    fun resetEffectParams() {
+        val active = _state.value.activeLayer ?: return
+        if (active.activeFilterId == null) return
+        updateActiveLayer { it.copy(activeFilterParams = emptyMap()) }
         scheduleCompositeRebuild()
     }
 
@@ -1133,13 +1267,17 @@ class EditorViewModel : ViewModel() {
         val active = _state.value.activeLayer ?: return
         val filterId = active.activeFilterId ?: return
         val bmp = active.bitmap ?: return
-        val filtered = PixelEngine.applyEffectFilter(bmp, filterId, active.activeFilterFade, active.activeFilterBlend)
+        val full = PixelEngine.applyEffectFilter(bmp, filterId, active.activeFilterFade, active.activeFilterBlend, active.activeFilterParams)
+        val filtered = active.activeFilterMask?.let { MaskGeometry.blendThroughMask(bmp, full, it, active.activeFilterMaskInverted) } ?: full
         updateActiveLayer {
             it.copy(
                 bitmap = filtered,
                 activeFilterId = null,
                 activeFilterFade = 0f,
-                activeFilterBlend = "Normal"
+                activeFilterBlend = "Normal",
+                activeFilterParams = emptyMap(),
+                activeFilterMask = null,
+                activeFilterMaskInverted = false
             )
         }
         pushHistorySnapshot()
@@ -1152,7 +1290,10 @@ class EditorViewModel : ViewModel() {
             it.copy(
                 activeFilterId = null,
                 activeFilterFade = 0f,
-                activeFilterBlend = "Normal"
+                activeFilterBlend = "Normal",
+                activeFilterParams = emptyMap(),
+                activeFilterMask = null,
+                activeFilterMaskInverted = false
             )
         }
         scheduleCompositeRebuild()
@@ -1398,8 +1539,11 @@ class EditorViewModel : ViewModel() {
      */
     fun requestLocalizeFx(fxKey: String) {
         val active = _state.value.activeLayer ?: return
-        val curCfg = active.effects[fxKey]
-        if (curCfg?.localMask == null) {
+        if (fxKey == FILTER_FX_KEY && active.activeFilterId == null) {
+            showToast("Scegli prima un filtro")
+            return
+        }
+        if (selectiveMaskOf(active, fxKey) == null) {
             _state.value = _state.value.copy(confirmLocalizeFxKey = fxKey)
         } else {
             openSelectivePaintMode(fxKey = fxKey, initBlackMask = false)
@@ -1416,8 +1560,46 @@ class EditorViewModel : ViewModel() {
         _state.value = _state.value.copy(confirmLocalizeFxKey = null)
     }
 
+    // ---------- accesso uniforme alle maschere: livello (null), filtro del catalogo, FX classici ----------
+    private fun selectiveMaskOf(layer: EditorLayer, fxKey: String?): Bitmap? = when (fxKey) {
+        null -> layer.maskBitmap
+        FILTER_FX_KEY -> layer.activeFilterMask
+        else -> layer.effects[fxKey]?.localMask
+    }
+
+    private fun selectiveInvertedOf(layer: EditorLayer, fxKey: String?): Boolean = when (fxKey) {
+        null -> layer.maskInverted
+        FILTER_FX_KEY -> layer.activeFilterMaskInverted
+        else -> layer.effects[fxKey]?.localInverted == true
+    }
+
+    private fun setSelectiveMask(fxKey: String?, mask: Bitmap?) {
+        when (fxKey) {
+            null -> updateActiveLayer { it.copy(maskBitmap = mask) }
+            FILTER_FX_KEY -> updateActiveLayer { it.copy(activeFilterMask = mask) }
+            else -> {
+                val cfg = _state.value.activeLayer?.effects?.get(fxKey) ?: EffectConfig(enabled = true)
+                updateLayerEffect(fxKey, cfg.copy(enabled = true, localMask = mask, localizing = mask != null))
+            }
+        }
+    }
+
+    fun isSelectiveInverted(): Boolean {
+        val s = _state.value
+        return s.activeLayer?.let { selectiveInvertedOf(it, s.selectiveTargetFxKey) } ?: false
+    }
+
+    /** Maschera della zona in modifica, creata vuota se non esiste. */
+    private fun currentSelectiveMaskOrNew(): Bitmap? {
+        val s = _state.value
+        val active = s.activeLayer ?: return null
+        return selectiveMaskOf(active, s.selectiveTargetFxKey) ?: Bitmap.createBitmap(
+            active.w.toInt().coerceAtLeast(4), active.h.toInt().coerceAtLeast(4), Bitmap.Config.ARGB_8888
+        )
+    }
+
     /**
-     * Opens §23 Universal Selective Paint mode for either a specific Effect (`fxKey != null`)
+     * Opens §23 Universal Selective Paint mode for an Effect (`fxKey != null`, incluso il filtro del catalogo)
      * or the active layer's visibility (`fxKey == null`).
      */
     fun openSelectivePaintMode(fxKey: String?, initBlackMask: Boolean = true) {
@@ -1426,41 +1608,57 @@ class EditorViewModel : ViewModel() {
         val lw = active.w.toInt().coerceAtLeast(4)
         val lh = active.h.toInt().coerceAtLeast(4)
 
-        if (fxKey != null) {
-            val curCfg = active.effects[fxKey] ?: EffectConfig(enabled = true)
-            val mask = curCfg.localMask ?: Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).apply {
-                eraseColor(if (initBlackMask) Color.TRANSPARENT else Color.WHITE)
-            }
-            updateLayerEffect(fxKey, curCfg.copy(enabled = true, localMask = mask, localizing = true))
-        } else {
-            val mask = active.maskBitmap ?: Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).apply {
-                eraseColor(if (initBlackMask) Color.TRANSPARENT else Color.WHITE)
-            }
-            updateActiveLayer { it.copy(maskBitmap = mask, editingMask = true) }
+        val mask = selectiveMaskOf(active, fxKey) ?: Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).apply {
+            eraseColor(if (initBlackMask) Color.TRANSPARENT else Color.WHITE)
         }
+        setSelectiveMask(fxKey, mask)
+        if (fxKey == null) updateActiveLayer { it.copy(editingMask = true) }
+        maskOnEnter = mask.copy(Bitmap.Config.ARGB_8888, false)
+        maskBase = null
 
         _state.value = _state.value.copy(
             returnToolAfterSelective = s.currentTool,
             currentTool = "selective_mask",
             selectiveTargetFxKey = fxKey,
             brushStyle = BrushStyle.STANDARD,
-            showMaskHeatmap = true,
-            toastMessage = if (fxKey != null)
-                "Pittura Selettiva FX ($fxKey): dipingi dove applicare l'effetto"
-            else
-                "Localizza Visibilità Livello: dipingi con pennello o gomma"
+            maskTool = MaskTool.BRUSH,
+            maskSubtract = false,
+            maskShapeDraft = null,
+            maskPolyPoints = emptyList(),
+            // con l'anteprima in diretta l'evidenziazione rossa coprirebbe il risultato: parte spenta
+            showMaskHeatmap = false,
+            toastMessage = when (fxKey) {
+                null -> "Visibilità livello: dipingi, cancella o usa forme, lazo e poligono"
+                FILTER_FX_KEY -> "Zona del filtro: dipingi, cancella o usa forme, lazo e poligono"
+                else -> "Zona dell'effetto ($fxKey): dipingi, cancella o usa forme"
+            }
         )
+        pushHistorySnapshot()
         rebuildCompositeImmediate()
     }
 
+    /** ✓: conferma l'eventuale bozza e torna allo strumento di partenza. */
     fun exitSelectivePaintMode() {
+        commitMaskDraft()
+        maskOnEnter = null
         val s = _state.value
         val prevTool = s.returnToolAfterSelective ?: "effects"
         _state.value = s.copy(
             currentTool = prevTool,
-            selectiveTargetFxKey = null
+            selectiveTargetFxKey = null,
+            maskShapeDraft = null,
+            maskPolyPoints = emptyList()
         )
         rebuildCompositeImmediate()
+    }
+
+    /** ✕: scarta tutte le modifiche alla zona fatte da quando si è entrati nello strumento. */
+    fun discardSelectiveChanges() {
+        maskBase = null
+        setSelectiveMask(_state.value.selectiveTargetFxKey, maskOnEnter)
+        _state.value = _state.value.copy(maskShapeDraft = null, maskPolyPoints = emptyList())
+        pushHistorySnapshot()
+        exitSelectivePaintMode()
     }
 
     fun toggleSelectiveHeatmap() {
@@ -1468,6 +1666,7 @@ class EditorViewModel : ViewModel() {
     }
 
     fun fillSelectiveMask(fillWhite: Boolean) {
+        commitMaskDraft()
         val s = _state.value
         val active = s.activeLayer ?: return
         val lw = active.w.toInt().coerceAtLeast(4)
@@ -1475,26 +1674,22 @@ class EditorViewModel : ViewModel() {
         val mask = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888).apply {
             eraseColor(if (fillWhite) Color.WHITE else Color.TRANSPARENT)
         }
-        val fxKey = s.selectiveTargetFxKey
-        if (fxKey != null) {
-            val cfg = active.effects[fxKey] ?: return
-            updateLayerEffect(fxKey, cfg.copy(localMask = mask))
-        } else {
-            updateActiveLayer { it.copy(maskBitmap = mask) }
-        }
+        setSelectiveMask(s.selectiveTargetFxKey, mask)
         pushHistorySnapshot()
         rebuildCompositeImmediate()
     }
 
     fun invertSelectiveMask() {
+        commitMaskDraft()
         val s = _state.value
         val active = s.activeLayer ?: return
-        val fxKey = s.selectiveTargetFxKey
-        if (fxKey != null) {
-            val cfg = active.effects[fxKey] ?: return
-            updateLayerEffect(fxKey, cfg.copy(localInverted = !cfg.localInverted))
-        } else {
-            invertActiveLayerMask()
+        when (val fxKey = s.selectiveTargetFxKey) {
+            null -> invertActiveLayerMask()
+            FILTER_FX_KEY -> updateActiveLayer { it.copy(activeFilterMaskInverted = !it.activeFilterMaskInverted) }
+            else -> {
+                val cfg = active.effects[fxKey] ?: return
+                updateLayerEffect(fxKey, cfg.copy(localInverted = !cfg.localInverted))
+            }
         }
         pushHistorySnapshot()
         rebuildCompositeImmediate()
@@ -1502,11 +1697,238 @@ class EditorViewModel : ViewModel() {
 
     fun removeEffectLocalization(fxKey: String) {
         val active = _state.value.activeLayer ?: return
-        val cfg = active.effects[fxKey] ?: return
-        updateLayerEffect(fxKey, cfg.copy(localMask = null, localInverted = false, localizing = false))
+        if (fxKey == FILTER_FX_KEY) {
+            updateActiveLayer { it.copy(activeFilterMask = null, activeFilterMaskInverted = false) }
+        } else {
+            val cfg = active.effects[fxKey] ?: return
+            updateLayerEffect(fxKey, cfg.copy(localMask = null, localInverted = false, localizing = false))
+        }
         pushHistorySnapshot()
         rebuildCompositeImmediate()
         showToast("Localizzazione rimossa: effetto applicato ovunque")
+    }
+
+    // ============ ZONA: FORME, LAZO, POLIGONO MODELLABILE (anteprima in diretta) ============
+    fun setMaskTool(tool: MaskTool) {
+        commitMaskDraft()
+        val s = _state.value
+        _state.value = s.copy(
+            maskTool = tool,
+            brushStyle = if (tool == MaskTool.BRUSH) (if (s.maskSubtract) BrushStyle.ERASER else BrushStyle.STANDARD) else s.brushStyle,
+            maskShapeDraft = null,
+            maskPolyPoints = emptyList()
+        )
+        if (tool == MaskTool.SHAPE) setMaskShapeKind(s.maskShapeKind)
+    }
+
+    /** Modalità ＋/−: vale per pennello (gomma), forme, lazo e poligono; la bozza si aggiorna subito. */
+    fun setMaskSubtract(subtract: Boolean) {
+        val s = _state.value
+        _state.value = s.copy(
+            maskSubtract = subtract,
+            brushStyle = if (s.maskTool == MaskTool.BRUSH) (if (subtract) BrushStyle.ERASER else BrushStyle.STANDARD) else s.brushStyle
+        )
+        refreshMaskDraftPreview()
+    }
+
+    fun setMaskShapeKind(kind: ShapeKind) {
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        if (s.maskShapeDraft == null) beginMaskDraft()
+        val draft = s.maskShapeDraft?.copy(kind = kind) ?: run {
+            // forma predefinita al centro del livello: si vede subito applicata
+            val side = min(active.w, active.h) * 0.45f
+            MaskShapeDraft(kind, active.x + active.w / 2f, active.y + active.h / 2f, side, side)
+        }
+        _state.value = _state.value.copy(maskShapeKind = kind, maskTool = MaskTool.SHAPE, maskShapeDraft = draft)
+        refreshMaskDraftPreview()
+    }
+
+    fun setMaskFeather(v: Float) {
+        _state.value = _state.value.copy(maskFeather = v)
+        refreshMaskDraftPreview()
+    }
+
+    /** Memorizza la zona confermata prima di iniziare una bozza. */
+    private fun beginMaskDraft() {
+        if (maskBase == null) maskBase = currentSelectiveMaskOrNew()?.copy(Bitmap.Config.ARGB_8888, false)
+    }
+
+    private fun draftPath(s: EditorUiState): android.graphics.Path? {
+        val d = s.maskShapeDraft
+        return when {
+            s.maskTool == MaskTool.SHAPE && d != null && d.w >= 2f && d.h >= 2f -> MaskGeometry.outline(d)
+            s.maskTool != MaskTool.SHAPE && s.maskPolyPoints.size >= 3 -> MaskGeometry.polygonPath(s.maskPolyPoints)
+            else -> null
+        }
+    }
+
+    /** Zona mostrata = zona confermata + bozza (aggiunta o tolta); aggiorna subito la foto. */
+    private fun refreshMaskDraftPreview() {
+        val s = _state.value
+        val base = maskBase ?: return
+        val active = s.activeLayer ?: return
+        val path = draftPath(s)
+        val shown = if (path != null) MaskGeometry.paint(base, path, active, s.maskSubtract, s.maskFeather) else base
+        setSelectiveMask(s.selectiveTargetFxKey, shown)
+        scheduleCompositeRebuild()
+    }
+
+    /** Rende definitiva la bozza (già visibile in anteprima) e la salva nella cronologia. */
+    fun commitMaskDraft() {
+        val s = _state.value
+        if (maskBase == null) return
+        val hadDraft = draftPath(s) != null
+        refreshMaskDraftPreview()
+        maskBase = null
+        _state.value = _state.value.copy(maskShapeDraft = null, maskPolyPoints = emptyList())
+        if (hadDraft) pushHistorySnapshot()
+    }
+
+    /** Scarta solo la bozza corrente: la zona torna com'era prima della forma o del contorno. */
+    fun clearMaskDraft() {
+        val base = maskBase
+        _state.value = _state.value.copy(maskShapeDraft = null, maskPolyPoints = emptyList())
+        if (base != null) {
+            setSelectiveMask(_state.value.selectiveTargetFxKey, base)
+            maskBase = null
+            scheduleCompositeRebuild()
+        }
+    }
+
+    fun removeLastMaskPoint() {
+        val pts = _state.value.maskPolyPoints
+        if (pts.isNotEmpty()) {
+            _state.value = _state.value.copy(maskPolyPoints = pts.dropLast(1))
+            refreshMaskDraftPreview()
+        }
+    }
+
+    /** Sfuma i bordi di tutta la zona già definita. */
+    fun featherWholeMask(radius: Float) {
+        commitMaskDraft()
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val mask = selectiveMaskOf(active, s.selectiveTargetFxKey) ?: return
+        setSelectiveMask(s.selectiveTargetFxKey, MaskGeometry.blurMask(mask, radius))
+        pushHistorySnapshot()
+        rebuildCompositeImmediate()
+    }
+
+    private fun maskHitRadius() = 30f * touchToCanvas
+
+    /** Tocchi per forme, lazo e poligono. Restituisce false se il tocco va al pennello o alla gomma. */
+    private fun maskPointerDown(x: Float, y: Float): Boolean {
+        val s = _state.value
+        val r = maskHitRadius()
+        maskDragLast = PointF(x, y)
+        when (s.maskTool) {
+            MaskTool.BRUSH -> return false
+            MaskTool.SHAPE -> {
+                val d = s.maskShapeDraft
+                if (d != null) {
+                    val hs = MaskGeometry.handles(d, 40f * touchToCanvas)
+                    val hit = MaskGeometry.nearestPoint(hs, x, y, r)
+                    when {
+                        hit == 4 -> { maskDrag = MaskDrag.ROTATE; return true }
+                        hit in 0..3 -> { maskDrag = MaskDrag.CORNER; maskDragIndex = hit; return true }
+                        MaskGeometry.contains(d, x, y) -> { maskDrag = MaskDrag.MOVE; return true }
+                    }
+                }
+                // una nuova forma conferma quella precedente (già visibile in anteprima)
+                if (d != null) commitMaskDraft()
+                maskDrag = MaskDrag.CREATE
+                maskDragAnchor = PointF(x, y)
+                beginMaskDraft()
+                _state.value = _state.value.copy(maskShapeDraft = MaskShapeDraft(s.maskShapeKind, x, y, 1f, 1f))
+            }
+            MaskTool.LASSO, MaskTool.POLYGON -> {
+                val pts = s.maskPolyPoints
+                val hit = MaskGeometry.nearestPoint(pts, x, y, r)
+                if (hit != -1) { maskDrag = MaskDrag.POINT; maskDragIndex = hit; return true }
+                if (s.maskTool == MaskTool.LASSO) {
+                    if (pts.size >= 3) commitMaskDraft()
+                    maskDrag = MaskDrag.LASSO
+                    beginMaskDraft()
+                    _state.value = _state.value.copy(maskPolyPoints = listOf(PointF(x, y)))
+                } else {
+                    // inserisce sul lato più vicino, altrimenti aggiunge in coda
+                    val seg = if (pts.size >= 3) MaskGeometry.nearestSegment(pts, x, y, r) else -1
+                    if (pts.isEmpty()) beginMaskDraft()
+                    val newPts = pts.toMutableList()
+                    val idx = if (seg != -1) seg + 1 else newPts.size
+                    newPts.add(idx, PointF(x, y))
+                    maskDrag = MaskDrag.POINT; maskDragIndex = idx
+                    _state.value = s.copy(maskPolyPoints = newPts)
+                }
+            }
+        }
+        return true
+    }
+
+    private fun maskPointerMove(x: Float, y: Float) {
+        val s = _state.value
+        val last = maskDragLast ?: PointF(x, y)
+        when (maskDrag) {
+            MaskDrag.CREATE -> {
+                val a = maskDragAnchor
+                val d = s.maskShapeDraft
+                if (a != null && d != null) {
+                    _state.value = s.copy(maskShapeDraft = d.copy(
+                        cx = (a.x + x) / 2f, cy = (a.y + y) / 2f,
+                        w = abs(x - a.x).coerceAtLeast(1f), h = abs(y - a.y).coerceAtLeast(1f), rotation = 0f
+                    ))
+                }
+            }
+            MaskDrag.MOVE -> s.maskShapeDraft?.let { d ->
+                _state.value = s.copy(maskShapeDraft = d.copy(cx = d.cx + x - last.x, cy = d.cy + y - last.y))
+            }
+            MaskDrag.CORNER -> s.maskShapeDraft?.let { d ->
+                val l = MaskGeometry.toLocal(d, x, y)
+                _state.value = s.copy(maskShapeDraft = d.copy(w = (abs(l.x) * 2f).coerceAtLeast(8f), h = (abs(l.y) * 2f).coerceAtLeast(8f)))
+            }
+            MaskDrag.ROTATE -> s.maskShapeDraft?.let { d ->
+                val ang = Math.toDegrees(atan2((y - d.cy).toDouble(), (x - d.cx).toDouble())).toFloat() + 90f
+                _state.value = s.copy(maskShapeDraft = d.copy(rotation = ang))
+            }
+            MaskDrag.POINT -> {
+                val pts = s.maskPolyPoints.toMutableList()
+                if (maskDragIndex in pts.indices) {
+                    pts[maskDragIndex] = PointF(x, y)
+                    _state.value = s.copy(maskPolyPoints = pts)
+                }
+            }
+            MaskDrag.LASSO -> {
+                val pts = s.maskPolyPoints
+                if (pts.isEmpty() || hypot(pts.last().x - x, pts.last().y - y) > 2f * touchToCanvas) {
+                    _state.value = s.copy(maskPolyPoints = pts + PointF(x, y))
+                }
+            }
+            MaskDrag.NONE -> {}
+        }
+        maskDragLast = PointF(x, y)
+        refreshMaskDraftPreview()
+    }
+
+    private fun maskPointerUp() {
+        val s = _state.value
+        if (maskDrag == MaskDrag.LASSO) {
+            val simplified = MaskGeometry.simplify(s.maskPolyPoints, 8f * touchToCanvas)
+            _state.value = s.copy(maskPolyPoints = if (simplified.size >= 3) simplified else emptyList())
+        }
+        if (maskDrag == MaskDrag.CREATE) {
+            val d = s.maskShapeDraft
+            if (d != null && (d.w < 12f * touchToCanvas || d.h < 12f * touchToCanvas)) {
+                // tocco senza trascinare: forma di dimensione predefinita centrata nel punto
+                val side = (s.activeLayer?.let { min(it.w, it.h) } ?: 400f) * 0.35f
+                _state.value = s.copy(maskShapeDraft = d.copy(w = side, h = side))
+            }
+        }
+        maskDrag = MaskDrag.NONE
+        maskDragIndex = -1
+        maskDragAnchor = null
+        maskDragLast = null
+        refreshMaskDraftPreview()
     }
 
     fun ensureActiveLayerHasMask() {
@@ -1598,7 +2020,14 @@ class EditorViewModel : ViewModel() {
                 dispersionSelection.add(PointF(canvasX, canvasY))
                 _state.value = s.copy(lassoPoints = dispersionSelection.toList())
             }
-            "brush", "mask", "selective_mask" -> {
+            "selective_mask" -> {
+                if (!maskPointerDown(canvasX, canvasY)) {
+                    lastBrushPoint = PointF(canvasX, canvasY)
+                    maskStrokeDirty = true
+                    paintBrushStroke(canvasX, canvasY, canvasX, canvasY)
+                }
+            }
+            "brush", "mask" -> {
                 lastBrushPoint = PointF(canvasX, canvasY)
                 paintBrushStroke(canvasX, canvasY, canvasX, canvasY)
             }
@@ -1619,7 +2048,8 @@ class EditorViewModel : ViewModel() {
         }
 
         // Bug 3 fix: pushHistorySnapshot ONCE on first pointermove of a painting gesture
-        if (!strokeHasPushedHistory && s.currentTool in listOf("brush", "mask", "selective_mask", "warp", "clone")) {
+        // la zona selettiva salva la cronologia a fine tratto (vedi onCanvasPointerUp)
+        if (!strokeHasPushedHistory && s.currentTool in listOf("brush", "mask", "warp", "clone")) {
             strokeHasPushedHistory = true
             pushHistorySnapshot()
         }
@@ -1651,7 +2081,17 @@ class EditorViewModel : ViewModel() {
                 dispersionSelection.add(PointF(canvasX, canvasY))
                 _state.value = s.copy(lassoPoints = dispersionSelection.toList())
             }
-            "brush", "mask", "selective_mask" -> {
+            "selective_mask" -> {
+                if (maskDrag != MaskDrag.NONE) {
+                    maskPointerMove(canvasX, canvasY)
+                } else {
+                    val prev = lastBrushPoint ?: PointF(canvasX, canvasY)
+                    paintBrushStroke(prev.x, prev.y, canvasX, canvasY)
+                    lastBrushPoint = PointF(canvasX, canvasY)
+                    maskStrokeDirty = true
+                }
+            }
+            "brush", "mask" -> {
                 val prev = lastBrushPoint ?: PointF(canvasX, canvasY)
                 paintBrushStroke(prev.x, prev.y, canvasX, canvasY)
                 lastBrushPoint = PointF(canvasX, canvasY)
@@ -1667,6 +2107,10 @@ class EditorViewModel : ViewModel() {
     fun onCanvasPointerUp() {
         val s = _state.value
         lastBrushPoint = null
+        if (s.currentTool == "selective_mask") {
+            if (maskDrag != MaskDrag.NONE) maskPointerUp()
+            if (maskStrokeDirty) { maskStrokeDirty = false; pushHistorySnapshot() }
+        }
         if (s.currentTool in listOf("brush", "mask", "selective_mask", "warp", "clone", "pen")) {
             rebuildCompositeImmediate()
         }
@@ -1698,9 +2142,7 @@ class EditorViewModel : ViewModel() {
         val currentLayer = _state.value.activeLayer ?: return
         val targetBmp: Bitmap = when {
             isSelectiveFx -> {
-                val fxKey = s.selectiveTargetFxKey!!
-                val cfg = currentLayer.effects[fxKey] ?: EffectConfig(enabled = true)
-                (cfg.localMask ?: Bitmap.createBitmap(
+                (selectiveMaskOf(currentLayer, s.selectiveTargetFxKey) ?: Bitmap.createBitmap(
                     currentLayer.w.toInt().coerceAtLeast(4),
                     currentLayer.h.toInt().coerceAtLeast(4),
                     Bitmap.Config.ARGB_8888
@@ -1801,11 +2243,7 @@ class EditorViewModel : ViewModel() {
         }
 
         when {
-            isSelectiveFx -> {
-                val fxKey = s.selectiveTargetFxKey!!
-                val cfg = currentLayer.effects[fxKey] ?: EffectConfig(enabled = true)
-                updateLayerEffect(fxKey, cfg.copy(localMask = targetBmp))
-            }
+            isSelectiveFx -> setSelectiveMask(s.selectiveTargetFxKey, targetBmp)
             editingLayerMask -> updateActiveLayer { it.copy(maskBitmap = targetBmp) }
             else -> updateActiveLayer { it.copy(bitmap = targetBmp) }
         }

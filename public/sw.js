@@ -1,8 +1,8 @@
 // =========================================================================
-// PICSART STUDIO AI - SERVICE WORKER (OFFLINE PWA ENGINE)
+// ZESTY - SERVICE WORKER (OFFLINE PWA ENGINE)
 // =========================================================================
 
-const CACHE_NAME = 'picsart-studio-v1';
+const CACHE_NAME = 'zesty-v1';
 
 // Asset critici per il caricamento immediato offline
 const PRECACHE_ASSETS = [
@@ -32,7 +32,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
-        console.log('[SW] Pre-caching asset Picsart Studio completato');
+        console.log('[SW] Pre-caching asset Zesty completato');
         return cache.addAll(PRECACHE_ASSETS);
       })
       .then(() => self.skipWaiting())

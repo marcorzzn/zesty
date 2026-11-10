@@ -38,68 +38,20 @@ import com.example.viewmodel.EditorUiState
 import com.example.viewmodel.EditorViewModel
 import kotlinx.coroutines.delay
 
-data class ToolNavItem(
-    val id: String,
-    val label: String,
-    val icon: ImageVector
-)
-
-private val BOTTOM_TOOLS = listOf(
-    ToolNavItem("tools", "Strumenti", Icons.Default.Build),
-    ToolNavItem("effects", "Effetti", Icons.Default.AutoAwesome),
-    ToolNavItem("retouch", "Fluidifica", Icons.Default.WaterDrop),
-    ToolNavItem("removebg", "Ritaglio Lib.", Icons.Default.ContentCut),
-    ToolNavItem("sticker", "Adesivo", Icons.Default.Star),
-    ToolNavItem("crop", "Ritaglia", Icons.Default.Crop),
-    ToolNavItem("text", "Testo", Icons.Default.Title),
-    ToolNavItem("addphoto", "Aggiungi Foto", Icons.Default.AddPhotoAlternate),
-    ToolNavItem("remove", "Clona", Icons.Default.Healing),
-    ToolNavItem("replay", "Replay", Icons.Default.Replay),
-    ToolNavItem("fit", "Adatta", Icons.Default.FitScreen),
-    ToolNavItem("brush", "Pennelli", Icons.Default.Brush),
-    ToolNavItem("border", "Bordo", Icons.Default.FilterFrames),
-    ToolNavItem("shapes", "Forme", Icons.Default.Category),
-    ToolNavItem("mask", "Maschera", Icons.Default.Gradient),
-    ToolNavItem("draw", "Disegna", Icons.Default.Edit),
-    ToolNavItem("pen", "Penna & Bool", Icons.Default.Polyline),
-    ToolNavItem("reflect", "Riflesso", Icons.Default.Flip),
-    ToolNavItem("maskform", "Masch. Forma", Icons.Default.Interests),
-    ToolNavItem("collage", "Collage", Icons.Default.GridView),
-    ToolNavItem("callout", "Chiamata", Icons.Default.ChatBubbleOutline)
-)
-
-private val GRID_TOOLS = listOf(
-    ToolNavItem("crop", "Ritaglia", Icons.Default.Crop),
-    ToolNavItem("freecrop", "Libero", Icons.Default.ContentCut),
-    ToolNavItem("shapecrop", "Ritaglia Forma", Icons.Default.Interests),
-    ToolNavItem("dispersion", "Dispersione", Icons.Default.Grain),
-    ToolNavItem("clone", "Clona", Icons.Default.Healing),
-    ToolNavItem("warp", "Fluidifica", Icons.Default.WaterDrop),
-    ToolNavItem("fit", "Estendi / Fit", Icons.Default.FitScreen),
-    ToolNavItem("pen", "Penna & Bool", Icons.Default.Polyline),
-    ToolNavItem("mask", "Maschera", Icons.Default.Gradient),
-    ToolNavItem("curve", "Curva RGB", Icons.Default.Timeline),
-    ToolNavItem("adjust", "Regola", Icons.Default.Tune),
-    ToolNavItem("effects", "Sfocatura / FX", Icons.Default.BlurOn),
-    ToolNavItem("collage", "Collage", Icons.Default.GridView),
-    ToolNavItem("resize", "Ridimensiona", Icons.Default.AspectRatio),
-    ToolNavItem("rotate", "Ruota & 3D", Icons.Default.RotateRight),
-    ToolNavItem("border", "Cornice", Icons.Default.FilterFrames)
-)
-
 @Composable
-fun PicsartEditorScreen(vm: EditorViewModel) {
+fun ZestyEditorScreen(vm: EditorViewModel) {
     val state by vm.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val haptic = LocalHapticFeedback.current
     var pickingForCollage by remember { mutableStateOf(false) }
+    var pickingAsNewProject by remember { mutableStateOf(false) }
 
     // Zero-permission Android Photo Picker
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            vm.importImageFromUri(context, uri, forCollageSlot = pickingForCollage)
+            vm.importImageFromUri(context, uri, forCollageSlot = pickingForCollage, asNewProject = pickingAsNewProject)
         }
     }
 
@@ -124,18 +76,82 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
     // Auto-dismiss toast after 3.2s
     LaunchedEffect(state.toastMessage) {
         if (state.toastMessage != null) {
-            delay(3200)
+            delay(1800)
             vm.dismissToast()
         }
     }
 
-    Box(
+    // Pannello parametri dello strumento attivo: lo stesso contenuto in basso (telefono) o a destra (tablet/web)
+    val toolPanel: @Composable () -> Unit = {
+        when (state.currentTool) {
+            "crop", "rotate" -> CropToolPanel(state, vm)
+            "freecrop" -> CutoutToolPanel(state, vm, isShapeCropOnly = false)
+            "shapecrop" -> CutoutToolPanel(state, vm, isShapeCropOnly = true)
+            "dispersion" -> DispersionToolPanel(state, vm)
+            "clone" -> CloneToolPanel(state, vm)
+            "warp" -> WarpToolPanel(state, vm)
+            "adjust" -> AdjustToolPanel(state, vm)
+            "curve" -> CurvesToolPanel(state, vm)
+            "effects" -> EffectsToolPanel(state, vm)
+            "shapes", "sticker", "callout" -> ShapesToolPanel(state, vm)
+            "text" -> TextToolPanel(
+                state = state,
+                vm = vm,
+                onPickFontFile = {
+                    fontPickerLauncher.launch(arrayOf("font/*", "application/x-font-ttf", "application/x-font-opentype", "*/*"))
+                }
+            )
+            "pen" -> PenAndBooleanPanel(state, vm)
+            "brush" -> BrushToolPanel(state, vm, isMaskMode = false)
+            "mask" -> BrushToolPanel(state, vm, isMaskMode = true)
+            "selective_mask" -> SelectivePaintToolPanel(state, vm)
+            "fit" -> FitAndBorderPanel(state, vm, isBorderTab = false)
+            "border" -> FitAndBorderPanel(state, vm, isBorderTab = true)
+            "resize" -> ResizeCanvasPanel(state, vm)
+            "collage" -> CollageToolPanel(
+                state = state,
+                vm = vm,
+                onPickPhotoForSlot = {
+                    pickingForCollage = true
+                    pickingAsNewProject = false
+                    photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                }
+            )
+        }
+    }
+
+    // Azioni che non aprono un pannello
+    val onToolClick: (String) -> Unit = { id ->
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        when (id) {
+            "addphoto" -> {
+                pickingForCollage = false
+                pickingAsNewProject = false
+                photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+            }
+            "reflect" -> vm.reflectActiveLayer(horizontal = true)
+            "export" -> vm.openExportModal(true)
+            "share" -> vm.shareImage(context)
+            else -> vm.selectBottomTool(id)
+        }
+    }
+    val familyOf: (String?) -> String? = { tool -> TOOL_FAMILIES.firstOrNull { f -> f.tools.any { it.id == tool } }?.id }
+    val selectedFamily = TOOL_FAMILIES.firstOrNull { it.id == state.activeBottomTab }?.id ?: familyOf(state.currentTool)
+    val onFamily: (String) -> Unit = { id ->
+        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+        vm.selectFamily(if (state.activeBottomTab == id && state.currentTool == null) null else id)
+    }
+
+    BoxWithConstraints(
         modifier = Modifier
             .fillMaxSize()
-            .background(BgBlack)
+            .background(StageSurround)
     ) {
+        // Disposizione B (telefono verticale) o C (≥ 600 dp: tablet, orizzontale, web) — classi di finestra Material 3
+        val expanded = maxWidth >= 600.dp
+
         Column(modifier = Modifier.fillMaxSize()) {
-            // 1. TOP BAR (Normal vs Tool Mode)
+            // 1. Barra superiore: progetto (normale) o strumento (✕ · annulla · ripeti · azioni · ✓)
             if (state.currentTool == null) {
                 MainTopBar(
                     state = state,
@@ -143,212 +159,70 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
                     onUndo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.undo() },
                     onRedo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.redo() },
                     onFitZoom = { vm.resetViewportZoom() },
-                    onExport = { vm.openExportModal(true) },
-                    onShare = { vm.shareImage(context) }
+                    onLayers = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.toggleLayersPanel() }
                 )
             } else {
+                val inZone = state.currentTool == "selective_mask"
                 ToolModeTopBar(
                     state = state,
-                    onCancel = { vm.closeCurrentTool(confirm = false) },
+                    // nella zona: ✕ scarta le modifiche alla zona, ✓ le tiene; entrambi tornano allo strumento di partenza
+                    onCancel = { if (inZone) vm.discardSelectiveChanges() else vm.closeCurrentTool(confirm = false) },
                     onUndo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.undo() },
                     onRedo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.redo() },
-                    onToggleEraser = {
-                        val next = if (state.brushStyle == BrushStyle.ERASER) BrushStyle.STANDARD else BrushStyle.ERASER
-                        vm.updateBrushSettings(style = next)
-                        vm.showToast(if (next == BrushStyle.ERASER) "Gomma attiva" else "Pennello attivo")
-                    },
-                    onConfirm = { vm.closeCurrentTool(confirm = true) }
+                    onConfirm = { if (inZone) vm.exitSelectivePaintMode() else vm.closeCurrentTool(confirm = true) },
+                    actions = { ToolTopBarActions(state, vm) }
                 )
             }
 
-            // 2. INTERACTIVE RASTER CANVAS AREA
-            Box(modifier = Modifier.weight(1f).fillMaxWidth()) {
-                InteractiveCanvasStage(
-                    state = state,
-                    vm = vm,
-                    modifier = Modifier.fillMaxSize()
-                )
-
-                // Resolution & Zoom Pill Badge
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(start = 12.dp, top = 8.dp)
-                        .clip(RoundedCornerShape(18.dp))
-                        .background(Color.White.copy(alpha = 0.08f))
-                        .clickable { vm.resetViewportZoom() }
-                        .padding(horizontal = 10.dp, vertical = 4.dp)
-                ) {
-                    Text(
-                        text = "${state.canvasW}×${state.canvasH} • ${(state.viewScale * 100).toInt()}%",
-                        color = TextWhite,
-                        fontSize = 10.sp,
-                        fontWeight = FontWeight.Medium
+            Row(modifier = Modifier.weight(1f).fillMaxWidth()) {
+                if (expanded) {
+                    FamilyRail(
+                        selectedFamily = selectedFamily,
+                        activeTool = state.currentTool,
+                        onFamily = onFamily,
+                        onTool = onToolClick
                     )
                 }
 
-                // Layers FAB (top-right, matches HTML mockup .layers-fab)
-                if (state.currentTool == null) {
-                    IconButton(
-                        onClick = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.toggleLayersPanel() },
-                        modifier = Modifier
-                            .align(Alignment.TopEnd)
-                            .padding(end = 12.dp, top = 8.dp)
-                            .size(40.dp)
-                            .clip(CircleShape)
-                            .background(Color.White.copy(alpha = 0.1f))
-                            .testTag("layers_fab")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Layers,
-                            contentDescription = "Livelli",
-                            tint = TextWhite,
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                // 2. Tela
+                Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
+                    InteractiveCanvasStage(state = state, vm = vm, modifier = Modifier.fillMaxSize())
+
                 }
 
-                // Magenta Import Photo FAB (bottom-right, matches HTML mockup .fab)
-                if (state.currentTool == null) {
-                    FloatingActionButton(
-                        onClick = {
-                            pickingForCollage = false
-                            photoPickerLauncher.launch(
-                                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                            )
-                        },
-                        containerColor = AccentPink,
-                        contentColor = TextWhite,
-                        shape = CircleShape,
-                        modifier = Modifier
-                            .align(Alignment.BottomEnd)
-                            .padding(end = 14.dp, bottom = 14.dp)
-                            .size(48.dp)
-                            .testTag("import_photo_fab")
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.AddPhotoAlternate,
-                            contentDescription = "Importa foto dalla galleria",
-                            modifier = Modifier.size(22.dp)
-                        )
-                    }
-                }
-
-                // 4x4 TOOL GRID POPUP (.tool-grid)
-                androidx.compose.animation.AnimatedVisibility(
-                    visible = state.toolGridOpen && state.currentTool == null,
-                    enter = slideInVertically(initialOffsetY = { it }) + fadeIn(),
-                    exit = slideOutVertically(targetOffsetY = { it }) + fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter)
-                ) {
+                // 3C. Pannello parametri a destra (tablet/web): isola staccata dai bordi, accanto alla foto
+                if (expanded && state.currentTool != null) {
                     Box(
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                            .background(PanelDark)
-                            .border(1.dp, BorderCol, RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp))
-                            .padding(12.dp)
-                            .testTag("tool_grid_popup")
-                    ) {
-                        LazyVerticalGrid(
-                            columns = GridCells.Fixed(4),
-                            modifier = Modifier.heightIn(max = 320.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp),
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            items(GRID_TOOLS, key = { it.id }) { item ->
-                                Column(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { vm.openTool(item.id) }
-                                        .padding(vertical = 10.dp, horizontal = 4.dp)
-                                        .testTag("grid_tool_${item.id}"),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Icon(
-                                        imageVector = item.icon,
-                                        contentDescription = item.label,
-                                        tint = TextDim,
-                                        modifier = Modifier.size(24.dp)
-                                    )
-                                    Spacer(Modifier.height(6.dp))
-                                    Text(
-                                        text = item.label,
-                                        color = TextDim,
-                                        fontSize = 10.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        textAlign = TextAlign.Center,
-                                        maxLines = 1,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-                    }
+                            .width(340.dp)
+                            .fillMaxHeight()
+                            .padding(8.dp)
+                            .clip(RoundedCornerShape(18.dp))
+                            .background(BgBlack)
+                            .verticalScroll(rememberScrollState())
+                    ) { toolPanel() }
                 }
             }
 
-            // 3. ACTIVE TOOL PANEL OR BOTTOM SCROLLABLE 21-TOOL BAR
-            if (state.currentTool != null) {
-                Box(
+            // 3B. Telefono: isola sotto la foto (non la copre mai). Quando si allarga, la tela si restringe
+            // e la foto viene riadattata per intero nello spazio rimasto.
+            if (!expanded) {
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .background(BgBlack)
                         .navigationBarsPadding()
+                        .padding(start = 8.dp, end = 8.dp, bottom = 8.dp)
+                        .clip(RoundedCornerShape(18.dp))
+                        .background(BgBlack)
+                        .animateContentSize()
                 ) {
-                    when (state.currentTool) {
-                        "crop", "rotate" -> CropToolPanel(state, vm)
-                        "freecrop" -> CutoutToolPanel(state, vm, isShapeCropOnly = false)
-                        "shapecrop" -> CutoutToolPanel(state, vm, isShapeCropOnly = true)
-                        "dispersion" -> DispersionToolPanel(state, vm)
-                        "clone" -> CloneToolPanel(state, vm)
-                        "warp" -> WarpToolPanel(state, vm)
-                        "adjust" -> AdjustToolPanel(state, vm)
-                        "curve" -> CurvesToolPanel(state, vm)
-                        "effects" -> EffectsToolPanel(state, vm)
-                        "shapes", "sticker", "callout" -> ShapesToolPanel(state, vm)
-                        "text" -> TextToolPanel(
-                            state = state,
-                            vm = vm,
-                            onPickFontFile = {
-                                fontPickerLauncher.launch(arrayOf("font/*", "application/x-font-ttf", "application/x-font-opentype", "*/*"))
-                            }
-                        )
-                        "pen" -> PenAndBooleanPanel(state, vm)
-                        "brush" -> BrushToolPanel(state, vm, isMaskMode = false)
-                        "mask" -> BrushToolPanel(state, vm, isMaskMode = true)
-                        "selective_mask" -> SelectivePaintToolPanel(state, vm)
-                        "fit" -> FitAndBorderPanel(state, vm, isBorderTab = false)
-                        "border" -> FitAndBorderPanel(state, vm, isBorderTab = true)
-                        "resize" -> ResizeCanvasPanel(state, vm)
-                        "collage" -> CollageToolPanel(
-                            state = state,
-                            vm = vm,
-                            onPickPhotoForSlot = {
-                                pickingForCollage = true
-                                photoPickerLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                )
-                            }
-                        )
+                    if (state.currentTool != null) {
+                        toolPanel()
+                    } else {
+                        FamilyToolsRow(familyId = selectedFamily, onTool = onToolClick)
+                        FamilyBar(selectedFamily = selectedFamily, onFamily = onFamily)
                     }
                 }
-            } else {
-                BottomScrollableToolbar(
-                    activeTab = state.activeBottomTab,
-                    onToolClick = { id ->
-                        when (id) {
-                            "addphoto" -> {
-                                pickingForCollage = false
-                                photoPickerLauncher.launch(
-                                    PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                                )
-                            }
-                            "reflect" -> vm.reflectActiveLayer(horizontal = true)
-                            else -> vm.selectBottomTool(id)
-                        }
-                    }
-                )
             }
         }
 
@@ -361,59 +235,35 @@ fun PicsartEditorScreen(vm: EditorViewModel) {
         ColorPickerModal(state = state, vm = vm)
         ExportDialogModal(state = state, vm = vm)
         RenameLayerModal(state = state, vm = vm)
-        NewProjectModal(state = state, vm = vm)
+        NewProjectModal(state = state, vm = vm, onOpenPhoto = {
+            pickingForCollage = false
+            pickingAsNewProject = true
+            photoPickerLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        })
         ConfirmLocalizeFxModal(state = state, vm = vm)
 
-        // 6. TOAST CARD (Matches HTML mockup .toast)
+        // 6. Avviso discreto: una riga, nessun pulsante, sparisce da solo (non interrompe il lavoro)
         val toastMsg = state.toastMessage
-        if (toastMsg != null) {
-            Box(
+        androidx.compose.animation.AnimatedVisibility(
+            visible = toastMsg != null,
+            enter = fadeIn(),
+            exit = fadeOut(),
+            modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 10.dp)
+        ) {
+            Text(
+                text = toastMsg ?: "",
+                color = TextWhite,
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
                 modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = 32.dp)
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-                    .padding(16.dp)
+                    .widthIn(max = 220.dp)
+                    .clip(RoundedCornerShape(18.dp))
+                    .background(Panel3)
+                    .padding(horizontal = 14.dp, vertical = 8.dp)
                     .testTag("toast_card")
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .size(36.dp)
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(BgBlack),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.CheckCircleOutline,
-                                contentDescription = null,
-                                tint = TextWhite,
-                                modifier = Modifier.size(20.dp)
-                            )
-                        }
-                        Text(
-                            text = toastMsg,
-                            color = Color.Black,
-                            fontSize = 13.sp,
-                            fontWeight = FontWeight.Medium,
-                            modifier = Modifier.weight(1f, fill = false)
-                        )
-                    }
-                    Text(
-                        text = "Capito!",
-                        color = ActivePurple,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.Bold,
-                        modifier = Modifier
-                            .clickable { vm.dismissToast() }
-                            .padding(vertical = 2.dp)
-                    )
-                }
-            }
+            )
         }
     }
 }
@@ -425,8 +275,7 @@ private fun MainTopBar(
     onUndo: () -> Unit,
     onRedo: () -> Unit,
     onFitZoom: () -> Unit,
-    onExport: () -> Unit,
-    onShare: () -> Unit
+    onLayers: () -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -437,8 +286,8 @@ private fun MainTopBar(
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         TopBarCircleButton(
-            icon = Icons.Default.Refresh,
-            contentDescription = "Nuovo progetto demo",
+            icon = Icons.Default.NoteAdd,
+            contentDescription = "Nuovo progetto",
             tag = "reset_demo_button",
             onClick = onResetDemo
         )
@@ -465,17 +314,25 @@ private fun MainTopBar(
             )
         }
         Spacer(Modifier.weight(1f))
-        TopBarCircleButton(
-            icon = Icons.Default.Download,
-            contentDescription = "Esporta immagine",
-            tag = "export_button",
-            onClick = onExport
+        Text(
+            text = "${state.canvasW}×${state.canvasH} · ${(state.viewScale * 100).toInt()}%",
+            color = TextDim,
+            fontSize = 11.sp,
+            fontWeight = FontWeight.Medium,
+            maxLines = 1,
+            modifier = Modifier
+                .clip(RoundedCornerShape(17.dp))
+                .background(BgBlack)
+                .clickable(onClick = onFitZoom)
+                .padding(horizontal = 12.dp, vertical = 9.dp)
+                .testTag("zoom_indicator")
         )
+        Spacer(Modifier.weight(1f))
         TopBarCircleButton(
-            icon = Icons.Default.Share,
-            contentDescription = "Condividi",
-            tag = "share_button",
-            onClick = onShare
+            icon = Icons.Default.Layers,
+            contentDescription = "Livelli",
+            tag = "layers_fab",
+            onClick = onLayers
         )
     }
 }
@@ -486,8 +343,8 @@ private fun ToolModeTopBar(
     onCancel: () -> Unit,
     onUndo: () -> Unit,
     onRedo: () -> Unit,
-    onToggleEraser: () -> Unit,
-    onConfirm: () -> Unit
+    onConfirm: () -> Unit,
+    actions: @Composable RowScope.() -> Unit
 ) {
     Row(
         modifier = Modifier
@@ -518,14 +375,10 @@ private fun ToolModeTopBar(
                 tag = "tool_redo_button",
                 onClick = onRedo
             )
-            TopBarCircleButton(
-                icon = Icons.Default.AutoFixOff,
-                contentDescription = "Gomma rapida",
-                tag = "tool_eraser_button",
-                onClick = onToggleEraser
-            )
         }
         Spacer(Modifier.weight(1f))
+        // azioni contestuali dello strumento (max 2 icone + menu ⋮)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically, content = actions)
         IconButton(
             onClick = onConfirm,
             modifier = Modifier
@@ -537,7 +390,7 @@ private fun ToolModeTopBar(
             Icon(
                 imageVector = Icons.Default.Check,
                 contentDescription = "Conferma modifiche",
-                tint = TextWhite,
+                tint = OnAccent,
                 modifier = Modifier.size(20.dp)
             )
         }
@@ -558,7 +411,7 @@ private fun TopBarCircleButton(
         modifier = Modifier
             .size(38.dp)
             .clip(CircleShape)
-            .background(Color.White.copy(alpha = if (enabled) 0.09f else 0.03f))
+            .background(if (enabled) BgBlack else BgBlack.copy(alpha = 0.5f))
             .testTag(tag)
     ) {
         Icon(
@@ -570,49 +423,3 @@ private fun TopBarCircleButton(
     }
 }
 
-@Composable
-private fun BottomScrollableToolbar(
-    activeTab: String,
-    onToolClick: (String) -> Unit
-) {
-    // Notice: Zero PRO disabled badges — every single tool is unlocked and functional
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .background(BgBlack)
-            .navigationBarsPadding()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 8.dp, vertical = 6.dp)
-            .testTag("bottom_toolbar"),
-        horizontalArrangement = Arrangement.spacedBy(2.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        BOTTOM_TOOLS.forEach { item ->
-            val isSelected = activeTab == item.id
-            Column(
-                modifier = Modifier
-                    .widthIn(min = 64.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .clickable { onToolClick(item.id) }
-                    .padding(horizontal = 8.dp, vertical = 6.dp)
-                    .testTag("btool_${item.id}"),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Icon(
-                    imageVector = item.icon,
-                    contentDescription = item.label,
-                    tint = if (isSelected) ActivePurple else TextDim,
-                    modifier = Modifier.size(22.dp)
-                )
-                Text(
-                    text = item.label,
-                    color = if (isSelected) ActivePurple else TextDim,
-                    fontSize = 9.sp,
-                    fontWeight = FontWeight.Medium,
-                    maxLines = 1
-                )
-            }
-        }
-    }
-}

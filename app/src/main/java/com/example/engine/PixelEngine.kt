@@ -3,6 +3,7 @@ package com.example.engine
 import android.graphics.*
 import android.os.Build
 import com.example.model.*
+import com.example.fx.FxEngine
 import kotlin.math.*
 import kotlin.random.Random
 
@@ -242,10 +243,14 @@ object PixelEngine {
     // Per-layer composition LRU cache to avoid redundant CPU pixel passes during slider drags (Bug C fix)
     private val layerCompCache = android.util.LruCache<Int, Bitmap>(18)
 
+    // Risultato del filtro prima della zona: mentre si modifica la zona si ricalcola solo la fusione (anteprima in diretta)
+    private val filterResultCache = android.util.LruCache<Int, Bitmap>(4)
+
     private fun computeLayerCacheKey(layer: EditorLayer, allLayers: List<EditorLayer>): Int {
         var result = layer.hashCode()
         result = 31 * result + (layer.bitmap?.generationId ?: 0)
         result = 31 * result + (layer.maskBitmap?.generationId ?: 0)
+        result = 31 * result + (layer.activeFilterMask?.generationId ?: 0)
         for ((_, cfg) in layer.effects) {
             result = 31 * result + (cfg.localMask?.generationId ?: 0)
         }
@@ -366,7 +371,12 @@ object PixelEngine {
 
         // Apply 170 Filter FX if active
         if (layer.activeFilterId != null) {
-            bmp = applyEffectFilter(bmp, layer.activeFilterId, layer.activeFilterFade, layer.activeFilterBlend)
+            val filterKey = computeLayerCacheKey(layer.copy(activeFilterMask = null, activeFilterMaskInverted = false), allLayers)
+            val filtered = filterResultCache.get(filterKey)?.takeIf { !it.isRecycled && it.width == bmp.width && it.height == bmp.height }
+                ?: applyEffectFilter(bmp, layer.activeFilterId, layer.activeFilterFade, layer.activeFilterBlend, layer.activeFilterParams)
+                    .also { filterResultCache.put(filterKey, it) }
+            // Zona del filtro: pennello, gomma, forme, lazo o poligono (§ maschera selettiva)
+            bmp = layer.activeFilterMask?.let { MaskGeometry.blendThroughMask(bmp, filtered, it, layer.activeFilterMaskInverted) } ?: filtered
         }
 
         // Apply layer visibility mask if present (independent and multiplicative with effect localMask)
@@ -1290,432 +1300,49 @@ object PixelEngine {
         return bmp
     }
 
-    val ALL_EFFECT_FILTERS: List<EffectFilter> = listOf(
-        EffectFilter("AdjustTool", "AdjustTool", "AdjustTool", "Effetti", 0f, "Normal", "adjusttool", "AdjustTool.json"),
-        EffectFilter("AndroidEnhance", "AndroidEnhance", "Migliora", "Colore", 0f, "Normal", "androidenhance", "AndroidEnhance.json"),
-        EffectFilter("AutoColorCorrection", "AutoColorCorrection", "Auto Colore", "Colore", 0f, "Normal", "autocolorcorrection", "AutoColorCorrection.json"),
-        EffectFilter("BWColor", "BWColor", "B&N Colore", "B&N", 0f, "Normal", "bwcolor", "BWColor.json"),
-        EffectFilter("BWCross", "BWCross", "B&N Incrociato", "B&N", 0f, "Normal", "bwcross", "BWCross.json"),
-        EffectFilter("BWFilm", "BWFilm", "B&N Pellicola", "B&N", 0f, "Normal", "bwfilm", "BWFilm.json"),
-        EffectFilter("BWHDR", "BWHDR", "B&N HDR", "B&N", 0f, "Normal", "bwhdr", "BWHDR.json"),
-        EffectFilter("BWOrton", "BWOrton", "B&N Orton", "B&N", 0f, "Normal", "bworton", "BWOrton.json"),
-        EffectFilter("BWVintage", "BWVintage", "B&N Vintage", "B&N", 0f, "Normal", "bwvintage", "BWVintage.json"),
-        EffectFilter("BackgroundSketch", "BackgroundSketch", "BackgroundSketch", "Effetti", 0f, "Normal", "backgroundsketch", "BackgroundSketch.json"),
-        EffectFilter("Bathroom1", "Bathroom1", "Bathroom1", "Effetti", 0f, "Normal", "bathroom1", "Bathroom1.json"),
-        EffectFilter("Bathroom2", "Bathroom2", "Bathroom2", "Effetti", 0f, "Normal", "bathroom2", "Bathroom2.json"),
-        EffectFilter("BlackAndWhite", "BlackAndWhite", "Bianco e Nero", "B&N", 0f, "Normal", "blackandwhite", "BlackAndWhite.json"),
-        EffectFilter("Bleaching", "Bleaching", "Candeggio", "Vintage", 0f, "Normal", "bleaching", "Bleaching.json"),
-        EffectFilter("BlemishFix", "BlemishFix", "BlemishFix", "Effetti", 0f, "Normal", "blemishfix", "BlemishFix.json"),
-        EffectFilter("BlemishFixOld", "BlemishFixOld", "BlemishFixOld", "Effetti", 0f, "Normal", "blemishfixold", "BlemishFixOld.json"),
-        EffectFilter("Blending", "Blending", "Blending", "Effetti", 0f, "Normal", "blending", "Blending.json"),
-        EffectFilter("Brightness", "Brightness", "Luminosità", "Colore", 0f, "Normal", "brightness", "Brightness.json"),
-        EffectFilter("BrightnessContrast", "BrightnessContrast", "Luce & Contrasto", "Colore", 0f, "Normal", "brightnesscontrast", "BrightnessContrast.json"),
-        EffectFilter("Caricature", "Caricature", "Caricature", "Effetti", 0f, "Normal", "caricature", "Caricature.json"),
-        EffectFilter("Cartoonizer", "Cartoonizer", "Cartoonizer", "Effetti", 0f, "Normal", "cartoonizer", "Cartoonizer.json"),
-        EffectFilter("Cinerama", "Cinerama", "Cinerama", "Vintage", 0f, "Normal", "cinerama", "Cinerama.json"),
-        EffectFilter("ColorBalance", "ColorBalance", "Bilanciamento", "Colore", 0f, "Normal", "colorbalance", "ColorBalance.json"),
-        EffectFilter("ColorEye", "ColorEye", "ColorEye", "Effetti", 0f, "Normal", "coloreye", "ColorEye.json"),
-        EffectFilter("ColorEyeLens", "ColorEyeLens", "ColorEyeLens", "Effetti", 0f, "Normal", "coloreyelens", "ColorEyeLens.json"),
-        EffectFilter("ColorEyeOval", "ColorEyeOval", "ColorEyeOval", "Effetti", 0f, "Normal", "coloreyeoval", "ColorEyeOval.json"),
-        EffectFilter("ColorGradient", "ColorGradient", "ColorGradient", "Effetti", 0f, "Normal", "colorgradient", "ColorGradient.json"),
-        EffectFilter("ColorGrid", "ColorGrid", "Griglia Colore", "PopArt", 0f, "Normal", "colorgrid", "ColorGrid.json"),
-        EffectFilter("ColorReplace", "ColorReplace", "Sostituisci Colore", "Colore", 0f, "Normal", "colorreplace", "ColorReplace.json"),
-        EffectFilter("ColorSplash", "ColorSplash", "Color Splash", "Colore", 0f, "Normal", "colorsplash", "ColorSplash.json"),
-        EffectFilter("ColoredDots", "ColoredDots", "Punti Colorati", "PopArt", 0f, "Normal", "coloreddots", "ColoredDots.json"),
-        EffectFilter("Colorize", "Colorize", "Colora", "Colore", 0f, "Normal", "colorize", "Colorize.json"),
-        EffectFilter("ComicBoom", "ComicBoom", "Fumetto Boom", "PopArt", 0f, "Normal", "comicboom", "ComicBoom.json"),
-        EffectFilter("Contours", "Contours", "Contorni", "Disegno", 0f, "Normal", "contours", "Contours.json"),
-        EffectFilter("Contrast", "Contrast", "Contrasto", "Colore", 0f, "Normal", "contrast", "Contrast.json"),
-        EffectFilter("Convolution", "Convolution", "Convolution", "Effetti", 0f, "Normal", "convolution", "Convolution.json"),
-        EffectFilter("CrossProcess", "CrossProcess", "Cross Process", "Vintage", 0f, "Normal", "crossprocess", "CrossProcess.json"),
-        EffectFilter("CrossProcessing", "CrossProcessing", "Cross Process 2", "Vintage", 0f, "Normal", "crossprocessing", "CrossProcessing.json"),
-        EffectFilter("CustomEnhance", "CustomEnhance", "CustomEnhance", "Effetti", 0f, "Normal", "customenhance", "CustomEnhance.json"),
-        EffectFilter("CylinderMirror", "CylinderMirror", "CylinderMirror", "Effetti", 0f, "Normal", "cylindermirror", "CylinderMirror.json"),
-        EffectFilter("Details", "Details", "Details", "Effetti", 0f, "Normal", "details", "Details.json"),
-        EffectFilter("Dispersion", "Dispersion", "Dispersion", "Effetti", 0f, "Normal", "dispersion", "Dispersion.json"),
-        EffectFilter("DoubleSketch", "DoubleSketch", "Doppio Schizzo", "Disegno", 0f, "Normal", "doublesketch", "DoubleSketch.json"),
-        EffectFilter("Dusk", "Dusk", "Tramonto", "Vintage", 0f, "Normal", "dusk", "Dusk.json"),
-        EffectFilter("Dust", "Dust", "Polvere & Graffi", "Vintage", 0f, "Normal", "dust", "Dust.json"),
-        EffectFilter("Effect12", "Effect12", "Effect12", "Effetti", 0f, "Normal", "effect12", "Effect12.json"),
-        EffectFilter("Effect13", "Effect13", "Effect13", "Effetti", 0f, "Normal", "effect13", "Effect13.json"),
-        EffectFilter("Effect14", "Effect14", "Effect14", "Effetti", 0f, "Normal", "effect14", "Effect14.json"),
-        EffectFilter("Effect24", "Effect24", "Effect24", "Effetti", 0f, "Normal", "effect24", "Effect24.json"),
-        EffectFilter("Effect4", "Effect4", "Effect4", "Effetti", 0f, "Normal", "effect4", "Effect4.json"),
-        EffectFilter("Effect40", "Effect40", "Effect40", "Effetti", 0f, "Normal", "effect40", "Effect40.json"),
-        EffectFilter("Effect7", "Effect7", "Effect7", "Effetti", 0f, "Normal", "effect7", "Effect7.json"),
-        EffectFilter("Emboss", "Emboss", "Emboss", "Effetti", 0f, "Normal", "emboss", "Emboss.json"),
-        EffectFilter("Exposure", "Exposure", "Esposizione", "Colore", 0f, "Normal", "exposure", "Exposure.json"),
-        EffectFilter("FaceFix", "FaceFix", "FaceFix", "Effetti", 0f, "Normal", "facefix", "FaceFix.json"),
-        EffectFilter("Fattal1", "Fattal1", "Fattal1", "Effetti", 0f, "Normal", "fattal1", "Fattal1.json"),
-        EffectFilter("Fattal2", "Fattal2", "Fattal2", "Effetti", 0f, "Normal", "fattal2", "Fattal2.json"),
-        EffectFilter("Film", "Film", "Pellicola", "Vintage", 0f, "Normal", "film", "Film.json"),
-        EffectFilter("FishEye", "FishEye", "FishEye", "Effetti", 0f, "Normal", "fisheye", "FishEye.json"),
-        EffectFilter("FocalZoom", "FocalZoom", "Zoom Focale", "Sfocatura", 0f, "Normal", "focalzoom", "FocalZoom.json"),
-        EffectFilter("Glitch2", "Glitch2", "Glitch RGB", "Luce", 0f, "Normal", "glitch2", "Glitch2.json"),
-        EffectFilter("GradientFill", "GradientFill", "Gradiente", "Colore", 0f, "Normal", "gradientfill", "GradientFill.json"),
-        EffectFilter("GradientMap", "GradientMap", "Mappa Gradiente", "Colore", 0f, "Normal", "gradientmap", "GradientMap.json"),
-        EffectFilter("Grain", "Grain", "Grana Film", "Vintage", 0f, "Normal", "grain", "Grain.json"),
-        EffectFilter("GrannysPaper", "GrannysPaper", "Carta Antica", "Disegno", 0f, "Normal", "grannyspaper", "GrannysPaper.json"),
-        EffectFilter("GraphAdjustTool", "GraphAdjustTool", "GraphAdjustTool", "Effetti", 0f, "Normal", "graphadjusttool", "GraphAdjustTool.json"),
-        EffectFilter("GraphAutoCorrection", "GraphAutoCorrection", "GraphAutoCorrection", "Effetti", 0f, "Normal", "graphautocorrection", "GraphAutoCorrection.json"),
-        EffectFilter("GraphBlackAndWhite", "GraphBlackAndWhite", "B&N Grafico", "B&N", 0f, "Normal", "graphblackandwhite", "GraphBlackAndWhite.json"),
-        EffectFilter("GraphBlend", "GraphBlend", "GraphBlend", "Effetti", 0f, "Normal", "graphblend", "GraphBlend.json"),
-        EffectFilter("GraphColorSplash", "GraphColorSplash", "Splash Dinamico", "Colore", 0f, "Normal", "graphcolorsplash", "GraphColorSplash.json"),
-        EffectFilter("GraphDenoise", "GraphDenoise", "GraphDenoise", "Effetti", 0f, "Normal", "graphdenoise", "GraphDenoise.json"),
-        EffectFilter("GraphDuotone", "GraphDuotone", "GraphDuotone", "Effetti", 0f, "Normal", "graphduotone", "GraphDuotone.json"),
-        EffectFilter("GraphFaceFix", "GraphFaceFix", "GraphFaceFix", "Effetti", 0f, "Normal", "graphfacefix", "GraphFaceFix.json"),
-        EffectFilter("GraphGlitch", "GraphGlitch", "Glitch Scan", "Luce", 0f, "Normal", "graphglitch", "GraphGlitch.json"),
-        EffectFilter("GraphHairColor", "GraphHairColor", "GraphHairColor", "Effetti", 0f, "Normal", "graphhaircolor", "GraphHairColor.json"),
-        EffectFilter("GraphMirror", "GraphMirror", "GraphMirror", "Effetti", 0f, "Normal", "graphmirror", "GraphMirror.json"),
-        EffectFilter("GraphNewHairColor", "GraphNewHairColor", "GraphNewHairColor", "Effetti", 0f, "Normal", "graphnewhaircolor", "GraphNewHairColor.json"),
-        EffectFilter("GraphNewSkinSmoothing", "GraphNewSkinSmoothing", "GraphNewSkinSmoothing", "Effetti", 0f, "Normal", "graphnewskinsmoothing", "GraphNewSkinSmoothing.json"),
-        EffectFilter("GraphNewSkinTone", "GraphNewSkinTone", "GraphNewSkinTone", "Effetti", 0f, "Normal", "graphnewskintone", "GraphNewSkinTone.json"),
-        EffectFilter("GraphNewTeethsWhitening", "GraphNewTeethsWhitening", "GraphNewTeethsWhitening", "Effetti", 0f, "Normal", "graphnewteethswhitening", "GraphNewTeethsWhitening.json"),
-        EffectFilter("GraphNoise", "GraphNoise", "GraphNoise", "Effetti", 0f, "Normal", "graphnoise", "GraphNoise.json"),
-        EffectFilter("GraphRedEye", "GraphRedEye", "GraphRedEye", "Effetti", 0f, "Normal", "graphredeye", "GraphRedEye.json"),
-        EffectFilter("GraphSkinSmoothing", "GraphSkinSmoothing", "GraphSkinSmoothing", "Effetti", 0f, "Normal", "graphskinsmoothing", "GraphSkinSmoothing.json"),
-        EffectFilter("GraphSkinTone", "GraphSkinTone", "GraphSkinTone", "Effetti", 0f, "Normal", "graphskintone", "GraphSkinTone.json"),
-        EffectFilter("GraphTeethsWhitening", "GraphTeethsWhitening", "GraphTeethsWhitening", "Effetti", 0f, "Normal", "graphteethswhitening", "GraphTeethsWhitening.json"),
-        EffectFilter("GraphTemp", "GraphTemp", "GraphTemp", "Effetti", 0f, "Normal", "graphtemp", "GraphTemp.json"),
-        EffectFilter("HDROne", "HDROne", "HDR 1", "Colore", 0f, "Normal", "hdrone", "HDROne.json"),
-        EffectFilter("HDRTwo", "HDRTwo", "HDR 2", "Colore", 0f, "Normal", "hdrtwo", "HDRTwo.json"),
-        EffectFilter("HalftoneDots", "HalftoneDots", "Puntini Retino", "PopArt", 0f, "Normal", "halftonedots", "HalftoneDots.json"),
-        EffectFilter("Holgaart1", "Holgaart1", "Holga", "Vintage", 0f, "Normal", "holgaart1", "Holgaart1.json"),
-        EffectFilter("Holgaart4", "Holgaart4", "Holga 2", "Vintage", 0f, "Normal", "holgaart4", "Holgaart4.json"),
-        EffectFilter("Hue", "Hue", "Tonalità", "Colore", 0f, "Normal", "hue", "Hue.json"),
-        EffectFilter("IOSEnhance", "IOSEnhance", "Migliora HDR", "Colore", 0f, "Normal", "iosenhance", "IOSEnhance.json"),
-        EffectFilter("InterweavingStrips", "InterweavingStrips", "InterweavingStrips", "Effetti", 0f, "Normal", "interweavingstrips", "InterweavingStrips.json"),
-        EffectFilter("Invert", "Invert", "Inverti", "Colore", 0f, "Normal", "invert", "Invert.json"),
-        EffectFilter("LensBlur", "LensBlur", "Effetto Lente", "Sfocatura", 0f, "Normal", "lensblur", "LensBlur.json"),
-        EffectFilter("Lomo", "Lomo", "Lomografia", "Vintage", 0f, "Normal", "lomo", "Lomo.json"),
-        EffectFilter("Lut", "Lut", "Lut", "Effetti", 0f, "Normal", "lut", "Lut.json"),
-        EffectFilter("Mask", "Mask", "Mask", "Effetti", 0f, "Normal", "mask", "Mask.json"),
-        EffectFilter("MaskC", "MaskC", "MaskC", "Effetti", 0f, "Normal", "maskc", "MaskC.json"),
-        EffectFilter("MirroredSketch", "MirroredSketch", "MirroredSketch", "Effetti", 0f, "Normal", "mirroredsketch", "MirroredSketch.json"),
-        EffectFilter("Mirrors", "Mirrors", "Mirrors", "Effetti", 0f, "Normal", "mirrors", "Mirrors.json"),
-        EffectFilter("Motion", "Motion", "Motion", "Effetti", 0f, "Normal", "motion", "Motion.json"),
-        EffectFilter("MotionBlur", "MotionBlur", "Movimento", "Sfocatura", 0f, "Normal", "motionblur", "MotionBlur.json"),
-        EffectFilter("Negative", "Negative", "Negativo", "Colore", 0f, "Normal", "negative", "Negative.json"),
-        EffectFilter("NeonCola", "NeonCola", "Neon", "Luce", 0f, "Normal", "neoncola", "NeonCola.json"),
-        EffectFilter("NeuralEffect", "NeuralEffect", "NeuralEffect", "Effetti", 0f, "Normal", "neuraleffect", "NeuralEffect.json"),
-        EffectFilter("NewVignette", "NewVignette", "Vignetta Sfumata", "Vintage", 0f, "Normal", "newvignette", "NewVignette.json"),
-        EffectFilter("NoiseReduction", "NoiseReduction", "NoiseReduction", "Effetti", 0f, "Normal", "noisereduction", "NoiseReduction.json"),
-        EffectFilter("None", "None", "None", "Effetti", 0f, "Normal", "none", "None.json"),
-        EffectFilter("Oil", "Oil", "Olio su Tela", "Disegno", 0f, "Normal", "oil", "Oil.json"),
-        EffectFilter("OilPainting", "OilPainting", "OilPainting", "Effetti", 0f, "Normal", "oilpainting", "OilPainting.json"),
-        EffectFilter("Orton", "Orton", "Bagliore Orton", "Sfocatura", 0f, "Normal", "orton", "Orton.json"),
-        EffectFilter("PastelPerfect", "PastelPerfect", "PastelPerfect", "Effetti", 0f, "Normal", "pastelperfect", "PastelPerfect.json"),
-        EffectFilter("Pencil", "Pencil", "Matita HB", "Disegno", 0f, "Normal", "pencil", "Pencil.json"),
-        EffectFilter("Pixelize", "Pixelize", "Pixel Art", "PopArt", 0f, "Normal", "pixelize", "Pixelize.json"),
-        EffectFilter("PointRepeat", "PointRepeat", "PointRepeat", "Effetti", 0f, "Normal", "pointrepeat", "PointRepeat.json"),
-        EffectFilter("Polygonize", "Polygonize", "Poligoni", "PopArt", 0f, "Normal", "polygonize", "Polygonize.json"),
-        EffectFilter("Popart1", "Popart1", "Pop Art 1", "PopArt", 0f, "Normal", "popart1", "Popart1.json"),
-        EffectFilter("Popart2", "Popart2", "Pop Art 2", "PopArt", 0f, "Normal", "popart2", "Popart2.json"),
-        EffectFilter("PopartUnitedColors", "PopartUnitedColors", "Colori Uniti", "PopArt", 0f, "Normal", "popartunitedcolors", "PopartUnitedColors.json"),
-        EffectFilter("Posterize", "Posterize", "Poster", "PopArt", 0f, "Normal", "posterize", "Posterize.json"),
-        EffectFilter("RadialBlur", "RadialBlur", "Radiale", "Sfocatura", 0f, "Normal", "radialblur", "RadialBlur.json"),
-        EffectFilter("Redeye", "Redeye", "Redeye", "Effetti", 0f, "Normal", "redeye", "Redeye.json"),
-        EffectFilter("RedeyeOld", "RedeyeOld", "RedeyeOld", "Effetti", 0f, "Normal", "redeyeold", "RedeyeOld.json"),
-        EffectFilter("RotateImage", "RotateImage", "RotateImage", "Effetti", 0f, "Normal", "rotateimage", "RotateImage.json"),
-        EffectFilter("Saturation", "Saturation", "Saturazione", "Colore", 0f, "Normal", "saturation", "Saturation.json"),
-        EffectFilter("SeafoamLightCross", "SeafoamLightCross", "Oceano Chiaro", "Colore", 0f, "Normal", "seafoamlightcross", "SeafoamLightCross.json"),
-        EffectFilter("SelectiveAdjustment", "SelectiveAdjustment", "SelectiveAdjustment", "Effetti", 0f, "Normal", "selectiveadjustment", "SelectiveAdjustment.json"),
-        EffectFilter("Sepia", "Sepia", "Seppia", "Vintage", 0f, "Normal", "sepia", "Sepia.json"),
-        EffectFilter("ShapedSketch", "ShapedSketch", "ShapedSketch", "Effetti", 0f, "Normal", "shapedsketch", "ShapedSketch.json"),
-        EffectFilter("SharpenDodger", "SharpenDodger", "SharpenDodger", "Effetti", 0f, "Normal", "sharpendodger", "SharpenDodger.json"),
-        EffectFilter("Shear", "Shear", "Shear", "Effetti", 0f, "Normal", "shear", "Shear.json"),
-        EffectFilter("SimpleSketch", "SimpleSketch", "Tratto Leggero", "Disegno", 0f, "Normal", "simplesketch", "SimpleSketch.json"),
-        EffectFilter("Sketch", "Sketch", "Schizzo a Matita", "Disegno", 0f, "Normal", "sketch", "Sketch.json"),
-        EffectFilter("Sketcher", "Sketcher", "Carboncino", "Disegno", 0f, "Normal", "sketcher", "Sketcher.json"),
-        EffectFilter("Sketcher1", "Sketcher1", "Sketcher1", "Effetti", 0f, "Normal", "sketcher1", "Sketcher1.json"),
-        EffectFilter("Sketcher2", "Sketcher2", "Sketcher2", "Effetti", 0f, "Normal", "sketcher2", "Sketcher2.json"),
-        EffectFilter("SmartBlur", "SmartBlur", "Sfocatura Smart", "Sfocatura", 0f, "Normal", "smartblur", "SmartBlur.json"),
-        EffectFilter("Snow", "Snow", "Snow", "Effetti", 0f, "Normal", "snow", "Snow.json"),
-        EffectFilter("SoftenBlur", "SoftenBlur", "Effetto Seta", "Sfocatura", 0f, "Normal", "softenblur", "SoftenBlur.json"),
-        EffectFilter("Solarization", "Solarization", "Solarizzazione", "Colore", 0f, "Normal", "solarization", "Solarization.json"),
-        EffectFilter("Stenciler1", "Stenciler1", "Stencil 1", "Disegno", 0f, "Normal", "stenciler1", "Stenciler1.json"),
-        EffectFilter("Stenciler2", "Stenciler2", "Stencil 2", "Disegno", 0f, "Normal", "stenciler2", "Stenciler2.json"),
-        EffectFilter("Stenciler3", "Stenciler3", "Stenciler3", "Effetti", 0f, "Normal", "stenciler3", "Stenciler3.json"),
-        EffectFilter("Stenciler4", "Stenciler4", "Stenciler4", "Effetti", 0f, "Normal", "stenciler4", "Stenciler4.json"),
-        EffectFilter("Stenciler5", "Stenciler5", "Stenciler5", "Effetti", 0f, "Normal", "stenciler5", "Stenciler5.json"),
-        EffectFilter("Stenciler6", "Stenciler6", "Stenciler6", "Effetti", 0f, "Normal", "stenciler6", "Stenciler6.json"),
-        EffectFilter("Stenciler7", "Stenciler7", "Stenciler7", "Effetti", 0f, "Normal", "stenciler7", "Stenciler7.json"),
-        EffectFilter("Stenciler8", "Stenciler8", "Stenciler8", "Effetti", 0f, "Normal", "stenciler8", "Stenciler8.json"),
-        EffectFilter("SunlessTan", "SunlessTan", "SunlessTan", "Effetti", 0f, "Normal", "sunlesstan", "SunlessTan.json"),
-        EffectFilter("Swirled", "Swirled", "Swirled", "Effetti", 0f, "Normal", "swirled", "Swirled.json"),
-        EffectFilter("Teethwhiten", "Teethwhiten", "Teethwhiten", "Effetti", 0f, "Normal", "teethwhiten", "Teethwhiten.json"),
-        EffectFilter("TintsAndTemperature", "TintsAndTemperature", "Temperatura", "Colore", 0f, "Normal", "tintsandtemperature", "TintsAndTemperature.json"),
-        EffectFilter("TinyPlanet", "TinyPlanet", "TinyPlanet", "Effetti", 0f, "Normal", "tinyplanet", "TinyPlanet.json"),
-        EffectFilter("Tranquil", "Tranquil", "Tranquil", "Effetti", 0f, "Normal", "tranquil", "Tranquil.json"),
-        EffectFilter("UnitedColors1", "UnitedColors1", "Quadricromia 1", "PopArt", 0f, "Normal", "unitedcolors1", "UnitedColors1.json"),
-        EffectFilter("UnitedColors2", "UnitedColors2", "Quadricromia 2", "PopArt", 0f, "Normal", "unitedcolors2", "UnitedColors2.json"),
-        EffectFilter("UnitedColors3", "UnitedColors3", "Quadricromia 3", "PopArt", 0f, "Normal", "unitedcolors3", "UnitedColors3.json"),
-        EffectFilter("UnitedColors4", "UnitedColors4", "Quadricromia 4", "PopArt", 0f, "Normal", "unitedcolors4", "UnitedColors4.json"),
-        EffectFilter("Vignette", "Vignette", "Vignettatura", "Vintage", 0f, "Normal", "vignette", "Vignette.json"),
-        EffectFilter("VignetteGL", "VignetteGL", "Vignetta GL", "Vintage", 0f, "Normal", "vignettegl", "VignetteGL.json"),
-        EffectFilter("VignetteOrchid", "VignetteOrchid", "Vignetta Orchidea", "Vintage", 0f, "Normal", "vignetteorchid", "VignetteOrchid.json"),
-        EffectFilter("Vintage", "Vintage", "Vintage", "Vintage", 0f, "Normal", "vintage", "Vintage.json"),
-        EffectFilter("VintageIvory", "VintageIvory", "Avorio Vintage", "Vintage", 0f, "Normal", "vintageivory", "VintageIvory.json"),
-        EffectFilter("WarmAmber", "WarmAmber", "Ambra Calda", "Colore", 0f, "Normal", "warmamber", "WarmAmber.json"),
-        EffectFilter("Water", "Water", "Water", "Effetti", 0f, "Normal", "water", "Water.json"),
-        EffectFilter("WaterColor", "WaterColor", "Acquerello", "Disegno", 0f, "Normal", "watercolor", "WaterColor.json"),
-        EffectFilter("YesterColor", "YesterColor", "Colori Vintage", "Vintage", 0f, "Normal", "yestercolor", "YesterColor.json"),
-        EffectFilter("ZoomEye", "ZoomEye", "ZoomEye", "Effetti", 0f, "Normal", "zoomeye", "ZoomEye.json")
+    // ============ FILTRI: catalogo Zesty FX ============
+    // I filtri sono definiti in public/assets/fx (formato JSON originale, condiviso con la web app)
+    // ed eseguiti da com.example.fx.FxEngine. Per aggiungere un filtro basta aggiungere una voce JSON.
+
+    /** Categorie da mostrare nel pannello: "Popolari", "Tutti" e quelle del catalogo. */
+    fun getFilterCategories(): List<Pair<String, String>> =
+        listOf("Popolari" to "Popolari", "Tutti" to "Tutti") +
+            FxEngine.catalog.categories.map { it.id to it.label }
+
+    private val POPULAR_FILTERS = listOf(
+        "enhance", "hdr_natural", "bw_classic", "bw_noir", "film_warm", "film_instant", "film_lomo",
+        "vintage_classic", "cine_teal_orange", "cine_golden_hour", "color_splash", "duotone",
+        "pop_grid4", "pop_halftone", "draw_pencil", "draw_cartoon", "draw_watercolor", "blur_tilt_shift",
+        "glitch_vhs", "light_leak_warm", "light_bokeh", "atm_snow", "port_skin"
     )
 
     fun getFiltersByCategory(category: String): List<EffectFilter> {
-        return if (category == "Tutti" || category == "All") {
-            ALL_EFFECT_FILTERS
-        } else if (category == "Popolari") {
-            ALL_EFFECT_FILTERS.filter { 
-                it.id in listOf("Sepia", "BlackAndWhite", "Contrast", "Saturation", "Vintage", 
-                                "Cinerama", "CrossProcess", "WarmAmber", "Vignette", "Invert", 
-                                "SmartBlur", "Popart1", "Glitch2", "Bleaching", "IOSEnhance")
-            }
-        } else {
-            ALL_EFFECT_FILTERS.filter { it.category.equals(category, ignoreCase = true) }
+        val cat = FxEngine.catalog
+        val list = when (category) {
+            "Tutti", "All" -> cat.effects
+            "Popolari" -> POPULAR_FILTERS.mapNotNull { cat.get(it) }
+            else -> cat.inCategory(category)
         }
+        return list.map { EffectFilter(id = it.id, name = it.id, label = it.label, category = it.category, algorithm = "zesty-fx") }
     }
 
+    /** Valori dei parametri del filtro: quelli salvati nel livello sopra i predefiniti. */
+    fun filterParamValues(filterId: String, overrides: Map<String, Float>): Map<String, Float> =
+        (FxEngine.catalog.get(filterId)?.defaultValues() ?: emptyMap()) + overrides
+
     /**
-     * Applica uno dei 170 filtri Picsart al Bitmap sorgente, con regolazione del fade (0..100)
-     * e fusione del Blend Mode (Normal, Multiply, Screen, Overlay, SoftLight, ecc.).
+     * Applica un filtro del catalogo con dissolvenza (0 = effetto pieno, 100 = originale)
+     * e metodo di fusione finale.
      */
     fun applyEffectFilter(
         src: Bitmap,
         filterId: String,
         fade: Float = 0f,
-        blendMode: String = "Normal"
+        blendMode: String = "Normal",
+        params: Map<String, Float> = emptyMap()
     ): Bitmap {
-        val w = src.width
-        val h = src.height
-        val idLower = filterId.lowercase()
-
-        // 1. Applica la trasformazione di base dell'effetto
-        val filtered = when (idLower) {
-            "blackandwhite", "bwfilm", "monochrome" -> {
-                applyColorMatrix(src, ColorMatrix().apply { setSaturation(0f) })
-            }
-            "bwcolor", "bwvintage", "graphblackandwhite" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    0.3f, 0.59f, 0.11f, 0f, 10f,
-                    0.3f, 0.59f, 0.11f, 0f, 10f,
-                    0.3f, 0.59f, 0.11f, 0f, 15f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "bwhdr", "bworton" -> {
-                val desat = applyColorMatrix(src, ColorMatrix().apply { setSaturation(0f) })
-                val blur = boxBlur(desat, 8)
-                blendBitmaps(desat, blur, PorterDuff.Mode.OVERLAY, 0.6f)
-            }
-            "bwcross" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    0.4f, 0.6f, 0.1f, 0f, -15f,
-                    0.4f, 0.6f, 0.1f, 0f, -15f,
-                    0.4f, 0.6f, 0.1f, 0f, 25f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "sepia" -> {
-                val sepiaMatrix = ColorMatrix(floatArrayOf(
-                    0.393f, 0.769f, 0.189f, 0f, 0f,
-                    0.349f, 0.686f, 0.168f, 0f, 0f,
-                    0.272f, 0.534f, 0.131f, 0f, 0f,
-                    0f,     0f,     0f,     1f, 0f
-                ))
-                applyColorMatrix(src, sepiaMatrix)
-            }
-            "vintage", "yestercolor" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    0.9f, 0.5f, 0.1f, 0f, 20f,
-                    0.3f, 0.8f, 0.1f, 0f, 15f,
-                    0.2f, 0.3f, 0.5f, 0f, 35f,
-                    0f,   0f,   0f,   1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "vintageivory" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    1.05f, 0.2f, 0.1f, 0f, 25f,
-                    0.2f, 1.0f, 0.1f, 0f, 25f,
-                    0.1f, 0.2f, 0.8f, 0f, 15f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "contrast" -> {
-                val scale = 1.45f
-                val translate = (-0.5f * scale + 0.5f) * 255f
-                val cm = ColorMatrix(floatArrayOf(
-                    scale, 0f, 0f, 0f, translate,
-                    0f, scale, 0f, 0f, translate,
-                    0f, 0f, scale, 0f, translate,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "saturation" -> {
-                applyColorMatrix(src, ColorMatrix().apply { setSaturation(1.65f) })
-            }
-            "brightness" -> {
-                val b = 35f
-                val cm = ColorMatrix(floatArrayOf(
-                    1f, 0f, 0f, 0f, b,
-                    0f, 1f, 0f, 0f, b,
-                    0f, 0f, 1f, 0f, b,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "brightnesscontrast" -> {
-                val scale = 1.35f
-                val translate = (-0.5f * scale + 0.5f) * 255f + 20f
-                val cm = ColorMatrix(floatArrayOf(
-                    scale, 0f, 0f, 0f, translate,
-                    0f, scale, 0f, 0f, translate,
-                    0f, 0f, scale, 0f, translate,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "invert", "negative" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    -1f,  0f,  0f, 0f, 255f,
-                     0f, -1f,  0f, 0f, 255f,
-                     0f,  0f, -1f, 0f, 255f,
-                     0f,  0f,  0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "cinerama", "film" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    1.15f, 0.05f, 0f, 0f, -10f,
-                    0f,    1.05f, 0.05f, 0f, 0f,
-                    0f,    0.05f, 1.35f, 0f, 25f,
-                    0f,    0f,    0f,    1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "crossprocess", "crossprocessing" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    1.25f, 0f, 0f, 0f, 5f,
-                    0f, 1.15f, 0.05f, 0f, 20f,
-                    0f, 0f, 0.8f, 0f, 35f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "warmamber", "dusk" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    1.25f, 0.1f, 0f, 0f, 25f,
-                    0.05f, 1.1f, 0f, 0f, 15f,
-                    0f, 0f, 0.75f, 0f, -15f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "seafoamlightcross" -> {
-                val cm = ColorMatrix(floatArrayOf(
-                    0.85f, 0.1f, 0f, 0f, -10f,
-                    0f, 1.2f, 0.1f, 0f, 20f,
-                    0.05f, 0.1f, 1.25f, 0f, 30f,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                applyColorMatrix(src, cm)
-            }
-            "bleaching" -> {
-                // High contrast desaturated silver look
-                val sat = ColorMatrix().apply { setSaturation(0.35f) }
-                val scale = 1.5f
-                val translate = (-0.5f * scale + 0.5f) * 255f
-                val cont = ColorMatrix(floatArrayOf(
-                    scale, 0f, 0f, 0f, translate,
-                    0f, scale, 0f, 0f, translate,
-                    0f, 0f, scale, 0f, translate,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                sat.postConcat(cont)
-                applyColorMatrix(src, sat)
-            }
-            "autocolorcorrection", "androidenhance", "iosenhance", "hdrone", "hdrtwo" -> {
-                val sat = ColorMatrix().apply { setSaturation(1.25f) }
-                val scale = 1.2f
-                val translate = (-0.5f * scale + 0.5f) * 255f + 10f
-                val cont = ColorMatrix(floatArrayOf(
-                    scale, 0f, 0f, 0f, translate,
-                    0f, scale, 0f, 0f, translate,
-                    0f, 0f, scale, 0f, translate,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                sat.postConcat(cont)
-                applyColorMatrix(src, sat)
-            }
-            "smartblur", "softenblur" -> {
-                val b = boxBlur(src, 10)
-                blendBitmaps(src, b, PorterDuff.Mode.SCREEN, 0.45f)
-            }
-            "orton" -> {
-                val b = boxBlur(src, 14)
-                blendBitmaps(src, b, PorterDuff.Mode.OVERLAY, 0.65f)
-            }
-            "vignette", "newvignette", "vignetteorchid" -> {
-                applyVignette(src, 0.7f)
-            }
-            "neoncola" -> {
-                val inv = applyColorMatrix(src, ColorMatrix(floatArrayOf(
-                    -1f, 0f, 0f, 0f, 255f,
-                    0f, -0.6f, 0f, 0f, 200f,
-                    0f, 0f, -1.2f, 0f, 255f,
-                    0f, 0f, 0f, 1f, 0f
-                )))
-                applyColorMatrix(inv, ColorMatrix().apply { setSaturation(1.8f) })
-            }
-            "popart1", "popart2", "popartunitedcolors" -> {
-                applyPopArt(src)
-            }
-            "glitch2", "graphglitch" -> {
-                applyGlitch(src)
-            }
-            else -> {
-                // Universal fallback per tutti i restanti filtri dei 170 JSON
-                val hash = filterId.hashCode()
-                val rShift = ((hash and 0xFF) % 40) - 15f
-                val gShift = (((hash shr 8) and 0xFF) % 40) - 15f
-                val bShift = (((hash shr 16) and 0xFF) % 40) - 15f
-                val satVal = 0.8f + (((hash shr 24) and 0xFF) % 70) / 100f
-                val cm = ColorMatrix(floatArrayOf(
-                    1f, 0f, 0f, 0f, rShift,
-                    0f, 1f, 0f, 0f, gShift,
-                    0f, 0f, 1f, 0f, bShift,
-                    0f, 0f, 0f, 1f, 0f
-                ))
-                cm.postConcat(ColorMatrix().apply { setSaturation(satVal) })
-                applyColorMatrix(src, cm)
-            }
-        }
-
-        // 2. Applicazione del Blend Mode e del Fade (Intensità)
-        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
-        val canvas = Canvas(out)
-        canvas.drawBitmap(src, 0f, 0f, null)
-
-        val alphaVal = (((100f - fade.coerceIn(0f, 100f)) / 100f) * 255f).toInt()
-        val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-            alpha = alphaVal
-            val bOption = BlendOption.fromId(blendMode.lowercase())
-            if (bOption.porterDuff != null) {
-                xfermode = PorterDuffXfermode(bOption.porterDuff)
-            }
-        }
-        canvas.drawBitmap(filtered, 0f, 0f, paint)
-
-        if (filtered != src && !filtered.isRecycled) {
-            filtered.recycle()
-        }
-        return out
+        val strength = (100f - fade.coerceIn(0f, 100f)) / 100f
+        return FxEngine.apply(src, filterId, params, strength, blendMode)
     }
 
     private fun applyColorMatrix(src: Bitmap, cm: ColorMatrix): Bitmap {

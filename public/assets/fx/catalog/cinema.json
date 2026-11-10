@@ -1,0 +1,105 @@
+{
+  "category": "cinema",
+  "effects": [
+    { "id": "cine_teal_orange", "label": "Teal & Orange",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "split_tone", "shadows": "#0f6e7a", "highlights": "#ff9a3c", "amount": "$amount * 0.75" },
+        { "op": "adjust", "contrast": 10, "vibrance": 10 }
+      ] },
+    { "id": "cine_blockbuster", "label": "Blockbuster",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "split_tone", "shadows": "#0a5d6e", "highlights": "#ffa040", "amount": "$amount * 0.9" },
+        { "op": "clarity", "amount": "$amount * 0.4", "radius": 5 },
+        { "op": "adjust", "contrast": 18, "saturation": 10 },
+        { "op": "vignette", "amount": 40, "radius": 55 }
+      ] },
+    { "id": "cine_noir_color", "label": "Noir a colori",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "saturation": "-$amount * 0.7", "contrast": "$amount * 0.3" },
+        { "op": "split_tone", "shadows": "#1a3a2a", "highlights": "#e8e0c8", "amount": 25 },
+        { "op": "vignette", "amount": "$amount * 0.8", "radius": 45 }
+      ] },
+    { "id": "cine_bleach", "label": "Argento cinema",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
+      "steps": [
+        { "op": "layer", "steps": [{ "op": "mono" }, { "op": "adjust", "contrast": 30 }], "blend": "overlay", "opacity": "$amount / 100" },
+        { "op": "adjust", "saturation": "-$amount * 0.5" }
+      ] },
+    { "id": "cine_cold_thriller", "label": "Thriller freddo",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "temperature": "-$amount * 0.4", "tint": "-$amount * 0.15", "saturation": "-$amount * 0.4", "contrast": "$amount * 0.25" },
+        { "op": "split_tone", "shadows": "#0c2f3a", "highlights": "#c8e0e0", "amount": 30 }
+      ] },
+    { "id": "cine_desert", "label": "Deserto",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "split_tone", "shadows": "#5a3410", "highlights": "#ffc870", "amount": "$amount * 0.7" },
+        { "op": "adjust", "temperature": "$amount * 0.3", "contrast": 15, "saturation": -10 }
+      ] },
+    { "id": "cine_green_code", "label": "Codice verde",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "curves", "r": [[0, 0], [128, 110], [255, 230]], "g": [[0, 10], [128, 145], [255, 255]], "b": [[0, 0], [128, 105], [255, 210]], "opacity": "$amount / 100" },
+        { "op": "adjust", "contrast": 20, "saturation": -20 }
+      ] },
+    { "id": "cine_day_for_night", "label": "Notte americana",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
+      "steps": [
+        { "op": "adjust", "exposure": "-$amount * 0.6", "saturation": "-$amount * 0.5", "temperature": "-$amount * 0.7" },
+        { "op": "tint", "color": "#2a4a9a", "amount": "$amount * 0.4" },
+        { "op": "vignette", "amount": 50, "radius": 50 }
+      ] },
+    { "id": "cine_golden_hour", "label": "Ora dorata",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "gradient", "type": "radial", "cx": 0.8, "cy": 0.15, "radius": 90, "stops": [[0, "#ffcf70"], [1, "#ff903000"]], "blend": "soft-light", "opacity": "$amount / 100" },
+        { "op": "adjust", "temperature": "$amount * 0.35", "vibrance": 15 },
+        { "op": "glow", "threshold": 70, "radius": 3, "strength": "$amount * 0.4" }
+      ] },
+    { "id": "cine_moody", "label": "Cupo",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "saturation": "-$amount * 0.4", "exposure": "-$amount * 0.2", "fade": "$amount * 0.25", "temperature": -15 },
+        { "op": "clarity", "amount": 30, "radius": 5 },
+        { "op": "vignette", "amount": 45, "radius": 50 }
+      ] },
+    { "id": "cine_vivid", "label": "Colori sgargianti",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "saturation": "$amount * 0.5", "contrast": "$amount * 0.25", "vibrance": "$amount * 0.2" },
+        { "op": "curves", "r": [[0, 0], [128, 136], [255, 255]], "b": [[0, 8], [128, 124], [255, 250]] }
+      ] },
+    { "id": "cine_scope", "label": "Cinemascope",
+      "params": [{ "id": "bars", "label": "Bande", "min": 0, "max": 40, "default": 12 }, { "id": "amount", "label": "Colore cinema", "default": 50 }],
+      "steps": [
+        { "op": "split_tone", "shadows": "#10505a", "highlights": "#ffb060", "amount": "$amount * 0.6" },
+        { "op": "fill", "color": "#000000", "mask": { "type": "linear", "position": 0.5, "width": "1 - $bars / 50", "feather": 0.001 } }
+      ] },
+    { "id": "cine_pastel", "label": "Pastello cinema",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "adjust", "fade": "$amount * 0.35", "saturation": "-$amount * 0.15", "brightness": 8 },
+        { "op": "split_tone", "shadows": "#7a8ab0", "highlights": "#ffd0c0", "amount": "$amount * 0.4" }
+      ] },
+    { "id": "cine_neon_noir", "label": "Neon noir",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 75 }],
+      "steps": [
+        { "op": "split_tone", "shadows": "#2a0a5a", "highlights": "#00e5ff", "amount": "$amount * 0.6" },
+        { "op": "tint", "color": "#ff2a8a", "amount": "$amount * 0.15", "mask": { "type": "luma", "from": 40, "to": 80 } },
+        { "op": "adjust", "contrast": 25, "exposure": -10 },
+        { "op": "glow", "threshold": 65, "radius": 2.5, "strength": 50 }
+      ] },
+    { "id": "cine_old_hollywood", "label": "Hollywood d'epoca",
+      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
+      "steps": [
+        { "op": "gradient_map", "stops": [[0, "#1a120c"], [0.6, "#a08868"], [1, "#fff6e4"]], "opacity": "$amount / 100" },
+        { "op": "layer", "steps": [{ "op": "blur", "radius": 2.5 }], "blend": "screen", "opacity": 0.35 },
+        { "op": "vignette", "amount": 50, "radius": 50 },
+        { "op": "grain", "amount": 20 }
+      ] }
+  ]
+}

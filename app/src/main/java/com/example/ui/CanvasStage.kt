@@ -26,7 +26,10 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
+import com.example.engine.MaskGeometry
+import com.example.engine.TransformGeometry
 import com.example.model.CropSubTab
+import com.example.model.MaskTool
 import com.example.model.LayerType
 import com.example.viewmodel.EditorUiState
 import com.example.viewmodel.EditorViewModel
@@ -59,11 +62,13 @@ fun InteractiveCanvasStage(
     val stageTop = (boxH - stageH) / 2f + state.viewOffsetY
     val scaleToCanvasX = state.canvasW / stageW.coerceAtLeast(1f)
     val scaleToCanvasY = state.canvasH / stageH.coerceAtLeast(1f)
+    // il gestore dei tocchi non viene ricreato a ogni modifica: legge sempre lo stato più recente
+    val latestState = rememberUpdatedState(state)
 
     Box(
         modifier = modifier
             .fillMaxSize()
-            .background(BgBlack)
+            .background(StageSurround)
             .onSizeChanged {
                 boxW = it.width.toFloat()
                 boxH = it.height.toFloat()
@@ -81,6 +86,7 @@ fun InteractiveCanvasStage(
                 state.viewOffsetY
             ) {
                 awaitEachGesture {
+                    @Suppress("NAME_SHADOWING") val state = latestState.value
                     val down = awaitFirstDown(requireUnconsumed = false)
                     val screenPt = down.position
 
@@ -166,6 +172,8 @@ fun InteractiveCanvasStage(
                             tool in listOf("brush", "mask", "selective_mask", "warp", "clone", "freecrop", "dispersion", "pen")
 
                     if (isDirectPaintTool) {
+                        // unità della tela per pixel dello schermo (maniglie con presa costante a ogni zoom)
+                        vm.touchToCanvas = scaleToCanvasX / state.viewScale.coerceAtLeast(0.05f)
                         vm.onCanvasPointerDown(startCanvas.x, startCanvas.y)
                         do {
                             val event = awaitPointerEvent()
@@ -188,28 +196,28 @@ fun InteractiveCanvasStage(
                         return@awaitEachGesture
                     }
 
-                    // 4. Default Layer Move / 8-Handle Resize / Rotation Handle / 2-Finger Viewport Zoom
+                    // 4. Sposta / ridimensiona / ruota il livello attivo (TransformGeometry), zoom e panoramica a due dita
                     val active = state.activeLayer
-                    var hitHandle = -1 // 0..7 = resize handles, 8 = top rotation knob, 9 = inside layer drag
-                    if (active != null && !active.locked) {
-                        val handles = getLayerHandlePoints(active.x, active.y, active.w, active.h)
-                        val rotKnob = Offset(active.x + active.w / 2f, active.y - 36f)
-                        if (hypot(startCanvas.x - rotKnob.x, startCanvas.y - rotKnob.y) < 38f * scaleToCanvasX) {
-                            hitHandle = 8
-                        } else {
-                            val idx = handles.indices.minByOrNull { i ->
-                                hypot(startCanvas.x - handles[i].x, startCanvas.y - handles[i].y)
-                            } ?: -1
-                            if (idx != -1 && hypot(startCanvas.x - handles[idx].x, startCanvas.y - handles[idx].y) < 34f * scaleToCanvasX) {
-                                hitHandle = idx
-                            } else if (
-                                startCanvas.x in active.x..(active.x + active.w) &&
-                                startCanvas.y in active.y..(active.y + active.h)
-                            ) {
-                                hitHandle = 9
-                            }
-                        }
+                    // unità della tela per pixel di schermo: le maniglie hanno la stessa presa a ogni zoom
+                    val t2c = scaleToCanvasX / state.viewScale.coerceAtLeast(0.05f)
+                    val startBox = active?.let { TransformGeometry.box(it.x, it.y, it.w, it.h, it.rotation) }
+                    var handle: TransformGeometry.Handle? = null
+                    if (active != null && !active.locked && startBox != null) {
+                        val screenMin = min(active.w, active.h) / t2c
+                        handle = TransformGeometry.hit(
+                            startBox, startCanvas.x, startCanvas.y,
+                            radius = HANDLE_TOUCH_DP.dp.toPx() * t2c,
+                            rotateOffset = ROTATE_OFFSET_DP.dp.toPx() * t2c,
+                            deleteOffset = DELETE_OFFSET_DP.dp.toPx() * t2c,
+                            showSides = screenMin > SIDE_HANDLES_MIN_DP.dp.toPx()
+                        )
                     }
+                    if (handle == TransformGeometry.Handle.DELETE) {
+                        vm.deleteActiveLayer()
+                        return@awaitEachGesture
+                    }
+                    val startAngle = startBox?.let { TransformGeometry.angleOf(it, startCanvas.x, startCanvas.y) } ?: 0f
+                    val keepRatio = true // angoli proporzionali, lati liberi
 
                     var prevCanvas = startCanvas
                     var modifiedLayer = false
@@ -219,7 +227,7 @@ fun InteractiveCanvasStage(
                             val zoom = event.calculateZoom()
                             val pan = event.calculatePan()
                             val rot = event.calculateRotation()
-                            if (hitHandle == 9 && active != null) {
+                            if (handle == TransformGeometry.Handle.BODY && active != null) {
                                 vm.transformActiveLayer(
                                     dx = pan.x * scaleToCanvasX / state.viewScale,
                                     dy = pan.y * scaleToCanvasY / state.viewScale,
@@ -235,26 +243,20 @@ fun InteractiveCanvasStage(
                             val change = event.changes.firstOrNull() ?: break
                             if (change.pressed) {
                                 val curCanvas = toCanvasPt(change.position)
-                                val dx = curCanvas.x - prevCanvas.x
-                                val dy = curCanvas.y - prevCanvas.y
-                                when (hitHandle) {
-                                    in 0..7 -> {
-                                        vm.resizeActiveLayerHandle(hitHandle, dx, dy)
+                                val h = handle
+                                when {
+                                    startBox != null && h != null && (h.isCorner || h.isSide) -> {
+                                        vm.setActiveLayerBox(
+                                            TransformGeometry.resize(startBox, h, curCanvas.x, curCanvas.y, keepRatio = keepRatio && h.isCorner, fromCenter = false, minSize = 16f)
+                                        )
                                         modifiedLayer = true
                                     }
-                                    8 -> {
-                                        if (active != null) {
-                                            val lcx = active.x + active.w / 2f
-                                            val lcy = active.y + active.h / 2f
-                                            val angle = Math.toDegrees(
-                                                atan2((curCanvas.y - lcy).toDouble(), (curCanvas.x - lcx).toDouble())
-                                            ).toFloat() + 90f
-                                            vm.rotateActiveLayerToAngle(angle)
-                                            modifiedLayer = true
-                                        }
+                                    startBox != null && h == TransformGeometry.Handle.ROTATE -> {
+                                        vm.setActiveLayerBox(TransformGeometry.rotate(startBox, startAngle, curCanvas.x, curCanvas.y))
+                                        modifiedLayer = true
                                     }
-                                    9 -> {
-                                        vm.transformActiveLayer(dx, dy)
+                                    h == TransformGeometry.Handle.BODY -> {
+                                        vm.transformActiveLayer(curCanvas.x - prevCanvas.x, curCanvas.y - prevCanvas.y)
                                         modifiedLayer = true
                                     }
                                     else -> {
@@ -286,7 +288,7 @@ fun InteractiveCanvasStage(
 
                 // Draw alpha checkerboard behind canvas so transparent backgrounds are clearly visible
                 drawRect(
-                    color = Color(0xFF1A1A22),
+                    color = StageSurround,
                     topLeft = Offset(left, top),
                     size = Size(stageW, stageH)
                 )
@@ -302,7 +304,7 @@ fun InteractiveCanvasStage(
                             val ch = (top + stageH - cy).coerceAtMost(checkSize)
                             if (cw > 0f && ch > 0f) {
                                 drawRect(
-                                    color = Color(0xFF262632),
+                                    color = StageCheckA,
                                     topLeft = Offset(cx, cy),
                                     size = Size(cw, ch)
                                 )
@@ -330,14 +332,16 @@ fun InteractiveCanvasStage(
                     }
                 }
 
+                drawRect(StageFrame, topLeft = Offset(left, top), size = Size(stageW, stageH), style = Stroke(width = 1.dp.toPx() / state.viewScale.coerceAtLeast(0.05f)))
+
                 // §23 Selective Mask semi-transparent red heatmap overlay (alpha 0.4)
                 if (state.currentTool == "selective_mask" && state.showMaskHeatmap) {
                     val activeLayer = state.activeLayer
                     if (activeLayer != null) {
-                        val maskBmp = if (state.selectiveTargetFxKey != null) {
-                            activeLayer.effects[state.selectiveTargetFxKey]?.localMask
-                        } else {
-                            activeLayer.maskBitmap
+                        val maskBmp = when (state.selectiveTargetFxKey) {
+                            null -> activeLayer.maskBitmap
+                            EditorViewModel.FILTER_FX_KEY -> activeLayer.activeFilterMask
+                            else -> activeLayer.effects[state.selectiveTargetFxKey]?.localMask
                         }
                         if (maskBmp != null) {
                             val lx = left + (activeLayer.x / state.canvasW) * stageW
@@ -352,6 +356,51 @@ fun InteractiveCanvasStage(
                                     alpha = 0.42f,
                                     colorFilter = ColorFilter.tint(Color(0xFFFF1E42), BlendMode.Modulate)
                                 )
+                            }
+                        }
+                    }
+                }
+
+                // Zona in bozza: forma con maniglie, lazo o poligono modellabile
+                if (state.currentTool == "selective_mask") {
+                    val toStage = android.graphics.Matrix().apply {
+                        postScale(stageW / state.canvasW, stageH / state.canvasH)
+                        postTranslate(left, top)
+                    }
+                    fun st(p: android.graphics.PointF) = Offset(left + p.x / state.canvasW * stageW, top + p.y / state.canvasH * stageH)
+                    val outlineW = 2.dp.toPx()
+                    state.maskShapeDraft?.let { d ->
+                        val path = MaskGeometry.outline(d).apply { transform(toStage) }.asComposePath()
+                        drawPath(path, Color.Black.copy(alpha = 0.55f), style = Stroke(width = outlineW * 2f))
+                        drawPath(path, AccentPinkHi, style = Stroke(width = outlineW, pathEffect = PathEffect.dashPathEffect(floatArrayOf(14f, 8f))))
+                        val hs = MaskGeometry.handles(d, 40f * vm.touchToCanvas).map { st(it) }
+                        // riquadro di controllo e collegamento alla maniglia di rotazione
+                        for (i in 0 until 4) drawLine(Color.White.copy(alpha = 0.6f), hs[i], hs[(i + 1) % 4], strokeWidth = 1.dp.toPx())
+                        val topMid = Offset((hs[0].x + hs[1].x) / 2f, (hs[0].y + hs[1].y) / 2f)
+                        drawLine(Color.White.copy(alpha = 0.8f), topMid, hs[4], strokeWidth = 1.5.dp.toPx())
+                        hs.forEachIndexed { i, h ->
+                            drawCircle(Color(0xCC141417), radius = 8.5.dp.toPx(), center = h) // anello scuro: visibile anche su foto chiare
+                            drawCircle(Color.White, radius = 7.dp.toPx(), center = h)
+                            drawCircle(if (i == 4) ActivePurple else AccentPink, radius = 4.5.dp.toPx(), center = h)
+                        }
+                    }
+                    val pts = state.maskPolyPoints
+                    if (pts.isNotEmpty()) {
+                        val sp = pts.map { st(it) }
+                        val path = Path().apply {
+                            moveTo(sp[0].x, sp[0].y)
+                            for (i in 1 until sp.size) lineTo(sp[i].x, sp[i].y)
+                            if (sp.size >= 3) close()
+                        }
+                        if (sp.size >= 3) drawPath(path, AccentPink.copy(alpha = 0.18f))
+                        drawPath(path, Color.Black.copy(alpha = 0.55f), style = Stroke(width = outlineW * 2f))
+                        drawPath(path, AccentPinkHi, style = Stroke(width = outlineW))
+                        // i punti si mostrano quando il contorno è stato chiuso o costruito a mano
+                        if (state.maskTool == MaskTool.POLYGON || sp.size <= 64) {
+                            sp.forEach { c ->
+                                drawCircle(Color(0xCC141417), radius = 7.5.dp.toPx(), center = c) // anello scuro: visibile anche su foto chiare
+                                drawCircle(Color.White, radius = 6.dp.toPx(), center = c)
+                                drawCircle(ActivePurple, radius = 3.5.dp.toPx(), center = c)
                             }
                         }
                     }
@@ -420,6 +469,7 @@ fun InteractiveCanvasStage(
                             }
                             drawPath(quad, ActivePurple, style = Stroke(width = 2.5.dp.toPx()))
                             pts.forEach { pt ->
+                                drawCircle(Color(0xCC141417), radius = 8.5.dp.toPx(), center = pt) // anello scuro: visibile anche su foto chiare
                                 drawCircle(Color.White, radius = 7.dp.toPx(), center = pt)
                                 drawCircle(ActivePurple, radius = 5.dp.toPx(), center = pt)
                             }
@@ -461,6 +511,7 @@ fun InteractiveCanvasStage(
                             Offset(cl + cw, ct + ch),
                             Offset(cl, ct + ch)
                         ).forEach { corner ->
+                            drawCircle(Color(0xCC141417), radius = 7.5.dp.toPx(), center = corner) // anello scuro: visibile anche su foto chiare
                             drawCircle(Color.White, radius = 6.dp.toPx(), center = corner)
                             drawCircle(ActivePurple, radius = 4.dp.toPx(), center = corner)
                         }
@@ -510,73 +561,63 @@ fun InteractiveCanvasStage(
                 // Active Layer Bounding Box + Quick Delete 'X' + 8 Resize Handles + Rotation Knob with Icon
                 if (active != null && state.currentTool !in listOf("crop", "rotate", "collage") &&
                     (state.layers.size > 1 || active.type != LayerType.RASTER || active.bitmap != null)) {
-                    val lx = left + (active.x / state.canvasW) * stageW
-                    val ly = top + (active.y / state.canvasH) * stageH
-                    val lw = (active.w / state.canvasW) * stageW
-                    val lh = (active.h / state.canvasH) * stageH
+                    // Riquadro, maniglie e rotazione: dimensioni costanti sullo schermo (divise per lo zoom)
+                    val zs = state.viewScale.coerceAtLeast(0.05f)
+                    val toStage = { p: android.graphics.PointF -> Offset(left + p.x / state.canvasW * stageW, top + p.y / state.canvasH * stageH) }
+                    val c2s = stageW / state.canvasW // pixel di tela-a-schermo prima dello zoom
+                    val t2c = 1f / (c2s * zs)
+                    val box = TransformGeometry.box(active.x, active.y, active.w, active.h, active.rotation)
+                    val hs = TransformGeometry.handles(box, ROTATE_OFFSET_DP.dp.toPx() * t2c, DELETE_OFFSET_DP.dp.toPx() * t2c)
+                    val showSides = min(active.w, active.h) / t2c > SIDE_HANDLES_MIN_DP.dp.toPx()
+                    val corners = listOf(TransformGeometry.Handle.TL, TransformGeometry.Handle.TR, TransformGeometry.Handle.BR, TransformGeometry.Handle.BL).map { toStage(hs.getValue(it)) }
+                    val outline = Path().apply { moveTo(corners[0].x, corners[0].y); corners.drop(1).forEach { lineTo(it.x, it.y) }; close() }
+                    drawPath(outline, Color.Black.copy(alpha = 0.35f), style = Stroke(width = 3.dp.toPx() / zs))
+                    drawPath(outline, ActivePurple, style = Stroke(width = 1.5.dp.toPx() / zs))
 
-                    rotate(active.rotation, pivot = Offset(lx + lw / 2f, ly + lh / 2f)) {
-                        // Main selection bounding box
-                        drawRect(
-                            color = ActivePurple.copy(alpha = 0.9f),
-                            topLeft = Offset(lx, ly),
-                            size = Size(lw, lh),
-                            style = Stroke(width = 1.5.dp.toPx())
-                        )
+                    // rotazione
+                    val topMid = Offset((corners[0].x + corners[1].x) / 2f, (corners[0].y + corners[1].y) / 2f)
+                    val knob = toStage(hs.getValue(TransformGeometry.Handle.ROTATE))
+                    drawLine(ActivePurple, topMid, knob, 1.5.dp.toPx() / zs)
+                    drawCircle(Color(0xCC141417), radius = 11.5.dp.toPx() / zs, center = knob) // anello scuro: visibile anche su foto chiare
+                    drawCircle(Color.White, radius = 10.dp.toPx() / zs, center = knob)
+                    drawCircle(ActivePurple, radius = 8.dp.toPx() / zs, center = knob)
+                    drawArc(
+                        color = Color.White, startAngle = 40f, sweepAngle = 280f, useCenter = false,
+                        topLeft = Offset(knob.x - 4.dp.toPx() / zs, knob.y - 4.dp.toPx() / zs),
+                        size = Size(8.dp.toPx() / zs, 8.dp.toPx() / zs), style = Stroke(1.5.dp.toPx() / zs)
+                    )
 
-                        // Top Rotation Knob with rotation symbol affordance
-                        val knobCenter = Offset(lx + lw / 2f, ly - 24.dp.toPx())
-                        drawLine(ActivePurple, Offset(lx + lw / 2f, ly), knobCenter, 1.5.dp.toPx())
-                        drawCircle(Color.White, radius = 9.dp.toPx(), center = knobCenter)
-                        drawCircle(AccentPink, radius = 7.dp.toPx(), center = knobCenter)
-                        // Rotation curved arrow indicator inside knob
-                        drawArc(
-                            color = Color.White,
-                            startAngle = 40f,
-                            sweepAngle = 280f,
-                            useCenter = false,
-                            topLeft = Offset(knobCenter.x - 4.dp.toPx(), knobCenter.y - 4.dp.toPx()),
-                            size = Size(8.dp.toPx(), 8.dp.toPx()),
-                            style = Stroke(1.5.dp.toPx())
-                        )
-
-                        // 8 Resize Handles (Corners are rounded squares for proportional scaling affordance)
-                        val handles = getLayerHandlePoints(lx, ly, lw, lh)
-                        handles.forEachIndexed { i, hPt ->
-                            if (i in listOf(0, 2, 4, 6)) {
-                                // Diagonal corners (Proportional aspect ratio handles)
-                                if (i != 0) { // Corner 0 has the delete 'X' button
-                                    drawCircle(Color.White, radius = 6.dp.toPx(), center = hPt)
-                                    drawCircle(ActivePurple, radius = 4.dp.toPx(), center = hPt)
-                                }
-                            } else {
-                                // Side handles (Free stretch)
-                                drawCircle(Color.White, radius = 4.5.dp.toPx(), center = hPt)
-                                drawCircle(Color(0xFF8B5CF6), radius = 3.dp.toPx(), center = hPt)
+                    // angoli (proporzionali) e lati (un asse)
+                    hs.forEach { (h, p) ->
+                        val c = toStage(p)
+                        when {
+                            h.isCorner -> {
+                                drawCircle(Color(0xCC141417), radius = 8.5.dp.toPx() / zs, center = c) // anello scuro: visibile anche su foto chiare
+                                drawCircle(Color.White, radius = 7.dp.toPx() / zs, center = c)
+                                drawCircle(ActivePurple, radius = 5.dp.toPx() / zs, center = c)
+                            }
+                            h.isSide && showSides -> {
+                                drawCircle(Color(0xCC141417), radius = 7.0.dp.toPx() / zs, center = c) // anello scuro: visibile anche su foto chiare
+                                drawCircle(Color.White, radius = 5.5.dp.toPx() / zs, center = c)
+                                drawCircle(ActivePurple, radius = 3.5.dp.toPx() / zs, center = c)
                             }
                         }
-
-                        // Quick Action Delete 'X' badge at Top-Left corner (Index 0)
-                        val delCenter = Offset(lx, ly)
-                        drawCircle(Color(0xFFE53935), radius = 11.dp.toPx(), center = delCenter)
-                        drawCircle(Color.White, radius = 11.dp.toPx(), center = delCenter, style = Stroke(1.5.dp.toPx()))
-                        val xArm = 4.5.dp.toPx()
-                        drawLine(Color.White, Offset(delCenter.x - xArm, delCenter.y - xArm), Offset(delCenter.x + xArm, delCenter.y + xArm), 2.dp.toPx())
-                        drawLine(Color.White, Offset(delCenter.x + xArm, delCenter.y - xArm), Offset(delCenter.x - xArm, delCenter.y + xArm), 2.dp.toPx())
                     }
+
+                    // eliminazione rapida, fuori dall'angolo in alto a sinistra
+                    val del = toStage(hs.getValue(TransformGeometry.Handle.DELETE))
+                    drawCircle(Color(0xFFE53935), radius = 10.dp.toPx() / zs, center = del)
+                    val xArm = 3.5.dp.toPx() / zs
+                    drawLine(Color.White, Offset(del.x - xArm, del.y - xArm), Offset(del.x + xArm, del.y + xArm), 1.8.dp.toPx() / zs)
+                    drawLine(Color.White, Offset(del.x + xArm, del.y - xArm), Offset(del.x - xArm, del.y + xArm), 1.8.dp.toPx() / zs)
                 }
             }
         }
     }
 }
 
-private fun getLayerHandlePoints(x: Float, y: Float, w: Float, h: Float): List<Offset> = listOf(
-    Offset(x, y),                   // 0: TL
-    Offset(x + w / 2f, y),          // 1: TC
-    Offset(x + w, y),               // 2: TR
-    Offset(x + w, y + h / 2f),      // 3: RC
-    Offset(x + w, y + h),           // 4: BR
-    Offset(x + w / 2f, y + h),      // 5: BC
-    Offset(x, y + h),               // 6: BL
-    Offset(x, y + h / 2f)           // 7: LC
-)
+// Misure delle maniglie in dp di schermo (docs/UI_PRINCIPLES.md: area di tocco ≥ 44 dp di diametro)
+private const val HANDLE_TOUCH_DP = 24f
+private const val ROTATE_OFFSET_DP = 32f
+private const val DELETE_OFFSET_DP = 30f
+private const val SIDE_HANDLES_MIN_DP = 96f
