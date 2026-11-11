@@ -204,6 +204,7 @@ enum class BrushStyle(val label: String) {
 
 /** Strumenti per definire la zona di un effetto o la visibilità di un livello. */
 enum class MaskTool(val label: String) {
+    WAND("Bacchetta"),
     BRUSH("Pennello"),
     SHAPE("Forma"),
     LASSO("Lazo"),

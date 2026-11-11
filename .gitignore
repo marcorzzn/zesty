@@ -28,3 +28,6 @@ pixart_old.zip
 
 # Materiale di terzi tenuto solo come riferimento locale (escluso da git e dalla build)
 materiale terzi/
+
+# Modelli IA (scaricati con tools/fetch-models.sh, verificati con SHA-256)
+/app/src/main/assets/models/

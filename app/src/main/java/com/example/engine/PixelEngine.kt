@@ -246,6 +246,26 @@ object PixelEngine {
     // Risultato del filtro prima della zona: mentre si modifica la zona si ricalcola solo la fusione (anteprima in diretta)
     private val filterResultCache = android.util.LruCache<Int, Bitmap>(4)
 
+    /**
+     * Anteprima interattiva: mentre si trascina un cursore il filtro si calcola su una copia con lato lungo
+     * di [PREVIEW_MAX_SIDE] px e si ingrandisce; appena l'interazione si ferma si ricalcola a piena risoluzione.
+     * Le misure del motore sono proporzionali alla foto, quindi l'aspetto non cambia.
+     */
+    @Volatile var interactivePreview: Boolean = false
+    const val PREVIEW_MAX_SIDE = 720
+
+    private fun applyFilterForPreview(bmp: Bitmap, layer: EditorLayer): Bitmap {
+        val id = layer.activeFilterId ?: return bmp
+        val maxSide = max(bmp.width, bmp.height)
+        if (!interactivePreview || maxSide <= PREVIEW_MAX_SIDE) {
+            return applyEffectFilter(bmp, id, layer.activeFilterFade, layer.activeFilterBlend, layer.activeFilterParams)
+        }
+        val k = PREVIEW_MAX_SIDE.toFloat() / maxSide
+        val small = Bitmap.createScaledBitmap(bmp, (bmp.width * k).roundToInt().coerceAtLeast(1), (bmp.height * k).roundToInt().coerceAtLeast(1), true)
+        val fx = applyEffectFilter(small, id, layer.activeFilterFade, layer.activeFilterBlend, layer.activeFilterParams)
+        return Bitmap.createScaledBitmap(fx, bmp.width, bmp.height, true)
+    }
+
     private fun computeLayerCacheKey(layer: EditorLayer, allLayers: List<EditorLayer>): Int {
         var result = layer.hashCode()
         result = 31 * result + (layer.bitmap?.generationId ?: 0)
@@ -371,10 +391,10 @@ object PixelEngine {
 
         // Apply 170 Filter FX if active
         if (layer.activeFilterId != null) {
-            val filterKey = computeLayerCacheKey(layer.copy(activeFilterMask = null, activeFilterMaskInverted = false), allLayers)
+            val preview = interactivePreview
+            val filterKey = 31 * computeLayerCacheKey(layer.copy(activeFilterMask = null, activeFilterMaskInverted = false), allLayers) + (if (preview) 1 else 0)
             val filtered = filterResultCache.get(filterKey)?.takeIf { !it.isRecycled && it.width == bmp.width && it.height == bmp.height }
-                ?: applyEffectFilter(bmp, layer.activeFilterId, layer.activeFilterFade, layer.activeFilterBlend, layer.activeFilterParams)
-                    .also { filterResultCache.put(filterKey, it) }
+                ?: applyFilterForPreview(bmp, layer).also { filterResultCache.put(filterKey, it) }
             // Zona del filtro: pennello, gomma, forme, lazo o poligono (§ maschera selettiva)
             bmp = layer.activeFilterMask?.let { MaskGeometry.blendThroughMask(bmp, filtered, it, layer.activeFilterMaskInverted) } ?: filtered
         }
@@ -993,6 +1013,39 @@ object PixelEngine {
      * 3D Perspective Homography transformation using 4 draggable corners (normalized 0..1)
      * Solves the 8x8 linear system for inverse projective mapping and samples pixel-by-pixel with bilinear interpolation.
      */
+    /**
+     * Distorsione prospettica: gli angoli del bitmap vanno nei punti [corners] (normalizzati 0..1, anche fuori).
+     * È la stessa trasformazione dell'anteprima (Matrix.setPolyToPoly), calcolata in modo esatto pixel per pixel.
+     * Le zone fuori dalla foto diventano trasparenti.
+     */
+    fun applyPerspectiveDistort(src: Bitmap, corners: List<NormPoint>): Bitmap {
+        if (corners.size < 4) return src
+        val w = src.width; val h = src.height
+        val quad = floatArrayOf(
+            corners[0].x * w, corners[0].y * h, corners[1].x * w, corners[1].y * h,
+            corners[2].x * w, corners[2].y * h, corners[3].x * w, corners[3].y * h
+        )
+        val rect = floatArrayOf(0f, 0f, w.toFloat(), 0f, w.toFloat(), h.toFloat(), 0f, h.toFloat())
+        val hm = solveHomography8x8(quad, rect) // dal quadrilatero di arrivo al rettangolo di partenza
+        val inPx = IntArray(w * h); val outPx = IntArray(w * h)
+        src.getPixels(inPx, 0, w, 0, 0, w, h)
+        for (y in 0 until h) {
+            val yf = y + 0.5f
+            for (x in 0 until w) {
+                val xf = x + 0.5f
+                val d = hm[6] * xf + hm[7] * yf + 1f
+                if (abs(d) < 1e-6f) continue
+                val u = (hm[0] * xf + hm[1] * yf + hm[2]) / d - 0.5f
+                val v = (hm[3] * xf + hm[4] * yf + hm[5]) / d - 0.5f
+                if (u < -0.5f || v < -0.5f || u > w - 0.5f || v > h - 0.5f) continue
+                outPx[y * w + x] = sampleBilinear(inPx, w, h, u, v)
+            }
+        }
+        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        out.setPixels(outPx, 0, w, 0, 0, w, h)
+        return out
+    }
+
     fun applyPerspectiveHomography(src: Bitmap, corners: List<NormPoint>): Bitmap {
         if (corners.size < 4) return src
         val w = src.width
@@ -1310,7 +1363,7 @@ object PixelEngine {
             FxEngine.catalog.categories.map { it.id to it.label }
 
     private val POPULAR_FILTERS = listOf(
-        "enhance", "hdr_natural", "bw_classic", "bw_noir", "film_warm", "film_instant", "film_lomo",
+        "poster_vintage", "frame_instant", "enhance", "hdr_natural", "bw_classic", "bw_noir", "film_warm", "film_instant", "film_lomo",
         "vintage_classic", "cine_teal_orange", "cine_golden_hour", "color_splash", "duotone",
         "pop_grid4", "pop_halftone", "draw_pencil", "draw_cartoon", "draw_watercolor", "blur_tilt_shift",
         "glitch_vhs", "light_leak_warm", "light_bokeh", "atm_snow", "port_skin"

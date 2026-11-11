@@ -38,17 +38,40 @@ fun RowScope.ToolTopBarActions(state: EditorUiState, vm: EditorViewModel) {
             }
         }
         "selective_mask" -> {
+            val cut = state.cutoutStudio
             PxIconAction(
-                icon = if (state.maskSubtract) Icons.Default.RemoveCircleOutline else Icons.Default.AddCircleOutline,
-                description = if (state.maskSubtract) "Modalità togli zona (tocca per aggiungere)" else "Modalità aggiungi zona (tocca per togliere)",
+                icon = when {
+                    cut && state.maskSubtract -> CutIcons.ModeRemove
+                    cut -> CutIcons.ModeRestore
+                    state.maskSubtract -> Icons.Default.RemoveCircleOutline
+                    else -> Icons.Default.AddCircleOutline
+                },
+                description = when {
+                    cut && state.maskSubtract -> "Modalità togli (tocca per rimettere)"
+                    cut -> "Modalità rimetti (tocca per togliere)"
+                    state.maskSubtract -> "Modalità togli zona (tocca per aggiungere)"
+                    else -> "Modalità aggiungi zona (tocca per togliere)"
+                },
                 active = state.maskSubtract
             ) { vm.setMaskSubtract(!state.maskSubtract) }
-            PxIconAction(
-                icon = if (state.showMaskHeatmap) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
-                description = "Evidenzia la zona",
-                active = state.showMaskHeatmap
-            ) { vm.toggleSelectiveHeatmap() }
+            if (cut) {
+                PxIconAction(
+                    icon = Icons.Default.Wallpaper,
+                    description = "Sfondo di prova: " + listOf("scacchi", "scuro", "bianco", "lime")[state.cutoutBackdrop],
+                    active = state.cutoutBackdrop != 0
+                ) { vm.setCutoutBackdrop(state.cutoutBackdrop + 1) }
+            } else {
+                PxIconAction(
+                    icon = if (state.showMaskHeatmap) Icons.Outlined.Visibility else Icons.Outlined.VisibilityOff,
+                    description = "Evidenzia la zona",
+                    active = state.showMaskHeatmap
+                ) { vm.toggleSelectiveHeatmap() }
+            }
             PxOverflowMenu(buildList {
+                if (cut) {
+                    add(PxMenuItem("Evidenzia la parte tolta", Icons.Outlined.Visibility, checked = state.showMaskHeatmap) { vm.toggleSelectiveHeatmap() })
+                    add(PxMenuItem("Ritaglia al soggetto", Icons.Default.CropFree) { vm.cutoutTrimToSubject() })
+                }
                 if (state.maskTool == MaskTool.POLYGON && state.maskPolyPoints.isNotEmpty()) {
                     add(PxMenuItem("Togli ultimo punto", Icons.Default.Backspace) { vm.removeLastMaskPoint() })
                 }
@@ -57,8 +80,8 @@ fun RowScope.ToolTopBarActions(state: EditorUiState, vm: EditorViewModel) {
                 }
                 add(PxMenuItem("Inverti zona", Icons.Default.Flip, checked = vm.isSelectiveInverted()) { vm.invertSelectiveMask() })
                 add(PxMenuItem("Sfuma i bordi", Icons.Default.BlurOn) { vm.featherWholeMask(8f) })
-                add(PxMenuItem("Tutta la foto", Icons.Default.SelectAll) { vm.fillSelectiveMask(true) })
-                add(PxMenuItem("Svuota zona", Icons.Default.Deselect) { vm.fillSelectiveMask(false) })
+                add(PxMenuItem(if (cut) "Rimetti tutto" else "Tutta la foto", Icons.Default.SelectAll) { vm.fillSelectiveMask(true) })
+                add(PxMenuItem(if (cut) "Togli tutto" else "Svuota zona", Icons.Default.Deselect) { vm.fillSelectiveMask(false) })
             })
         }
         "brush", "mask" -> {

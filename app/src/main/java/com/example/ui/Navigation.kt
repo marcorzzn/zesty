@@ -21,7 +21,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 
 /**
- * Architettura delle informazioni di Pixart (docs/PIANO_INTEGRAZIONE.md §3):
+ * Architettura delle informazioni di Zesty (docs/PIANO_INTEGRAZIONE.md §3):
  * 7 famiglie, ogni strumento in un solo posto. Uguale su telefono, tablet e web; cambia solo la posizione.
  * Solo icone: il nome è nella descrizione accessibile e nel suggerimento a pressione lunga.
  */
@@ -46,9 +46,9 @@ val TOOL_FAMILIES = listOf(
         ToolNavItem("reflect", "Rifletti", Icons.Default.Flip)
     )),
     ToolFamily("scontorna", "Scontorna", Icons.Default.ContentCut, listOf(
-        ToolNavItem("freecrop", "Ritaglio libero", Icons.Default.Gesture),
-        ToolNavItem("shapecrop", "Ritaglio a forma", Icons.Default.Interests),
-        ToolNavItem("mask", "Maschera", Icons.Default.Gradient)
+        // un solo strumento: bacchetta, lazo, pennello, forme, sfondo automatico e rifinitura
+        // (i vecchi "Ritaglio libero", "Ritaglio a forma" e "Maschera" confluiscono qui; il codice resta)
+        ToolNavItem("cutout", "Scontorna", Icons.Default.ContentCut)
     )),
     ToolFamily("ritocca", "Ritocca", Icons.Default.Healing, listOf(
         ToolNavItem("clone", "Clona", Icons.Default.Healing),
@@ -68,6 +68,7 @@ val TOOL_FAMILIES = listOf(
     ToolFamily("esporta", "Esporta", Icons.Default.IosShare, listOf(
         ToolNavItem("export", "Esporta", Icons.Default.Download),
         ToolNavItem("share", "Condividi", Icons.Default.Share),
+        ToolNavItem("split", "Dividi e salva", Icons.Default.GridOn),
         ToolNavItem("replay", "Riproduci modifiche", Icons.Default.Replay)
     ))
 )

@@ -178,12 +178,16 @@ fun CropToolPanel(state: EditorUiState, vm: EditorViewModel) {
                 }
             }
         } else {
-            Text(
-                text = "Trascina i 4 angoli viola sul canvas per la Prospettiva 3D (Omografia)",
-                color = TextDim,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
-            )
+            // Prospettiva: cursori per raddrizzare in un gesto, angoli trascinabili sulla foto, tutto in diretta
+            PxSectionTitle("Prospettiva") {
+                Text(
+                    "Ripristina", color = AccentPinkHi, fontSize = 11.sp,
+                    modifier = Modifier.clip(CircleShape).clickable { vm.resetPerspective() }.padding(horizontal = 8.dp, vertical = 4.dp)
+                )
+            }
+            PxSlider("Verticale", state.perspVertical, -100f..100f, { vm.setPerspectiveKeystone(vertical = it) })
+            PxSlider("Orizzontale", state.perspHorizontal, -100f..100f, { vm.setPerspectiveKeystone(horizontal = it) })
+            PxHint("Trascina gli angoli per allineare la foto alla griglia")
         }
 
         // Aspect Ratio row
@@ -226,39 +230,17 @@ fun CropToolPanel(state: EditorUiState, vm: EditorViewModel) {
             }
         }
 
-        // Bottom Crop Tabs
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(Color(0xFF0A0A0D))
-                .padding(8.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp)
-        ) {
-            CropSubTab.entries.forEach { tab ->
-                val label = when (tab) {
-                    CropSubTab.CROP -> "RITAGLIA"
-                    CropSubTab.ROTATE -> "RUOTA"
-                    CropSubTab.PERSPECTIVE -> "PROSPETTIVA"
-                }
-                val active = state.cropSubTab == tab
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(6.dp))
-                        .background(if (active) BorderCol else Color.White.copy(alpha = 0.03f))
-                        .clickable { vm.setCropSubTab(tab) }
-                        .padding(vertical = 10.dp),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = label,
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = if (active) TextWhite else TextMute
-                    )
-                }
-            }
-        }
+        // Modalità: ritaglia, ruota, prospettiva
+        val modes = listOf(
+            CropSubTab.CROP to PxOption("Ritaglia", Icons.Default.Crop),
+            CropSubTab.ROTATE to PxOption("Ruota", Icons.Default.RotateRight),
+            CropSubTab.PERSPECTIVE to PxOption("Prospettiva", Icons.Default.Transform)
+        )
+        PxSegmented(
+            options = modes.map { it.second },
+            selected = modes.indexOfFirst { it.first == state.cropSubTab }.coerceAtLeast(0),
+            onSelect = { vm.setCropSubTab(modes[it].first) }
+        )
     }
 }
 
@@ -1224,10 +1206,11 @@ fun BlendModeStrip(selected: BlendOption, onSelect: (BlendOption) -> Unit) {
 fun SelectivePaintToolPanel(state: EditorUiState, vm: EditorViewModel) {
     val tool = state.maskTool
     val tools = listOf(
+        MaskTool.WAND to PxOption("Bacchetta: tocca un colore", CutIcons.Wand),
         MaskTool.BRUSH to PxOption("Pennello", Icons.Default.Brush),
         MaskTool.SHAPE to PxOption("Forma", Icons.Default.Category),
-        MaskTool.LASSO to PxOption("Lazo", Icons.Default.Gesture),
-        MaskTool.POLYGON to PxOption("Poligono", Icons.Default.Timeline)
+        MaskTool.LASSO to PxOption("Lazo: disegna il contorno", CutIcons.Lasso),
+        MaskTool.POLYGON to PxOption("Poligono: tocca gli angoli", CutIcons.Polygon)
     )
 
     Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 6.dp)) {
@@ -1237,6 +1220,7 @@ fun SelectivePaintToolPanel(state: EditorUiState, vm: EditorViewModel) {
             onSelect = { vm.setMaskTool(tools[it].first) }
         )
         when (tool) {
+            MaskTool.WAND -> WandSettings(state, vm)
             MaskTool.BRUSH -> {
                 PxSlider("Dimensione", state.brushSize, 1f..200f, { vm.updateBrushSettings(size = it) }, "px")
                 PxSlider("Durezza", state.brushHardness, 5f..100f, { vm.updateBrushSettings(hardness = it) }, "%")

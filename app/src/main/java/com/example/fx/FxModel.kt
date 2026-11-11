@@ -4,9 +4,9 @@ import org.json.JSONArray
 import org.json.JSONObject
 
 /**
- * Pixart FX — modello dati del catalogo effetti.
+ * Zesty FX — modello dati del catalogo effetti.
  *
- * Il catalogo è definito in JSON (public/assets/fx/) con un formato originale di Pixart,
+ * Il catalogo è definito in JSON (public/assets/fx/) con un formato originale di Zesty,
  * condiviso fra l'app Android e la web app. Ogni effetto è una sequenza di "step":
  * ogni step invoca un'operazione primitiva (vedi FxOps) con argomenti che possono essere
  * numeri, colori "#rrggbb", oppure espressioni che usano i parametri dell'effetto ("$amount * 0.5").
@@ -223,6 +223,11 @@ object FxExpr {
                     "max" -> if (args.size >= 2) maxOf(args[0], args[1]) else args.firstOrNull() ?: 0.0
                     "abs" -> kotlin.math.abs(args.firstOrNull() ?: 0.0)
                     "clamp" -> if (args.size >= 3) args[0].coerceIn(args[1], args[2]) else args.firstOrNull() ?: 0.0
+                    // colore da tre canali 0..255 (arrotondati e limitati): "rgb(246 - $aged * 0.14, 238, 218)"
+                    "rgb" -> if (args.size >= 3) {
+                        val r = Math.round(args[0]).coerceIn(0, 255); val g = Math.round(args[1]).coerceIn(0, 255); val b = Math.round(args[2]).coerceIn(0, 255)
+                        ((r shl 16) or (g shl 8) or b).toDouble()
+                    } else 0.0
                     else -> 0.0
                 }
             }

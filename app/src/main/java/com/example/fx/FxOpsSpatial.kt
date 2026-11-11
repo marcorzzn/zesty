@@ -56,22 +56,47 @@ object FxOpsSpatial {
 
     /** Filtro guidato (He et al.): leviga preservando i bordi. Usato per pelle, denoise, cartoon. */
     fun smooth(img: FxImage, radiusPx: Float, strength: Float): FxImage {
-        val r = radiusPx.roundToInt().coerceAtLeast(1)
         val eps = (strength * strength * 0.06f).coerceAtLeast(1e-5f)
         val n = img.size; val w = img.w; val h = img.h
+        // Fast guided filter (He e Sun, 2015): medie e coefficienti calcolati su una copia ridotta di s,
+        // poi applicati all'immagine piena. Con raggi ≥ 4 px la differenza non si vede, il tempo cala di s².
+        val s = when { radiusPx >= 12f -> 4; radiusPx >= 4f -> 2; else -> 1 }
+        val sw = if (s > 1) w / s else w; val sh = if (s > 1) h / s else h
+        val r = (radiusPx / s).roundToInt().coerceAtLeast(1)
+        val small = if (s > 1) FxBlur.downsample(img.px, w, h, s, sw, sh) else img.px
+        val sn = sw * sh
         val out = IntArray(n) { img.px[it] and 0xFF000000.toInt() }
-        val ch = FloatArray(n)
+        val ch = FloatArray(sn)
+        val sq = FloatArray(sn)
         for (shift in intArrayOf(16, 8, 0)) {
-            for (i in 0 until n) ch[i] = ((img.px[i] shr shift) and 0xFF) / 255f
-            val sq = FloatArray(n) { ch[it] * ch[it] }
-            val mI = FxBlur.boxF(ch, w, h, r); val mII = FxBlur.boxF(sq, w, h, r)
-            val aa = FloatArray(n); val bb = FloatArray(n)
-            for (i in 0 until n) {
+            for (i in 0 until sn) { val v = ((small[i] shr shift) and 0xFF) / 255f; ch[i] = v; sq[i] = v * v }
+            val mI = FxBlur.boxF(ch, sw, sh, r); val mII = FxBlur.boxF(sq, sw, sh, r)
+            val aa = FloatArray(sn); val bb = FloatArray(sn)
+            for (i in 0 until sn) {
                 val v = mII[i] - mI[i] * mI[i]
                 aa[i] = v / (v + eps); bb[i] = mI[i] - aa[i] * mI[i]
             }
-            val ma = FxBlur.boxF(aa, w, h, r); val mb = FxBlur.boxF(bb, w, h, r)
-            for (i in 0 until n) out[i] = out[i] or (Px.clampF((ma[i] * ch[i] + mb[i]) * 255f) shl shift)
+            val ma = FxBlur.boxF(aa, sw, sh, r); val mb = FxBlur.boxF(bb, sw, sh, r)
+            if (s == 1) {
+                for (i in 0 until n) out[i] = out[i] or (Px.clampF((ma[i] * ch[i] + mb[i]) * 255f) shl shift)
+            } else {
+                // coefficienti ingranditi in bilineare e applicati al canale a piena risoluzione
+                val kx = sw.toFloat() / w; val ky = sh.toFloat() / h
+                for (y in 0 until h) {
+                    val fy = ((y + 0.5f) * ky - 0.5f).coerceIn(0f, (sh - 1).toFloat())
+                    val y0 = fy.toInt(); val y1 = min(y0 + 1, sh - 1); val ty = fy - y0
+                    for (x in 0 until w) {
+                        val fx = ((x + 0.5f) * kx - 0.5f).coerceIn(0f, (sw - 1).toFloat())
+                        val x0 = fx.toInt(); val x1 = min(x0 + 1, sw - 1); val tx = fx - x0
+                        val i00 = y0 * sw + x0; val i10 = y0 * sw + x1; val i01 = y1 * sw + x0; val i11 = y1 * sw + x1
+                        val av = (ma[i00] * (1 - tx) + ma[i10] * tx) * (1 - ty) + (ma[i01] * (1 - tx) + ma[i11] * tx) * ty
+                        val bv = (mb[i00] * (1 - tx) + mb[i10] * tx) * (1 - ty) + (mb[i01] * (1 - tx) + mb[i11] * tx) * ty
+                        val i = y * w + x
+                        val c = ((img.px[i] shr shift) and 0xFF) / 255f
+                        out[i] = out[i] or (Px.clampF((av * c + bv) * 255f) shl shift)
+                    }
+                }
+            }
         }
         return FxImage(w, h, out)
     }
@@ -294,6 +319,34 @@ object FxOpsSpatial {
 
     fun motionBlur(img: FxImage, angle: Float, distPx: Float): FxImage {
         if (distPx < 1f) return img
+        // Passate successive di 3 campioni con passo dimezzato: approssima la media su tutta la scia
+        // con 3·log2(d) letture invece di d (fino a 48). Stessa resa, molto più veloce.
+        val ang = Math.toRadians(angle.toDouble())
+        val ux = cos(ang).toFloat(); val uy = sin(ang).toFloat()
+        var cur = img
+        var step = distPx / 4f
+        while (step >= 0.5f) {
+            val src = cur
+            val out = IntArray(img.size)
+            val dx = ux * step; val dy = uy * step
+            for (y in 0 until img.h) for (x in 0 until img.w) {
+                val a = FxSample.bilinear(src, x - dx, y - dy); val c = src.px[y * img.w + x]; val b = FxSample.bilinear(src, x + dx, y + dy)
+                out[y * img.w + x] = avg3(a, c, b)
+            }
+            cur = FxImage(img.w, img.h, out)
+            step /= 2f
+        }
+        return cur
+    }
+
+    private fun avg3(a: Int, b: Int, c: Int): Int {
+        fun ch(sh: Int) = ((((a ushr sh) and 0xFF) + ((b ushr sh) and 0xFF) * 2 + ((c ushr sh) and 0xFF)) + 2) shr 2
+        return (ch(24) shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
+    }
+
+    @Suppress("unused")
+    private fun motionBlurDirect(img: FxImage, angle: Float, distPx: Float): FxImage {
+        if (distPx < 1f) return img
         val n = distPx.roundToInt().coerceIn(2, 48)
         val ang = Math.toRadians(angle.toDouble())
         val dx = (cos(ang) * distPx).toFloat(); val dy = (sin(ang) * distPx).toFloat()
@@ -311,6 +364,34 @@ object FxOpsSpatial {
     }
 
     fun zoomBlur(img: FxImage, cx: Float, cy: Float, amount: Float): FxImage {
+        if (amount <= 0f) return img
+        // passate successive a 3 campioni con scala dimezzata (come il mosso): ~12 letture invece di 24
+        val ox = cx * img.w; val oy = cy * img.h
+        var cur = img
+        var step = amount * 0.35f / 4f
+        val minStep = 0.5f / max(img.w, img.h)
+        while (step >= minStep) {
+            val src = cur
+            val out = IntArray(img.size)
+            val s1 = 1f + step; val s2 = 1f - step
+            for (y in 0 until img.h) {
+                val dy = y - oy
+                for (x in 0 until img.w) {
+                    val dx = x - ox
+                    out[y * img.w + x] = avg3(
+                        FxSample.bilinear(src, ox + dx * s1, oy + dy * s1), src.px[y * img.w + x],
+                        FxSample.bilinear(src, ox + dx * s2, oy + dy * s2)
+                    )
+                }
+            }
+            cur = FxImage(img.w, img.h, out)
+            step /= 2f
+        }
+        return cur
+    }
+
+    @Suppress("unused")
+    private fun zoomBlurDirect(img: FxImage, cx: Float, cy: Float, amount: Float): FxImage {
         if (amount <= 0f) return img
         val n = 24
         val ox = cx * img.w; val oy = cy * img.h

@@ -26,7 +26,7 @@ import androidx.compose.ui.unit.sp
 import kotlin.math.roundToInt
 
 /**
- * Pixart — componenti di base dell'interfaccia (vedi docs/UI_PRINCIPLES.md).
+ * Zesty — componenti di base dell'interfaccia (vedi docs/UI_PRINCIPLES.md).
  * Misure e colori sono qui, una volta sola: i pannelli non usano valori sparsi.
  */
 object Px {
@@ -79,17 +79,22 @@ fun PxHint(text: String) {
 
 /** Chip selezionabile, solo per collezioni in una riga scorrevole. */
 @Composable
-fun PxChip(text: String, selected: Boolean, onClick: () -> Unit) {
-    Box(
+fun PxChip(text: String, selected: Boolean, icon: ImageVector? = null, swatch: Color? = null, onClick: () -> Unit) {
+    val fg = if (selected) OnAccent else TextDim
+    Row(
         modifier = Modifier
-            .height(32.dp)
-            .clip(RoundedCornerShape(16.dp))
+            .height(if (icon != null) 36.dp else 32.dp)
+            .clip(RoundedCornerShape(18.dp))
             .background(if (selected) Px.Accent else Px.Surface)
             .clickable(onClick = onClick)
-            .padding(horizontal = 12.dp),
-        contentAlignment = Alignment.Center
+            .padding(start = if (icon != null || swatch != null) 8.dp else 12.dp, end = 12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Text(text, color = if (selected) OnAccent else TextDim, fontSize = 11.sp,
+        // l'icona mostra il risultato dell'azione, il testo breve la conferma
+        if (icon != null) Icon(icon, contentDescription = null, tint = if (selected) OnAccent else TextWhite, modifier = Modifier.size(20.dp))
+        if (swatch != null) Box(Modifier.size(16.dp).clip(CircleShape).background(swatch).border(1.dp, TextMute, CircleShape))
+        Text(text, color = fg, fontSize = 11.sp,
             fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium, maxLines = 1)
     }
 }

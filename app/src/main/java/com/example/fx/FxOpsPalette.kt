@@ -15,8 +15,77 @@ object FxOpsPalette {
 
     val ops: Map<String, FxOp> = mapOf(
         "palette_quantize" to FxOp { img, a, _ -> paletteQuantize(img, a) },
-        "frame" to FxOp { img, a, _ -> frame(img, a) }
+        "frame" to FxOp { img, a, _ -> frame(img, a) },
+        "mat" to FxOp { img, a, _ -> mat(img, a) },
+        "fibers" to FxOp { img, a, ctx -> fibers(img, a, ctx.seed) }
     )
+
+    /**
+     * Passe-partout: la foto intera viene rimpicciolita (proporzioni invariate) dentro un margine di carta,
+     * così la cornice non copre nulla. size/bottom in u; line = filo attorno alla foto; shadow = ombra interna.
+     */
+    fun mat(img: FxImage, a: FxArgs): FxImage {
+        val m = (a.num("size", 5f) * img.unit).coerceAtLeast(0f)
+        val mb = (a.num("bottom", a.num("size", 5f)) * img.unit).coerceAtLeast(0f)
+        if (m <= 0f && mb <= 0f) return img
+        val paper = a.color("color", 0xFFF3EAD6.toInt())
+        val lineW = a.num("line", 0f) * img.unit
+        val lineC = a.color("lineColor", 0xFF2A2420.toInt())
+        val shadow = a.num("shadow", 0f) / 100f
+        val w = img.w; val h = img.h
+        val availW = w - 2f * m; val availH = h - m - mb
+        if (availW < 4f || availH < 4f) return img
+        val k = min(availW / w, availH / h)
+        val pw = w * k; val ph = h * k
+        val ox = (w - pw) / 2f; val oy = m + (availH - ph) / 2f
+        val out = IntArray(img.size)
+        val inv = 1f / k
+        for (y in 0 until h) for (x in 0 until w) {
+            val i = y * w + x
+            val lx = x + 0.5f - ox; val ly = y + 0.5f - oy
+            if (lx >= 0f && ly >= 0f && lx < pw && ly < ph) {
+                out[i] = FxSample.bilinear(img, lx * inv - 0.5f, ly * inv - 0.5f) or 0xFF000000.toInt()
+            } else {
+                var c = paper
+                // filo e ombra interna appena fuori dalla foto
+                val dx = max(max(-lx, lx - pw), 0f); val dy = max(max(-ly, ly - ph), 0f)
+                val d = sqrt(dx * dx + dy * dy)
+                if (lineW > 0f && d <= lineW) c = lineC
+                else if (shadow > 0f) {
+                    val t = (1f - (d - lineW) / (m * 0.35f).coerceAtLeast(1f)).coerceIn(0f, 1f) * shadow * 0.45f
+                    if (t > 0f) c = Px.mix(c, 0xFF000000.toInt(), t)
+                }
+                out[i] = c
+            }
+        }
+        return FxImage(w, h, out)
+    }
+
+    /** Fibre della carta: brevi tratti chiari e scuri, densità e tono legati all'invecchiamento. */
+    fun fibers(img: FxImage, a: FxArgs, seed: Int): FxImage {
+        val amount = a.num("amount", 50f) / 100f
+        val aged = a.num("aged", 40f) / 100f
+        val sd = seed + a.int("seed", 0)
+        val out = img.px.copyOf()
+        val w = img.w; val h = img.h
+        val count = (w * h / 3500f * amount).toInt()
+        val dark = 0xFF6E5A3C.toInt(); val light = 0xFFFFFFFF.toInt()
+        for (s in 0 until count) {
+            val px0 = FxRand.r01(s, 1, sd) * w; val py0 = FxRand.r01(s, 2, sd) * h
+            val ang = FxRand.r01(s, 3, sd) * 6.283f
+            val len = (0.4f + FxRand.r01(s, 4, sd) * 1.1f) * img.unit
+            val isDark = FxRand.r01(s, 5, sd) < 0.5f
+            val col = if (isDark) dark else light
+            val op = if (isDark) 0.04f + aged * 0.05f else 0.07f
+            val dx = cos(ang); val dy = sin(ang)
+            val steps = len.toInt().coerceAtLeast(2)
+            for (k in 0 until steps) {
+                val x = (px0 + dx * k).toInt(); val y = (py0 + dy * k).toInt()
+                if (x in 0 until w && y in 0 until h) out[y * w + x] = Px.mix(out[y * w + x], col or (out[y * w + x] and 0xFF000000.toInt()), op)
+            }
+        }
+        return FxImage(w, h, out)
+    }
 
     private fun dist2(r1: Float, g1: Float, b1: Float, r2: Float, g2: Float, b2: Float): Float {
         val dr = r1 - r2; val dg = g1 - g2; val db = b1 - b2

@@ -1,8 +1,9 @@
 {
-  "format": "pixart-fx",
+  "format": "zesty-fx",
   "version": 1,
-  "about": "Catalogo effetti di Pixart. Ogni file elenca effetti composti da operazioni primitive (vedi README.md). Aggiungere un effetto = aggiungere una voce JSON.",
+  "about": "Catalogo effetti di Zesty. Ogni file elenca effetti composti da operazioni primitive (vedi README.md). Aggiungere un effetto = aggiungere una voce JSON.",
   "categories": [
+    { "id": "poster", "label": "Poster e cornici" },
     { "id": "correzione", "label": "Correzione" },
     { "id": "bn", "label": "B&N" },
     { "id": "pellicola", "label": "Pellicola" },
@@ -21,6 +22,7 @@
     { "id": "ritratto", "label": "Ritratto" }
   ],
   "files": [
+    "catalog/poster.json",
     "catalog/correzione.json",
     "catalog/bn.json",
     "catalog/pellicola.json",

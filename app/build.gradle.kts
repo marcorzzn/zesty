@@ -20,7 +20,13 @@ android {
     versionName = "1.0.0-beta.1"
 
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+    // Scontorna con IA sul telefono: solo telefoni a 64 bit (ARM), per contenere il peso dell'APK
+    ndk { abiFilters += listOf("arm64-v8a") }
   }
+
+  // i modelli ONNX si leggono così come sono, senza decompressione
+  androidResources { noCompress += "onnx" }
 
   // Do not remove or modify these signingConfigs. They are necessary for building, installing,
   // and updating Android apps in AI Studio.
@@ -94,6 +100,8 @@ dependencies {
   implementation(libs.androidx.compose.material.icons.core)
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.compose.material3)
+  // motore per i modelli di scontorno (Microsoft, licenza MIT), eseguito sul telefono
+  implementation("com.microsoft.onnxruntime:onnxruntime-android:1.27.0")
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.graphics)
   implementation(libs.androidx.compose.ui.tooling.preview)

@@ -248,6 +248,40 @@ object ExportEngine {
         fileName to bytes.size.toLong()
     }
 
+    /**
+     * Salva ogni pannello come file separato in Immagini/Zesty: nome_01.png, nome_02.png…
+     * Restituisce quanti file sono stati scritti.
+     */
+    fun exportPieces(context: Context, composite: Bitmap, rects: List<android.graphics.Rect>, format: ExportFormat, jpgQuality: Int): Result<Int> = runCatching {
+        val fmt = if (format == ExportFormat.JPG) ExportFormat.JPG else ExportFormat.PNG
+        val stamp = System.currentTimeMillis()
+        var written = 0
+        rects.forEachIndexed { i, r ->
+            val l = r.left.coerceIn(0, composite.width - 1); val t = r.top.coerceIn(0, composite.height - 1)
+            val w = (r.right - l).coerceIn(1, composite.width - l); val h = (r.bottom - t).coerceIn(1, composite.height - t)
+            val piece = Bitmap.createBitmap(composite, l, t, w, h)
+            val bytes = ByteArrayOutputStream().use { bos ->
+                if (fmt == ExportFormat.JPG) flattenOnWhite(piece).compress(Bitmap.CompressFormat.JPEG, jpgQuality.coerceIn(10, 100), bos)
+                else piece.compress(Bitmap.CompressFormat.PNG, 100, bos)
+                bos.toByteArray()
+            }
+            val name = "Zesty_${stamp}_%02d.${fmt.ext}".format(i + 1)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                    put(MediaStore.MediaColumns.MIME_TYPE, fmt.mime)
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, Environment.DIRECTORY_PICTURES + "/Zesty")
+                }
+                val uri = context.contentResolver.insert(MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY), values)
+                if (uri != null) { context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }; written++ }
+            } else {
+                val dir = File(context.getExternalFilesDir(null), "Exports").apply { mkdirs() }
+                File(dir, name).outputStream().use { it.write(bytes) }; written++
+            }
+        }
+        written
+    }
+
     fun shareCurrentImage(context: Context, composite: Bitmap) {
         runCatching {
             val file = File(context.cacheDir, "zesty_share.png")

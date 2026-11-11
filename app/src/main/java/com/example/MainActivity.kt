@@ -25,6 +25,8 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         // Catalogo effetti condiviso con la web app (assets/www/assets/fx)
         FxEngine.load(applicationContext)
+        // modelli di scontorno sul telefono (si caricano solo al primo uso)
+        com.example.engine.AiSegmenter.attach(applicationContext)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme(darkTheme = true, dynamicColor = false) {

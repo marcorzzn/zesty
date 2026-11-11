@@ -1,25 +1,6 @@
 {
   "category": "popart",
   "effects": [
-    { "id": "pop_poster_vintage", "label": "Poster vintage",
-      "tags": ["poster", "serigrafia", "anni 70"],
-      "params": [
-        { "id": "colors", "label": "Colori", "min": 3, "max": 8, "default": 5 },
-        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 3 },
-        { "id": "tone", "label": "Sfumature", "min": 0, "max": 40, "default": 15 },
-        { "id": "grain", "label": "Grana", "min": 0, "max": 40, "default": 14 },
-        { "id": "aged", "label": "Carta invecchiata", "default": 40 },
-        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [
-        { "op": "smooth", "radius": "0.4 + $simplify * 0.25", "strength": "$simplify * 8", "if": "$simplify" },
-        { "op": "palette_quantize", "colors": "$colors", "tone": "$tone", "aged": "$aged" },
-        { "op": "fill", "color": "#f6eeda", "blend": "multiply", "opacity": "$aged / 220" },
-        { "op": "grain", "amount": "$grain * 1.4", "size": 0.12 },
-        { "op": "dust", "amount": "$aged * 0.35", "opacity": 40 },
-        { "op": "frame", "size": 5, "color": "#f3ead6", "if": "$margin" }
-      ] },
     { "id": "pop_grid4", "label": "Pop 4 riquadri",
       "params": [{ "id": "levels", "label": "Livelli", "min": 2, "max": 6, "default": 3 }],
       "steps": [

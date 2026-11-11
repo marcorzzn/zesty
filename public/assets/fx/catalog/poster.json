@@ -1,0 +1,143 @@
+{
+  "category": "poster",
+  "effects": [
+    { "id": "poster_vintage", "label": "Poster vintage",
+      "tags": ["poster", "serigrafia", "anni 70"],
+      "params": [
+        { "id": "colors", "label": "Colori", "min": 3, "max": 8, "default": 5 },
+        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 3 },
+        { "id": "tone", "label": "Sfumature", "min": 0, "max": 40, "default": 15 },
+        { "id": "grain", "label": "Grana", "min": 0, "max": 40, "default": 14 },
+        { "id": "aged", "label": "Carta invecchiata", "default": 40 },
+        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 },
+        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
+      ],
+      "steps": [
+        { "op": "blur", "radius": "$simplify * 0.12", "if": "$simplify" },
+        { "op": "palette_quantize", "colors": "$colors", "tone": "$tone", "aged": "$aged" },
+        { "op": "fill", "color": "rgb(246 - $aged * 0.14, 238 - $aged * 0.22, 218 - $aged * 0.4)", "blend": "multiply", "opacity": 0.5 },
+        { "op": "grain", "amount": "$grain * 1.6", "size": 0.08 },
+        { "op": "fibers", "amount": 100, "aged": "$aged" },
+        { "op": "mat", "size": 5, "color": "rgb(246 - $aged * 0.14, 238 - $aged * 0.22, 218 - $aged * 0.4)", "if": "$margin" }
+      ] },
+    { "id": "poster_screenprint3", "label": "Serigrafia 3 colori",
+      "params": [
+        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 5 },
+        { "id": "offset", "label": "Fuori registro", "min": 0, "max": 3, "default": 0.5, "step": 0.1 },
+        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 },
+        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
+      ],
+      "steps": [
+        { "op": "blur", "radius": "$simplify * 0.15", "if": "$simplify" },
+        { "op": "palette_quantize", "colors": 3, "tone": 0, "aged": 30 },
+        { "op": "rgb_shift", "amount": "$offset", "angle": 35 },
+        { "op": "fill", "color": "#F1E7D2", "blend": "multiply", "opacity": 0.45 },
+        { "op": "grain", "amount": 18, "size": 0.08 },
+        { "op": "fibers", "amount": 80, "aged": 30 },
+        { "op": "mat", "size": 6, "color": "#F1E7D2", "if": "$margin" }
+      ] },
+    { "id": "poster_pop", "label": "Poster pop",
+      "params": [
+        { "id": "colors", "label": "Colori", "min": 3, "max": 8, "default": 6 },
+        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 3 },
+        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 }
+      ],
+      "steps": [
+        { "op": "adjust", "saturation": 45, "contrast": 15 },
+        { "op": "blur", "radius": "$simplify * 0.12", "if": "$simplify" },
+        { "op": "palette_quantize", "colors": "$colors", "tone": 5, "aged": 0 },
+        { "op": "mat", "size": 5, "color": "#FFFFFF", "if": "$margin" }
+      ] },
+    { "id": "poster_noir", "label": "Poster noir",
+      "params": [
+        { "id": "colors", "label": "Toni", "min": 2, "max": 5, "default": 3 },
+        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 4 },
+        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 }
+      ],
+      "steps": [
+        { "op": "mono" },
+        { "op": "adjust", "contrast": 20 },
+        { "op": "blur", "radius": "$simplify * 0.12", "if": "$simplify" },
+        { "op": "palette_quantize", "colors": "$colors", "tone": 0, "aged": 20 },
+        { "op": "gradient_map", "stops": [[0, "#141210"], [1, "#EFE6D2"]] },
+        { "op": "grain", "amount": 20, "size": 0.08 },
+        { "op": "mat", "size": 6, "color": "#EFE6D2", "if": "$margin" }
+      ] },
+    { "id": "poster_risograph", "label": "Risografia",
+      "params": [
+        { "id": "ink1", "label": "Inchiostro 1", "type": "color", "default": "#FF48B0" },
+        { "id": "ink2", "label": "Inchiostro 2", "type": "color", "default": "#0078BF" },
+        { "id": "offset", "label": "Fuori registro", "min": 0, "max": 3, "default": 0.6, "step": 0.1 },
+        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 },
+        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
+      ],
+      "steps": [
+        { "op": "blur", "radius": 0.3 },
+        { "op": "posterize", "levels": 4 },
+        { "op": "gradient_map", "stops": [[0, "$ink2"], [0.55, "$ink1"], [1, "#F7F2E7"]] },
+        { "op": "rgb_shift", "amount": "$offset", "angle": 20 },
+        { "op": "grain", "amount": 30, "size": 0.1, "mono": false },
+        { "op": "mat", "size": 5, "color": "#F7F2E7", "if": "$margin" }
+      ] },
+    { "id": "poster_litho", "label": "Litografia",
+      "params": [
+        { "id": "size", "label": "Tratteggio", "min": 0.3, "max": 3, "default": 0.8, "step": 0.1 },
+        { "id": "colors", "label": "Colori", "min": 2, "max": 6, "default": 4 },
+        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 }
+      ],
+      "steps": [
+        { "op": "blur", "radius": 0.25 },
+        { "op": "palette_quantize", "colors": "$colors", "tone": 10, "aged": 50 },
+        { "op": "layer", "steps": [{ "op": "halftone", "mode": "lines", "size": "$size", "angle": 30, "ink": "#2A2218", "paper": "#FFFFFF" }], "blend": "multiply", "opacity": 0.55 },
+        { "op": "fill", "color": "#EFE2C6", "blend": "multiply", "opacity": 0.4 },
+        { "op": "mat", "size": 6, "color": "#EFE2C6", "if": "$margin" }
+      ] },
+    { "id": "poster_minimal", "label": "Poster minimale",
+      "params": [
+        { "id": "ink", "label": "Inchiostro", "type": "color", "default": "#1D2A44" },
+        { "id": "paper", "label": "Carta", "type": "color", "default": "#F2EBDD" },
+        { "id": "level", "label": "Soglia", "min": 40, "max": 220, "default": 120 },
+        { "id": "margin", "label": "Margine", "min": 0, "max": 15, "default": 9 }
+      ],
+      "steps": [
+        { "op": "smooth", "radius": 1.5, "strength": 70 },
+        { "op": "threshold", "level": "$level", "softness": 3, "dark": "$ink", "light": "$paper" },
+        { "op": "mat", "size": "$margin", "bottom": "$margin * 1.4", "color": "$paper" }
+      ] },
+    { "id": "frame_white", "label": "Cornice bianca",
+      "params": [{ "id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 5 }],
+      "steps": [{ "op": "mat", "size": "$size", "color": "#FFFFFF" }] },
+    { "id": "frame_black", "label": "Cornice nera",
+      "params": [{ "id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 5 }],
+      "steps": [{ "op": "mat", "size": "$size", "color": "#111111" }] },
+    { "id": "frame_color", "label": "Cornice colorata",
+      "params": [
+        { "id": "color", "label": "Colore", "type": "color", "default": "#F28C28" },
+        { "id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 6 }
+      ],
+      "steps": [{ "op": "mat", "size": "$size", "color": "$color" }] },
+    { "id": "frame_instant", "label": "Istantanea",
+      "params": [
+        { "id": "size", "label": "Bordo", "min": 2, "max": 12, "default": 5 },
+        { "id": "fade", "label": "Sbiadito", "default": 25 }
+      ],
+      "steps": [
+        { "op": "adjust", "fade": "$fade", "saturation": -10, "temperature": 8 },
+        { "op": "mat", "size": "$size", "bottom": "$size * 3.6", "color": "#F6F3EC", "shadow": 30 }
+      ] },
+    { "id": "frame_gallery", "label": "Passe-partout",
+      "params": [
+        { "id": "size", "label": "Margine", "min": 4, "max": 20, "default": 11 },
+        { "id": "color", "label": "Carta", "type": "color", "default": "#F4F1EA" }
+      ],
+      "steps": [{ "op": "mat", "size": "$size", "bottom": "$size * 1.15", "color": "$color", "line": 0.25, "lineColor": "#3A342C", "shadow": 45 }] },
+    { "id": "frame_postcard", "label": "Cartolina",
+      "params": [{ "id": "size", "label": "Bordo", "min": 2, "max": 12, "default": 4 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
+      "steps": [
+        { "op": "adjust", "vibrance": 15, "fade": 10 },
+        { "op": "mat", "size": "$size", "color": "#F3EAD6" },
+        { "op": "texture", "kind": "paper", "amount": 30, "blend": "multiply", "opacity": 0.5 },
+        { "op": "fibers", "amount": 70, "aged": 50 }
+      ] }
+  ]
+}

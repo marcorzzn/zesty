@@ -7,7 +7,7 @@ import org.json.JSONObject
 import kotlin.math.*
 
 /**
- * Pixart FX — motore che esegue le pipeline del catalogo.
+ * Zesty FX — motore che esegue le pipeline del catalogo.
  *
  * Chiavi comuni a ogni step (oltre a quelle dell'operazione):
  *   "op"      nome dell'operazione
@@ -108,12 +108,12 @@ object FxEngine {
         if (opacity >= 0.999f && blend == "normal" && maskObj == null) return produced
         val mask = maskObj?.let { buildMask(input, FxArgs(it, vars)) }
         val out = IntArray(input.size)
-        for (i in out.indices) {
-            val m = if (mask != null) mask[i] * opacity else opacity
-            out[i] = if (blend == "normal") {
-                // la fusione normale porta anche l'alpha (necessario per distorsioni e pattern trasparenti)
-                Px.mix(input.px[i], produced.px[i], m)
-            } else FxBlend.pixel(blend, input.px[i], produced.px[i], m)
+        if (blend == "normal") {
+            // la fusione normale porta anche l'alpha (necessario per distorsioni e pattern trasparenti)
+            val ip = input.px; val pp = produced.px
+            for (i in out.indices) out[i] = Px.mix(ip[i], pp[i], if (mask != null) mask[i] * opacity else opacity)
+        } else {
+            FxBlend.blendInto(blend, input.px, produced.px, mask, opacity, out)
         }
         return FxImage(input.w, input.h, out)
     }

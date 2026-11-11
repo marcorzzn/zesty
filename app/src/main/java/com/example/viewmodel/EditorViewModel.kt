@@ -5,6 +5,9 @@ import android.graphics.*
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.engine.CutoutEngine
+import com.example.engine.SubjectEngine
+import com.example.engine.AiSegmenter
 import com.example.engine.ExportEngine
 import com.example.engine.ExportFormat
 import com.example.engine.MaskGeometry
@@ -58,12 +61,17 @@ data class EditorUiState(
     val cropRatio: String = "free",
     val cropRect: RectF = RectF(0.1f, 0.1f, 0.9f, 0.9f), // normalized 0..1
     val cropRotation: Float = 0f,
-    val perspectiveCorners: List<NormPoint> = listOf(
-        NormPoint(0.08f, 0.08f),
-        NormPoint(0.92f, 0.08f),
-        NormPoint(0.92f, 0.92f),
-        NormPoint(0.08f, 0.92f)
-    ),
+    // Prospettiva (distorsione): angoli del livello attivo normalizzati sul suo riquadro (0..1, possono uscire)
+    val perspectiveCorners: List<NormPoint> = listOf(NormPoint(0f, 0f), NormPoint(1f, 0f), NormPoint(1f, 1f), NormPoint(0f, 1f)),
+    val perspVertical: Float = 0f,     // -100..100: allarga/stringe il lato alto (raddrizza le verticali)
+    val perspHorizontal: Float = 0f,   // -100..100: allarga/stringe il lato destro
+    val perspOffsets: List<NormPoint> = List(4) { NormPoint(0f, 0f) }, // spostamenti manuali degli angoli
+    val perspDragging: Boolean = false,
+    // Esporta → Dividi e salva
+    val split: com.example.engine.SplitGeometry.Settings = com.example.engine.SplitGeometry.Settings(),
+    val splitJpg: Boolean = false, // durante il trascinamento niente animazione (segue il dito)
+    val perspSource: Bitmap? = null,   // livello attivo già elaborato, per l'anteprima
+    val perspBackdrop: Bitmap? = null, // gli altri livelli, sotto l'anteprima
     // Free crop / Cutout / Dispersion / Clone
     val cutoutMode: CutoutMode = CutoutMode.LASSO,
     val lassoPoints: List<PointF> = emptyList(), // in canvas coordinates
@@ -90,6 +98,17 @@ data class EditorUiState(
     val maskSubtract: Boolean = false, // modalità − : il pennello cancella, forme/lazo/poligono tolgono zona
     val maskFeather: Float = 6f, // sfumatura bordo forme/lazo (unita' tela)
     val returnToolAfterSelective: String? = null,
+    // Scontorna: bacchetta, sfondo automatico e rifinitura sulla maschera del livello
+    val cutoutStudio: Boolean = false,
+    val wandTolerance: Float = 18f,   // ΔE CIELAB
+    val wandSoftness: Float = 35f,    // % della tolleranza
+    val wandContiguous: Boolean = true,
+    val wandGradual: Boolean = true,
+    val cutoutHoles: Boolean = false, // sfondo: toglie anche le zone racchiuse dal soggetto
+    val cutoutRefineRadius: Float = 6f,
+    val cutoutGrow: Float = 0f,       // px: + espandi, - contrai
+    val cutoutBackdrop: Int = 0,      // anteprima: 0 scacchi, 1 scuro, 2 bianco, 3 lime
+    val cutoutBusy: Boolean = false,
     // Warp state
     val warpMode: WarpMode = WarpMode.PUSH,
     val warpRadius: Float = 95f,
@@ -435,13 +454,15 @@ class EditorViewModel : ViewModel() {
             "draw" -> "brush"
             "retouch", "movement", "aiimprove" -> "warp"
             "remove", "aireplace" -> "clone"
-            "removebg", "selection" -> "freecrop"
+            "removebg", "selection", "freecrop", "shapecrop" -> "cutout"
             "maskform" -> "shapecrop"
             "frame" -> "border"
             "extend", "aiexpand" -> "fit"
             "blur", "tiltshift" -> "effects"
             else -> toolId
         }
+
+        if (normalized == "cutout") { openCutoutStudio(); return }
 
         // Auto-create layer or select existing layer of that type (Bug E fix)
         when (normalized) {
@@ -507,13 +528,14 @@ class EditorViewModel : ViewModel() {
             currentTool = normalized,
             cropRotation = 0f,
             cropRect = RectF(0.1f, 0.1f, 0.9f, 0.9f),
-            perspectiveCorners = listOf(
-                NormPoint(0.08f, 0.08f),
-                NormPoint(0.92f, 0.08f),
-                NormPoint(0.92f, 0.92f),
-                NormPoint(0.08f, 0.92f)
-            )
+            perspectiveCorners = listOf(NormPoint(0f, 0f), NormPoint(1f, 0f), NormPoint(1f, 1f), NormPoint(0f, 1f)),
+            perspVertical = 0f,
+            perspHorizontal = 0f,
+            perspOffsets = List(4) { NormPoint(0f, 0f) },
+            perspSource = null,
+            perspBackdrop = null
         )
+        if ((normalized == "crop" || normalized == "rotate") && _state.value.cropSubTab == CropSubTab.PERSPECTIVE) preparePerspectivePreview()
     }
 
     fun closeCurrentTool(confirm: Boolean) {
@@ -941,6 +963,56 @@ class EditorViewModel : ViewModel() {
     // ============ 1. CROP, ROTATE & 3D PERSPECTIVE ============
     fun setCropSubTab(tab: CropSubTab) {
         _state.value = _state.value.copy(cropSubTab = tab)
+        if (tab == CropSubTab.PERSPECTIVE) preparePerspectivePreview()
+    }
+
+    // ============ PROSPETTIVA: anteprima in diretta ============
+    /** Livello attivo elaborato e resto della composizione, calcolati una volta: poi l'anteprima è solo GPU. */
+    private fun preparePerspectivePreview() {
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val source = PixelEngine.renderSingleLayerBitmap(active, s.layers)
+        val others = s.layers.map { if (it.id == active.id) it.copy(visible = false) else it }
+        val backdrop = PixelEngine.renderComposite(
+            s.canvasW, s.canvasH, s.bgColor, s.fitBgMode, s.borderOuter, s.borderInner, s.borderRadius, s.borderColor, others
+        )
+        _state.value = _state.value.copy(perspSource = source, perspBackdrop = backdrop)
+    }
+
+    private fun perspectiveCornersFrom(v: Float, h: Float, off: List<NormPoint>): List<NormPoint> {
+        val kv = v / 100f * 0.35f; val kh = h / 100f * 0.35f
+        val base = listOf(NormPoint(-kv, 0f), NormPoint(1f + kv, -kh), NormPoint(1f, 1f + kh), NormPoint(0f, 1f))
+        return base.mapIndexed { i, b -> NormPoint(b.x + off[i].x, b.y + off[i].y) }
+    }
+
+    /** Raddrizza con i cursori: gli angoli si spostano con un'animazione morbida. */
+    fun setPerspectiveKeystone(vertical: Float? = null, horizontal: Float? = null) {
+        val s = _state.value
+        val v = vertical ?: s.perspVertical; val h = horizontal ?: s.perspHorizontal
+        _state.value = s.copy(perspVertical = v, perspHorizontal = h, perspectiveCorners = perspectiveCornersFrom(v, h, s.perspOffsets))
+    }
+
+    fun setPerspectiveDragging(dragging: Boolean) {
+        _state.value = _state.value.copy(perspDragging = dragging)
+    }
+
+    /** Trascina un angolo (coordinate della tela): diventa uno spostamento manuale sopra i cursori. */
+    fun perspectiveCornerDrag(index: Int, canvasX: Float, canvasY: Float) {
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val nx = ((canvasX - active.x) / active.w.coerceAtLeast(1f)).coerceIn(-0.6f, 1.6f)
+        val ny = ((canvasY - active.y) / active.h.coerceAtLeast(1f)).coerceIn(-0.6f, 1.6f)
+        val base = perspectiveCornersFrom(s.perspVertical, s.perspHorizontal, List(4) { NormPoint(0f, 0f) })
+        val off = s.perspOffsets.toMutableList()
+        off[index] = NormPoint(nx - base[index].x, ny - base[index].y)
+        _state.value = s.copy(perspOffsets = off, perspectiveCorners = perspectiveCornersFrom(s.perspVertical, s.perspHorizontal, off))
+    }
+
+    fun resetPerspective() {
+        _state.value = _state.value.copy(
+            perspVertical = 0f, perspHorizontal = 0f, perspOffsets = List(4) { NormPoint(0f, 0f) },
+            perspectiveCorners = listOf(NormPoint(0f, 0f), NormPoint(1f, 0f), NormPoint(1f, 1f), NormPoint(0f, 1f))
+        )
     }
 
     fun setCropRatio(ratioKey: String) {
@@ -1021,8 +1093,9 @@ class EditorViewModel : ViewModel() {
             ensureActiveLayerRasterized()
             val active = _state.value.activeLayer ?: return
             val bmp = active.bitmap ?: return
-            val warped = PixelEngine.applyPerspectiveHomography(bmp, s.perspectiveCorners)
+            val warped = PixelEngine.applyPerspectiveDistort(bmp, s.perspectiveCorners)
             updateActiveLayer { it.copy(bitmap = warped) }
+            _state.value = _state.value.copy(perspSource = null, perspBackdrop = null)
             rebuildCompositeImmediate()
             return
         }
@@ -1229,7 +1302,24 @@ class EditorViewModel : ViewModel() {
     }
 
     /** Modifica un parametro del filtro attivo (cursore, colore, scelta o interruttore). */
+    private var settleJob: Job? = null
+
+    /**
+     * Durante un trascinamento il filtro si mostra in anteprima ridotta (fluida); 250 ms dopo l'ultimo
+     * movimento si ricalcola a piena risoluzione.
+     */
+    private fun interactiveEffectChange() {
+        PixelEngine.interactivePreview = true
+        settleJob?.cancel()
+        settleJob = viewModelScope.launch {
+            kotlinx.coroutines.delay(250)
+            PixelEngine.interactivePreview = false
+            scheduleCompositeRebuild()
+        }
+    }
+
     fun setEffectParam(paramId: String, value: Float) {
+        interactiveEffectChange()
         val active = _state.value.activeLayer ?: return
         if (active.activeFilterId == null) return
         updateActiveLayer { it.copy(activeFilterParams = it.activeFilterParams + (paramId to value)) }
@@ -1245,6 +1335,7 @@ class EditorViewModel : ViewModel() {
     }
 
     fun setEffectFade(fade: Float) {
+        interactiveEffectChange()
         val active = _state.value.activeLayer ?: return
         if (active.activeFilterId == null) return
         updateActiveLayer { it.copy(activeFilterFade = fade) }
@@ -1252,6 +1343,7 @@ class EditorViewModel : ViewModel() {
     }
 
     fun setEffectBlendMode(blendMode: String) {
+        interactiveEffectChange()
         val active = _state.value.activeLayer ?: return
         if (active.activeFilterId == null) return
         updateActiveLayer { it.copy(activeFilterBlend = blendMode) }
@@ -1642,9 +1734,11 @@ class EditorViewModel : ViewModel() {
         commitMaskDraft()
         maskOnEnter = null
         val s = _state.value
-        val prevTool = s.returnToolAfterSelective ?: "effects"
+        val prevTool = if (s.cutoutStudio) null else (s.returnToolAfterSelective ?: "effects")
         _state.value = s.copy(
             currentTool = prevTool,
+            cutoutStudio = false,
+            cutoutBusy = false,
             selectiveTargetFxKey = null,
             maskShapeDraft = null,
             maskPolyPoints = emptyList()
@@ -1766,6 +1860,7 @@ class EditorViewModel : ViewModel() {
     /** Zona mostrata = zona confermata + bozza (aggiunta o tolta); aggiorna subito la foto. */
     private fun refreshMaskDraftPreview() {
         val s = _state.value
+        if (wandSeed != null) { refreshWandPreview(); return }
         val base = maskBase ?: return
         val active = s.activeLayer ?: return
         val path = draftPath(s)
@@ -1777,6 +1872,16 @@ class EditorViewModel : ViewModel() {
     /** Rende definitiva la bozza (già visibile in anteprima) e la salva nella cronologia. */
     fun commitMaskDraft() {
         val s = _state.value
+        if (wandSeed != null) {
+            // se l'ultimo calcolo in sottofondo non riflette ancora le impostazioni attuali, si completa ora
+            if (!wandFresh) computeWandNow()
+            cutoutGen++ // i calcoli ancora in corso non devono più toccare la zona
+            wandSeed = null
+            maskBase = null
+            wandDirty = false
+            pushHistorySnapshot()
+            return
+        }
         if (maskBase == null) return
         val hadDraft = draftPath(s) != null
         refreshMaskDraftPreview()
@@ -1787,6 +1892,7 @@ class EditorViewModel : ViewModel() {
 
     /** Scarta solo la bozza corrente: la zona torna com'era prima della forma o del contorno. */
     fun clearMaskDraft() {
+        if (wandSeed != null) { wandSeed = null; cutoutGen++; wandDirty = false; wandFresh = true }
         val base = maskBase
         _state.value = _state.value.copy(maskShapeDraft = null, maskPolyPoints = emptyList())
         if (base != null) {
@@ -1815,6 +1921,322 @@ class EditorViewModel : ViewModel() {
         rebuildCompositeImmediate()
     }
 
+    // ============ SCONTORNA: bacchetta, sfondo automatico, rifinitura (CutoutEngine) ============
+    /** Pixel del livello alla risoluzione della maschera, già convertiti in CIELAB (in cache). */
+    private class CutoutSource(val key: Long, val px: IntArray, val lab: CutoutEngine.Lab)
+    @Volatile private var cutoutSourceCache: CutoutSource? = null
+    private var cutoutJob: Job? = null
+    private var cutoutGen = 0
+    private var wandSeed: Point? = null // coordinate della maschera
+    private var wandRunning = false // un solo calcolo alla volta
+    private var wandDirty = false   // impostazioni cambiate durante il calcolo: si ricalcola alla fine
+    private var wandFresh = true    // la zona mostrata corrisponde alle impostazioni attuali
+
+    private fun cutoutSource(layer: EditorLayer, layers: List<EditorLayer>, mw: Int, mh: Int): CutoutSource {
+        val bmp = layer.bitmap ?: PixelEngine.renderSingleLayerBitmap(layer, layers)
+        val key = (System.identityHashCode(bmp).toLong() shl 32) xor (bmp.generationId.toLong() shl 20) xor (mw.toLong() * 31 + mh)
+        cutoutSourceCache?.takeIf { it.key == key }?.let { return it }
+        val scaled = if (bmp.width == mw && bmp.height == mh) bmp else Bitmap.createScaledBitmap(bmp, mw, mh, true)
+        val px = IntArray(mw * mh)
+        scaled.getPixels(px, 0, mw, 0, 0, mw, mh)
+        return CutoutSource(key, px, CutoutEngine.toLab(px, mw, mh)).also { cutoutSourceCache = it }
+    }
+
+    private fun maskToAlpha(mask: Bitmap): FloatArray {
+        val w = mask.width; val h = mask.height
+        val px = IntArray(w * h)
+        mask.getPixels(px, 0, w, 0, 0, w, h)
+        return FloatArray(w * h) { ((px[it] ushr 24) and 255) / 255f }
+    }
+
+    private fun alphaToMask(a: FloatArray, w: Int, h: Int): Bitmap {
+        val px = IntArray(w * h) { i -> ((a[i].coerceIn(0f, 1f) * 255f + 0.5f).toInt() shl 24) or 0xFFFFFF }
+        return Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply { setPixels(px, 0, w, 0, 0, w, h) }
+    }
+
+    /** Apre Scontorna: lavora sulla visibilità del livello, con tutti gli strumenti della zona più la bacchetta. */
+    fun openCutoutStudio() {
+        val s0 = _state.value
+        if (s0.activeLayer == null) { showToast("Aggiungi prima una foto"); return }
+        ensureActiveLayerRasterized()
+        val active = _state.value.activeLayer ?: return
+        if (active.maskInverted && active.maskBitmap != null) {
+            // la maschera invertita diventa normale: ciò che si vede resta uguale
+            val a = maskToAlpha(active.maskBitmap)
+            for (i in a.indices) a[i] = 1f - a[i]
+            updateActiveLayer { it.copy(maskBitmap = alphaToMask(a, active.maskBitmap.width, active.maskBitmap.height), maskInverted = false) }
+        }
+        openSelectivePaintMode(fxKey = null, initBlackMask = false)
+        _state.value = _state.value.copy(
+            cutoutStudio = true,
+            returnToolAfterSelective = null,
+            maskTool = MaskTool.WAND,
+            maskSubtract = true,
+            showMaskHeatmap = false,
+            toastMessage = "Tocca lo sfondo per toglierlo. Con ＋ lo rimetti"
+        )
+    }
+
+    fun setCutoutBackdrop(v: Int) { _state.value = _state.value.copy(cutoutBackdrop = v.mod(4)) }
+
+    fun updateWandSettings(tolerance: Float? = null, softness: Float? = null, contiguous: Boolean? = null, gradual: Boolean? = null) {
+        val s = _state.value
+        _state.value = s.copy(
+            wandTolerance = tolerance ?: s.wandTolerance,
+            wandSoftness = softness ?: s.wandSoftness,
+            wandContiguous = contiguous ?: s.wandContiguous,
+            wandGradual = gradual ?: s.wandGradual
+        )
+        if (wandSeed != null) refreshWandPreview()
+    }
+
+    fun updateCutoutSettings(holes: Boolean? = null, refineRadius: Float? = null, grow: Float? = null) {
+        val s = _state.value
+        _state.value = s.copy(
+            cutoutHoles = holes ?: s.cutoutHoles,
+            cutoutRefineRadius = refineRadius ?: s.cutoutRefineRadius,
+            cutoutGrow = grow ?: s.cutoutGrow
+        )
+    }
+
+    /** Tocco con la bacchetta: la selezione resta in bozza e si aggiorna se cambi tolleranza o modalità. */
+    private fun wandTap(x: Float, y: Float) {
+        commitMaskDraft() // il tocco precedente entra nella zona
+        val active = _state.value.activeLayer ?: return
+        val mask = currentSelectiveMaskOrNew() ?: return
+        val mx = ((x - active.x) / active.w.coerceAtLeast(1f) * mask.width).toInt()
+        val my = ((y - active.y) / active.h.coerceAtLeast(1f) * mask.height).toInt()
+        if (mx !in 0 until mask.width || my !in 0 until mask.height) return
+        beginMaskDraft()
+        wandSeed = Point(mx, my)
+        refreshWandPreview()
+    }
+
+    private fun wandResult(s: EditorUiState, base: Bitmap, seed: Point): Bitmap? {
+        val active = s.activeLayer ?: return null
+        val w = base.width; val h = base.height
+        val src = cutoutSource(active, s.layers, w, h)
+        val sel = CutoutEngine.wand(src.lab, seed.x, seed.y, s.wandTolerance, s.wandSoftness / 100f, s.wandContiguous, s.wandGradual)
+        return alphaToMask(CutoutEngine.combine(maskToAlpha(base), sel, s.maskSubtract), w, h)
+    }
+
+    /** Calcolo immediato (alla conferma), quando quello in sottofondo non è aggiornato. */
+    private fun computeWandNow() {
+        val base = maskBase ?: return
+        val seed = wandSeed ?: return
+        val s = _state.value
+        runCatching { wandResult(s, base, seed) }.getOrNull()?.let { setSelectiveMask(s.selectiveTargetFxKey, it); scheduleCompositeRebuild() }
+        wandFresh = true
+    }
+
+    /** Anteprima della bacchetta in sottofondo: mentre trascini un cursore resta un solo calcolo, con l'ultimo valore. */
+    private fun refreshWandPreview() {
+        if (maskBase == null || wandSeed == null) return
+        wandFresh = false
+        if (wandRunning) { wandDirty = true; return }
+        wandRunning = true
+        val s = _state.value
+        val base = maskBase!!
+        val seed = wandSeed!!
+        val gen = cutoutGen
+        cutoutJob = viewModelScope.launch(Dispatchers.Default) {
+            val shown = runCatching { wandResult(s, base, seed) }.getOrNull()
+            withContext(Dispatchers.Main) {
+                wandRunning = false
+                if (gen == cutoutGen && shown != null) {
+                    setSelectiveMask(s.selectiveTargetFxKey, shown)
+                    scheduleCompositeRebuild()
+                    if (!wandDirty) wandFresh = true
+                }
+                if (wandDirty) { wandDirty = false; refreshWandPreview() }
+            }
+        }
+    }
+
+    /** Esegue un'operazione su tutta la zona in sottofondo, poi la salva nella cronologia. */
+    private fun runCutoutOp(done: String, op: (CutoutSource, FloatArray, Int, Int) -> FloatArray) {
+        commitMaskDraft()
+        val s = _state.value
+        if (s.cutoutBusy) return
+        val active = s.activeLayer ?: return
+        val key = s.selectiveTargetFxKey
+        val mask = currentSelectiveMaskOrNew() ?: return
+        _state.value = s.copy(cutoutBusy = true)
+        viewModelScope.launch(Dispatchers.Default) {
+            cutoutJob?.join()
+            val res = runCatching {
+                val w = mask.width; val h = mask.height
+                alphaToMask(op(cutoutSource(active, s.layers, w, h), maskToAlpha(mask), w, h), w, h)
+            }
+            withContext(Dispatchers.Main) {
+                _state.value = _state.value.copy(cutoutBusy = false)
+                res.onSuccess {
+                    setSelectiveMask(key, it)
+                    pushHistorySnapshot()
+                    rebuildCompositeImmediate()
+                    showToast(done)
+                }.onFailure { showToast("Operazione non riuscita: ${it.message ?: "memoria insufficiente"}") }
+            }
+        }
+    }
+
+    /**
+     * Soggetto automatico: isola persona o oggetto anche su sfondi qualsiasi.
+     * I volti (rilevatore di Android, sul telefono, senza rete) indicano dove stanno testa e busto;
+     * ciò che è già stato tolto resta sfondo, così si può ripetere dopo qualche ritocco.
+     */
+    fun cutoutAutoSubject() {
+        runCutoutOp("Soggetto isolato: ritocca con bacchetta o pennello se serve") { src, a, w, h ->
+            subjectInArea(src.px, w, h, a)
+        }
+    }
+
+    /**
+     * Area di interesse: se una parte è già stata tolta, l'IA guarda solo dove resta qualcosa
+     * (più pixel sul soggetto = bordo più preciso, utile per oggetti piccoli).
+     */
+    private fun subjectInArea(px: IntArray, w: Int, h: Int, keep: FloatArray): FloatArray {
+        val b = CutoutEngine.bounds(keep, w, h, 0.5f) ?: return FloatArray(w * h)
+        val bw = b[2] - b[0]; val bh = b[3] - b[1]
+        if (bw.toLong() * bh > 0.7 * w.toLong() * h) return mixedSubject(px, w, h, keep)
+        val mx = (bw * 0.06f).toInt() + 4; val my = (bh * 0.06f).toInt() + 4
+        val l = (b[0] - mx).coerceAtLeast(0); val t = (b[1] - my).coerceAtLeast(0)
+        val r = (b[2] + mx).coerceAtMost(w); val btm = (b[3] + my).coerceAtMost(h)
+        val cw = r - l; val ch = btm - t
+        val cpx = IntArray(cw * ch); val ck = FloatArray(cw * ch)
+        for (y in 0 until ch) {
+            System.arraycopy(px, (y + t) * w + l, cpx, y * cw, cw)
+            System.arraycopy(keep, (y + t) * w + l, ck, y * cw, cw)
+        }
+        val part = mixedSubject(cpx, cw, ch, ck)
+        val out = FloatArray(w * h)
+        for (y in 0 until ch) System.arraycopy(part, y * cw, out, (y + t) * w + l, cw)
+        return out
+    }
+
+    /** Il mix: IS-Net (qualunque soggetto) + MODNet (persone) + taglio su grafo e rifinitura di Zesty. */
+    private fun mixedSubject(px: IntArray, w: Int, h: Int, keep: FloatArray): FloatArray {
+        val faces = runCatching { detectFaces(px, w, h) }.getOrDefault(emptyList())
+        val salient = (if (AiSegmenter.available) runCatching { AiSegmenter.salientObject(px, w, h) }.getOrNull() else null)
+            ?: return SubjectEngine.subject(px, w, h, faces, keep) // senza IA: solo il motore di Zesty
+        val portrait = if (faces.isNotEmpty()) runCatching { AiSegmenter.portraitMatte(px, w, h) }.getOrNull() else null
+        return SubjectEngine.fuse(px, w, h, salient, portrait, faces, keep)
+    }
+
+    private fun detectFaces(px: IntArray, w: Int, h: Int): List<SubjectEngine.Face> {
+        val sc = minOf(1f, 720f / maxOf(w, h))
+        val fw = ((w * sc).toInt() and 1.inv()).coerceAtLeast(2) // larghezza pari, richiesta dal rilevatore
+        val fh = (h * sc).toInt().coerceAtLeast(2)
+        val src = Bitmap.createBitmap(px, w, h, Bitmap.Config.ARGB_8888)
+        val scaled = Bitmap.createScaledBitmap(src, fw, fh, true)
+        val rgb = scaled.copy(Bitmap.Config.RGB_565, false)
+        val found = arrayOfNulls<android.media.FaceDetector.Face>(6)
+        val count = android.media.FaceDetector(fw, fh, found.size).findFaces(rgb, found)
+        val sx = w.toFloat() / fw; val sy = h.toFloat() / fh
+        val mid = android.graphics.PointF()
+        return (0 until count).mapNotNull { i ->
+            val f = found[i] ?: return@mapNotNull null
+            if (f.confidence() < 0.3f) return@mapNotNull null
+            f.getMidPoint(mid)
+            SubjectEngine.Face(mid.x * sx, mid.y * sy, f.eyesDistance() * (sx + sy) / 2f)
+        }
+    }
+
+    /** Toglie lo sfondo uniforme (colori dominanti del bordo della foto). */
+    fun cutoutRemoveUniformBackground() {
+        val s = _state.value
+        runCutoutOp("Sfondo tolto") { src, a, _, _ ->
+            CutoutEngine.combine(a, CutoutEngine.uniformBackground(src.lab, s.wandTolerance, s.wandSoftness / 100f, s.cutoutHoles), subtract = true)
+        }
+    }
+
+    /** Chiave colore: toglie in tutta la foto il colore indicato (nero, bianco, verde, blu). */
+    fun cutoutRemoveColor(rgb: Int) {
+        val s = _state.value
+        val key = CutoutEngine.rgbToLab((rgb shr 16) and 255, (rgb shr 8) and 255, rgb and 255)
+        runCutoutOp("Colore tolto") { src, a, _, _ ->
+            CutoutEngine.combine(a, CutoutEngine.colorKey(src.lab, key, s.wandTolerance, s.wandSoftness / 100f), subtract = true)
+        }
+    }
+
+    fun cutoutRefineEdge() {
+        val r = _state.value.cutoutRefineRadius.roundToInt().coerceAtLeast(1)
+        runCutoutOp("Bordo rifinito") { src, a, w, h -> CutoutEngine.refineEdge(src.px, a, w, h, r) }
+    }
+
+    fun cutoutGrowShrink() {
+        val r = _state.value.cutoutGrow.roundToInt()
+        if (r == 0) { showToast("Scegli quanti pixel espandere o contrarre"); return }
+        runCutoutOp(if (r > 0) "Zona espansa di $r px" else "Zona contratta di ${-r} px") { _, a, w, h -> CutoutEngine.grow(a, w, h, r) }
+    }
+
+    fun cutoutFillHoles() = runCutoutOp("Buchi riempiti") { _, a, w, h -> CutoutEngine.fillHoles(a, w, h) }
+
+    fun cutoutRemoveIslands(onlyLargest: Boolean) =
+        runCutoutOp(if (onlyLargest) "Tenuto solo il soggetto principale" else "Isolotti tolti") { _, a, w, h ->
+            CutoutEngine.removeIslands(a, w, h, if (onlyLargest) 1f else 0.02f)
+        }
+
+    /** Togli alone: corregge il colore dei pixel di bordo (modifica i pixel del livello, annullabile). */
+    fun cutoutDecontaminate() {
+        commitMaskDraft()
+        val s = _state.value
+        if (s.cutoutBusy || s.selectiveTargetFxKey != null) return
+        val active = s.activeLayer ?: return
+        val bmp = active.bitmap ?: return
+        val mask = active.maskBitmap ?: return
+        _state.value = s.copy(cutoutBusy = true)
+        viewModelScope.launch(Dispatchers.Default) {
+            val res = runCatching {
+                val w = bmp.width; val h = bmp.height
+                val m = if (mask.width == w && mask.height == h) mask else Bitmap.createScaledBitmap(mask, w, h, true)
+                val px = IntArray(w * h)
+                bmp.getPixels(px, 0, w, 0, 0, w, h)
+                val radius = (4f * w / mask.width.coerceAtLeast(1)).roundToInt().coerceIn(2, 24)
+                val out = CutoutEngine.decontaminate(px, maskToAlpha(m), w, h, radius)
+                Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888).apply { setPixels(out, 0, w, 0, 0, w, h) }
+            }
+            withContext(Dispatchers.Main) {
+                _state.value = _state.value.copy(cutoutBusy = false)
+                res.onSuccess { nb ->
+                    updateActiveLayer { it.copy(bitmap = nb) }
+                    pushHistorySnapshot()
+                    rebuildCompositeImmediate()
+                    showToast("Alone tolto dai bordi")
+                }.onFailure { showToast("Operazione non riuscita") }
+            }
+        }
+    }
+
+    /** Ritaglia il livello attorno al soggetto; se è l'unico livello, anche la tela (PNG senza margini vuoti). */
+    fun cutoutTrimToSubject() {
+        commitMaskDraft()
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val mask = active.maskBitmap ?: run { showToast("Togli prima lo sfondo"); return }
+        val bmp = active.bitmap ?: return
+        val mw = mask.width; val mh = mask.height
+        val b = CutoutEngine.bounds(maskToAlpha(mask), mw, mh) ?: run { showToast("La zona visibile è vuota"); return }
+        if (b[0] == 0 && b[1] == 0 && b[2] == mw && b[3] == mh) { showToast("Il soggetto occupa già tutto il livello"); return }
+        val bx = bmp.width.toFloat() / mw; val by = bmp.height.toFloat() / mh
+        val cl = (b[0] * bx).toInt(); val ct = (b[1] * by).toInt()
+        val cw = ((b[2] - b[0]) * bx).roundToInt().coerceIn(1, bmp.width - cl)
+        val ch = ((b[3] - b[1]) * by).roundToInt().coerceIn(1, bmp.height - ct)
+        val newBmp = Bitmap.createBitmap(bmp, cl, ct, cw, ch).copy(Bitmap.Config.ARGB_8888, true)
+        val newMask = Bitmap.createBitmap(mask, b[0], b[1], b[2] - b[0], b[3] - b[1]).copy(Bitmap.Config.ARGB_8888, true)
+        val sx = active.w / mw; val sy = active.h / mh
+        var nx = active.x + b[0] * sx; var ny = active.y + b[1] * sy
+        val nw = (b[2] - b[0]) * sx; val nh = (b[3] - b[1]) * sy
+        val single = s.layers.size == 1
+        if (single) { nx = 0f; ny = 0f }
+        updateActiveLayer { it.copy(bitmap = newBmp, maskBitmap = newMask, x = nx, y = ny, w = nw, h = nh) }
+        if (single) _state.value = _state.value.copy(canvasW = nw.roundToInt().coerceAtLeast(1), canvasH = nh.roundToInt().coerceAtLeast(1))
+        maskOnEnter = newMask.copy(Bitmap.Config.ARGB_8888, false)
+        pushHistorySnapshot()
+        rebuildCompositeImmediate()
+        showToast(if (single) "Foto ritagliata attorno al soggetto" else "Livello ritagliato attorno al soggetto")
+    }
+
     private fun maskHitRadius() = 30f * touchToCanvas
 
     /** Tocchi per forme, lazo e poligono. Restituisce false se il tocco va al pennello o alla gomma. */
@@ -1823,6 +2245,7 @@ class EditorViewModel : ViewModel() {
         val r = maskHitRadius()
         maskDragLast = PointF(x, y)
         when (s.maskTool) {
+            MaskTool.WAND -> { wandTap(x, y); return true }
             MaskTool.BRUSH -> return false
             MaskTool.SHAPE -> {
                 val d = s.maskShapeDraft
@@ -2084,7 +2507,7 @@ class EditorViewModel : ViewModel() {
             "selective_mask" -> {
                 if (maskDrag != MaskDrag.NONE) {
                     maskPointerMove(canvasX, canvasY)
-                } else {
+                } else if (s.maskTool != MaskTool.WAND) {
                     val prev = lastBrushPoint ?: PointF(canvasX, canvasY)
                     paintBrushStroke(prev.x, prev.y, canvasX, canvasY)
                     lastBrushPoint = PointF(canvasX, canvasY)
@@ -2559,6 +2982,38 @@ class EditorViewModel : ViewModel() {
                 }.onFailure { err ->
                     showToast("Errore esportazione: ${err.localizedMessage ?: "riprova"}")
                 }
+            }
+        }
+    }
+
+    // ============ ESPORTA: DIVIDI E SALVA ============
+    fun updateSplit(transform: (com.example.engine.SplitGeometry.Settings) -> com.example.engine.SplitGeometry.Settings) {
+        _state.value = _state.value.copy(split = transform(_state.value.split))
+    }
+
+    fun setSplitJpg(jpg: Boolean) {
+        _state.value = _state.value.copy(splitJpg = jpg)
+    }
+
+    fun splitRects(): List<android.graphics.Rect> {
+        val s = _state.value
+        return com.example.engine.SplitGeometry.rects(s.canvasW, s.canvasH, s.split)
+    }
+
+    /** ✓ dello strumento Dividi: salva ogni pannello come file separato. */
+    fun exportSplit(context: Context) {
+        val s = _state.value
+        val composite = s.compositeBitmap ?: return
+        val rects = splitRects()
+        if (rects.isEmpty()) { showToast("Nessun pannello da salvare"); return }
+        val format = if (s.splitJpg) ExportFormat.JPG else ExportFormat.PNG
+        viewModelScope.launch(Dispatchers.IO) {
+            val res = ExportEngine.exportPieces(context, composite, rects, format, 92)
+            withContext(Dispatchers.Main) {
+                res.onSuccess { n ->
+                    showToast("Salvati $n file in Immagini/Zesty")
+                    _state.value = _state.value.copy(currentTool = null)
+                }.onFailure { showToast("Salvataggio non riuscito") }
             }
         }
     }

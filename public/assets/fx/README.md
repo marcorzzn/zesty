@@ -35,6 +35,7 @@ Il parametro speciale `seed` ("Variante") cambia la casualità di grana, polvere
 - numeri, booleani, colori `#rgb`, `#rrggbb`, `#rrggbbaa`
 - riferimenti a parametri: `"$amount"`, anche per i colori: `"$dark"`
 - espressioni: `"$amount * 0.4 + 10"`, `"-$amount"`, `"1 - $bars / 50"`, `min()`, `max()`, `abs()`, `clamp()`
+- colore calcolato: `"rgb(246 - $aged * 0.14, 238, 218)"` (canali 0..255, arrotondati e limitati)
 - scelta da parametro: `{ "pick": "$mode", "from": ["left", "right"] }`
 
 ### Unità
@@ -63,5 +64,7 @@ Le posizioni (`cx`, `cy`, `position`) vanno da 0 a 1.
 **Artistico** — `oil` (Kuwahara), `edges` (mono, glow, overlay, color), `sketch`, `emboss`, `pixelate` (square, circle, diamond), `halftone` (mono, color, lines), `crystallize`, `warhol`, `cell_tint`
 
 **Distorsione** — `swirl`, `bulge`, `ripple` (both, horizontal, vertical, radial), `turbulence`, `polar`, `mirror`, `kaleidoscope`, `shear`, `flip`, `rgb_shift`, `glitch`, `disperse`
+
+**Poster e cornici** — `palette_quantize` (colors, tone, aged: palette ridotta con k-means), `mat` (passe-partout: size, bottom, color, line, lineColor, shadow — la foto viene rimpicciolita intera, nulla viene coperto), `frame` (bordo interno), `fibers` (fibre della carta)
 
 **Luce, texture, particelle, pattern** — `vignette`, `grain`, `gradient` (linear, radial), `texture` (paper, canvas, clouds, noise, marble, concrete), `dust`, `particles` (snow, rain, bokeh, stars), `scanlines`, `pattern` (dots, lines, grid, checker, stripes, waves, zigzag, cross, weave, hex, diamonds, hearts, stars)

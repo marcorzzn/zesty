@@ -104,10 +104,11 @@ fun ZestyEditorScreen(vm: EditorViewModel) {
             "pen" -> PenAndBooleanPanel(state, vm)
             "brush" -> BrushToolPanel(state, vm, isMaskMode = false)
             "mask" -> BrushToolPanel(state, vm, isMaskMode = true)
-            "selective_mask" -> SelectivePaintToolPanel(state, vm)
+            "selective_mask" -> if (state.cutoutStudio) CutoutStudioPanel(state, vm) else SelectivePaintToolPanel(state, vm)
             "fit" -> FitAndBorderPanel(state, vm, isBorderTab = false)
             "border" -> FitAndBorderPanel(state, vm, isBorderTab = true)
             "resize" -> ResizeCanvasPanel(state, vm)
+            "split" -> SplitToolPanel(state, vm)
             "collage" -> CollageToolPanel(
                 state = state,
                 vm = vm,
@@ -169,7 +170,13 @@ fun ZestyEditorScreen(vm: EditorViewModel) {
                     onCancel = { if (inZone) vm.discardSelectiveChanges() else vm.closeCurrentTool(confirm = false) },
                     onUndo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.undo() },
                     onRedo = { haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove); vm.redo() },
-                    onConfirm = { if (inZone) vm.exitSelectivePaintMode() else vm.closeCurrentTool(confirm = true) },
+                    onConfirm = {
+                        when {
+                            inZone -> vm.exitSelectivePaintMode()
+                            state.currentTool == "split" -> vm.exportSplit(context)
+                            else -> vm.closeCurrentTool(confirm = true)
+                        }
+                    },
                     actions = { ToolTopBarActions(state, vm) }
                 )
             }
