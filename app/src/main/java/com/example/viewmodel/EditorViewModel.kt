@@ -35,9 +35,6 @@ data class EditorUiState(
     val borderColor: Int = Color.WHITE,
     val layers: List<EditorLayer> = emptyList(),
     val activeLayerId: String? = null,
-    val compositeBitmap: Bitmap? = null,
-    // copia della tela già caricata sulla GPU, solo per disegnarla (preparata fuori dal thread dello schermo)
-    val compositeDisplay: Bitmap? = null,
     // Viewport zoom / pan / rotate
     val viewScale: Float = 1f,
     val viewOffsetX: Float = 0f,
@@ -146,6 +143,18 @@ class EditorViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(EditorUiState())
     val state: StateFlow<EditorUiState> = _state.asStateFlow()
+
+    /**
+     * Tela composta, pubblicata a parte dallo stato dell'editor: un nuovo fotogramma (decine al secondo
+     * durante i cursori) fa ridisegnare solo la tela, non pannelli e barre.
+     * [display] è la copia già caricata sulla GPU, solo per disegnarla.
+     */
+    data class CompositeFrame(val bitmap: Bitmap? = null, val display: Bitmap? = null)
+    private val _composite = MutableStateFlow(CompositeFrame())
+    val composite: StateFlow<CompositeFrame> = _composite.asStateFlow()
+    // versione richiesta e versione pubblicata: la tela è aggiornata solo se coincidono
+    @Volatile private var compositeRequested = 0L
+    @Volatile private var compositePublished = -1L
 
     private val undoStack = ArrayDeque<HistorySnapshot>()
     private val redoStack = ArrayDeque<HistorySnapshot>()
@@ -383,32 +392,26 @@ class EditorViewModel : ViewModel() {
      */
     private fun fullComposite(): Bitmap {
         val s = _state.value
-        s.compositeBitmap?.takeIf { it.width == s.canvasW.coerceAtLeast(1) && it.height == s.canvasH.coerceAtLeast(1) }?.let { return it }
+        val cur = _composite.value.bitmap
+        if (cur != null && compositePublished == compositeRequested &&
+            cur.width == s.canvasW.coerceAtLeast(1) && cur.height == s.canvasH.coerceAtLeast(1)) return cur
+        // tela non aggiornata (calcolo in corso) o in anteprima: si calcola subito a piena risoluzione
+        val ver = compositeRequested
         val bmp = PixelEngine.renderComposite(
             s.canvasW, s.canvasH, s.bgColor, s.fitBgMode,
             s.borderOuter, s.borderInner, s.borderRadius, s.borderColor, s.layers, scale = 1f
         )
         bmp.prepareToDraw()
-        _state.value = _state.value.copy(compositeBitmap = bmp, compositeDisplay = null)
+        _composite.value = CompositeFrame(bmp, null)
+        compositePublished = ver
         return bmp
     }
 
-    fun rebuildCompositeImmediate() {
-        val s = _state.value
-        val bmp = PixelEngine.renderComposite(
-            canvasW = s.canvasW,
-            canvasH = s.canvasH,
-            bgColor = s.bgColor,
-            fitBgMode = s.fitBgMode,
-            borderOuter = s.borderOuter,
-            borderInner = s.borderInner,
-            borderRadius = s.borderRadius,
-            borderColor = s.borderColor,
-            layers = s.layers
-        )
-        bmp.prepareToDraw()
-        _state.value = _state.value.copy(compositeBitmap = bmp, compositeDisplay = null)
-    }
+    /**
+     * Ricomposizione dopo un'azione (elimina, fusione, conferma...). Non blocca più lo schermo:
+     * si calcola in sottofondo come durante i cursori; chi ha bisogno della tela piena usa [fullComposite].
+     */
+    fun rebuildCompositeImmediate() = scheduleCompositeRebuild()
 
     private val renderLock = Any()
     private var renderRunning = false
@@ -420,6 +423,7 @@ class EditorViewModel : ViewModel() {
      * e lo si esegue con l'ultimo stato appena il precedente è pronto.
      */
     fun scheduleCompositeRebuild() {
+        compositeRequested++
         synchronized(renderLock) {
             if (renderRunning) { renderPending = true; return }
             renderRunning = true
@@ -428,6 +432,7 @@ class EditorViewModel : ViewModel() {
         renderJob = viewModelScope.launch(Dispatchers.Default) {
             try {
                 while (true) {
+                    val ver = compositeRequested
                     val s = _state.value
                     val bmp = PixelEngine.renderComposite(
                         canvasW = s.canvasW,
@@ -442,7 +447,8 @@ class EditorViewModel : ViewModel() {
                     )
                     val display = gpuCopy(bmp)
                     withContext(Dispatchers.Main) {
-                        _state.value = _state.value.copy(compositeBitmap = bmp, compositeDisplay = display)
+                        _composite.value = CompositeFrame(bmp, display)
+                        compositePublished = ver
                     }
                     synchronized(renderLock) {
                         if (!renderPending) { renderRunning = false; return@launch }

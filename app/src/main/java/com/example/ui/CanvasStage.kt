@@ -27,6 +27,7 @@ import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.drawscope.rotate
 import androidx.compose.ui.graphics.drawscope.withTransform
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -72,6 +73,8 @@ fun InteractiveCanvasStage(
     val scaleToCanvasY = state.canvasH / stageH.coerceAtLeast(1f)
     // il gestore dei tocchi non viene ricreato a ogni modifica: legge sempre lo stato più recente
     val latestState = rememberUpdatedState(state)
+    // la tela composta si legge solo dentro il disegno: un nuovo fotogramma ridisegna, non ricompone
+    val frame = vm.composite.collectAsStateWithLifecycle()
     // Lente d'ingrandimento (posizione del dito sullo schermo) per contorni precisi
     var loupe by remember { mutableStateOf<Offset?>(null) }
 
@@ -420,7 +423,7 @@ fun InteractiveCanvasStage(
                         c.nativeCanvas.drawBitmap(src, m, android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG or android.graphics.Paint.ANTI_ALIAS_FLAG))
                     }
                 }
-                if (!perspPreview) (state.compositeDisplay ?: state.compositeBitmap)?.let { bmp ->
+                if (!perspPreview) frame.value.let { it.display ?: it.bitmap }?.let { bmp ->
                     if (state.currentTool == "crop" || state.currentTool == "rotate") {
                         rotate(state.cropRotation, pivot = Offset(left + stageW / 2f, top + stageH / 2f)) {
                             drawImage(
@@ -747,7 +750,7 @@ fun InteractiveCanvasStage(
 
             // Lente: mostra ingrandita (2,5× la vista) la zona sotto il dito, nell'angolo opposto
             val lp = loupe
-            val comp = state.compositeDisplay ?: state.compositeBitmap
+            val comp = frame.value.let { it.display ?: it.bitmap }
             if (lp != null && comp != null && state.currentTool == "selective_mask") {
                 val r = 56.dp.toPx()
                 val margin = 10.dp.toPx()
