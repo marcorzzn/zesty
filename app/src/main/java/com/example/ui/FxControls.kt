@@ -37,7 +37,7 @@ fun FxParamControls(
 ) {
     val fx = effectId?.let { FxEngine.catalog.get(it) } ?: return
     val values = fx.defaultValues() + overrides
-    fx.params.forEach { p ->
+    fx.params.filterNot { it.hidden }.forEach { p ->
         val v = values[p.id] ?: p.default
         when (p.type) {
             FxParamType.RANGE -> PxSlider(

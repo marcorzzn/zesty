@@ -27,7 +27,9 @@ data class FxParam(
     val default: Float = 0f,
     val step: Float = 1f,
     val defaultColor: Int = 0xFFFFFFFF.toInt(),
-    val options: List<String> = emptyList()
+    val options: List<String> = emptyList(),
+    // regolato da un gesto sulla tela (es. posizione dell'inquadratura fra le bande): nessun cursore
+    val hidden: Boolean = false
 )
 
 data class FxEffect(
@@ -100,6 +102,7 @@ class FxCatalog(
                 val opts = p.optJSONArray("options")?.let { a -> List(a.length()) { a.getString(it) } } ?: emptyList()
                 params += FxParam(
                     id = p.getString("id"),
+                    hidden = p.optBoolean("hidden", false),
                     label = p.optString("label", p.getString("id")),
                     type = type,
                     min = p.optDouble("min", 0.0).toFloat(),

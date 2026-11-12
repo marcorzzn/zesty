@@ -10,6 +10,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.foundation.layout.*
@@ -566,16 +567,12 @@ fun CurvesToolPanel(state: EditorUiState, vm: EditorViewModel) {
 fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
     val active = state.activeLayer
     val categories = remember { PixelEngine.getFilterCategories() }
-    val allFilters = remember(state.filterCategory) {
+    val filters = remember(state.filterCategory) {
         PixelEngine.getFiltersByCategory(state.filterCategory)
     }
-    // sottogruppi della categoria (es. Cinema: I grandi autori, Generi ed epoche...), nell'ordine del catalogo
-    val groups = remember(state.filterCategory) {
-        allFilters.mapNotNull { com.example.fx.FxEngine.catalog.get(it.id)?.group?.takeIf { g -> g.isNotEmpty() } }.distinct()
-    }
-    var group by androidx.compose.runtime.saveable.rememberSaveable(state.filterCategory) { mutableStateOf("") }
-    val filters = remember(allFilters, group) {
-        if (group.isEmpty()) allFilters else allFilters.filter { com.example.fx.FxEngine.catalog.get(it.id)?.group == group }
+    // sottogruppo di ogni effetto (es. Cinema: I grandi autori…): il nome compare sopra il primo effetto del gruppo
+    val groupOf = remember(state.filterCategory) {
+        filters.associate { it.id to (com.example.fx.FxEngine.catalog.get(it.id)?.group ?: "") }
     }
 
     LaunchedEffect(active?.id) {
@@ -590,23 +587,22 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
             }
         }
 
-        // 1b. Sottogruppi della categoria, se ce ne sono
-        if (groups.size > 1) {
-            PxCollectionRow {
-                PxChip("Tutti", selected = group.isEmpty()) { group = "" }
-                groups.forEach { g -> PxChip(g, selected = group == g) { group = g } }
-            }
-        }
-
         // 2. Miniature dei filtri della categoria
         LazyRow(
             modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
             contentPadding = PaddingValues(horizontal = Px.Gutter),
             horizontalArrangement = Arrangement.spacedBy(Px.Gap)
         ) {
-            items(filters, key = { it.id }) { f ->
+            itemsIndexed(filters, key = { _, it -> it.id }) { i, f ->
                 val isSelected = active?.activeFilterId == f.id
                 val thumb = state.filterThumbnails[f.id]
+                val g = groupOf[f.id].orEmpty()
+                val startsGroup = g.isNotEmpty() && (i == 0 || groupOf[filters[i - 1].id] != g)
+                Row(verticalAlignment = Alignment.Top) {
+                if (startsGroup && i > 0) {
+                    // separazione sottile fra un gruppo e l'altro
+                    Box(Modifier.padding(top = 18.dp, end = Px.Gap).width(1.dp).height(64.dp).background(DividerCol))
+                }
                 Column(
                     modifier = Modifier
                         .width(64.dp)
@@ -614,6 +610,13 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
                         .clickable { vm.selectEffectFilter(f.id) },
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    // nome del gruppo sopra il primo effetto (gli altri hanno lo stesso spazio vuoto: righe allineate)
+                    Text(
+                        text = if (startsGroup) g.uppercase() else "",
+                        fontSize = 9.sp, color = Px.Active, fontWeight = FontWeight.Bold, maxLines = 1,
+                        softWrap = false, overflow = TextOverflow.Visible,
+                        modifier = Modifier.height(16.dp).wrapContentWidth(Alignment.Start, unbounded = true)
+                    )
                     Box(
                         modifier = Modifier
                             .size(64.dp)
@@ -637,6 +640,7 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
+                }
                 }
             }
         }

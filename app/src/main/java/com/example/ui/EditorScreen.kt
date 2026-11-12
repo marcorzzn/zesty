@@ -141,7 +141,14 @@ fun ZestyEditorScreen(vm: EditorViewModel) {
     val selectedFamily = TOOL_FAMILIES.firstOrNull { it.id == state.activeBottomTab }?.id ?: familyOf(state.currentTool)
     val onFamily: (String) -> Unit = { id ->
         haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-        vm.selectFamily(if (state.activeBottomTab == id && state.currentTool == null) null else id)
+        val single = TOOL_FAMILIES.firstOrNull { it.id == id }?.tools?.singleOrNull()
+        if (single != null) {
+            // famiglia con un solo strumento (Effetti, Scontorna, Restauro): si apre subito, senza un'icona doppia
+            vm.selectFamily(id)
+            onToolClick(single.id)
+        } else {
+            vm.selectFamily(if (state.activeBottomTab == id && state.currentTool == null) null else id)
+        }
     }
 
     BoxWithConstraints(

@@ -1420,6 +1420,23 @@ class EditorViewModel : ViewModel() {
         }
     }
 
+    /** L'effetto attivo ha le bande cinema accese: il trascinamento sulla foto sposta l'inquadratura fra le bande. */
+    fun bandsActive(): Boolean {
+        val l = _state.value.activeLayer ?: return false
+        val id = l.activeFilterId ?: return false
+        val fx = com.example.fx.FxEngine.catalog.get(id) ?: return false
+        if (fx.params.none { it.id == "boff" }) return false
+        return (PixelEngine.filterParamValues(id, l.activeFilterParams)["bands"] ?: 0f) > 0.5f
+    }
+
+    /** Trascinamento verticale (unità della tela): il dito "porta" la foto, la finestra fra le bande segue. */
+    fun dragBandsOffset(dyCanvas: Float) {
+        val l = _state.value.activeLayer ?: return
+        val id = l.activeFilterId ?: return
+        val cur = PixelEngine.filterParamValues(id, l.activeFilterParams)["boff"] ?: 0f
+        setEffectParam("boff", (cur - dyCanvas / (l.h * 0.5f).coerceAtLeast(1f) * 100f).coerceIn(-100f, 100f))
+    }
+
     fun setEffectParam(paramId: String, value: Float) {
         interactiveEffectChange()
         val active = _state.value.activeLayer ?: return
@@ -1498,8 +1515,11 @@ class EditorViewModel : ViewModel() {
         val srcBmp = active.bitmap ?: return
         viewModelScope.launch(Dispatchers.Default) {
             try {
-                val thumbSize = 64
-                val scaled = Bitmap.createScaledBitmap(srcBmp, thumbSize, thumbSize, true)
+                // ritaglio quadrato centrale: tutte le miniature uguali e nessuna deformazione della foto
+                val thumbSize = 160
+                val side = minOf(srcBmp.width, srcBmp.height)
+                val square = Bitmap.createBitmap(srcBmp, (srcBmp.width - side) / 2, (srcBmp.height - side) / 2, side, side)
+                val scaled = Bitmap.createScaledBitmap(square, thumbSize, thumbSize, true)
                 val filters = PixelEngine.getFiltersByCategory(_state.value.filterCategory)
                 val map = mutableMapOf<String, Bitmap>()
                 for (f in filters) {

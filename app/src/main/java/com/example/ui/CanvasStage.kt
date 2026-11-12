@@ -257,6 +257,26 @@ fun InteractiveCanvasStage(
                         return@awaitEachGesture
                     }
 
+                    // 3b. Bande cinema: il trascinamento sposta la foto sotto le bande (due dita: zoom e panoramica)
+                    if (tool == "effects" && vm.bandsActive()) {
+                        var prev = startCanvas
+                        do {
+                            val event = awaitPointerEvent()
+                            if (event.changes.size >= 2) {
+                                vm.updateViewportGesture(event.calculatePan().x, event.calculatePan().y, event.calculateZoom(), 0f)
+                            } else {
+                                val ch = event.changes.firstOrNull() ?: break
+                                if (ch.pressed) {
+                                    val cur = toCanvasPt(ch.position)
+                                    vm.dragBandsOffset(cur.y - prev.y)
+                                    prev = cur
+                                }
+                            }
+                            event.changes.forEach { it.consume() }
+                        } while (event.changes.any { it.pressed })
+                        return@awaitEachGesture
+                    }
+
                     // 4. Sposta / ridimensiona / ruota il livello attivo (TransformGeometry), zoom e panoramica a due dita
                     // unità della tela per pixel di schermo: le maniglie hanno la stessa presa a ogni zoom
                     val t2c = scaleToCanvasX / state.viewScale.coerceAtLeast(0.05f)
