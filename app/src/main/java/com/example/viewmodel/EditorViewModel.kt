@@ -103,7 +103,11 @@ data class EditorUiState(
     val aiPackProgress: Float? = null,
     // Colorizza
     val colorizeBusy: Boolean = false,
-    val colorizeSaturation: Float = 100f,
+    val colorizeSaturation: Float = 120f,
+    val colorizeWarmth: Float = 0f,   // -100..100
+    val colorizeHue: Float = 0f,      // gradi
+    val colorizeDepth: Float = 30f,   // 0..100
+    val colorizeEdges: Float = 50f,   // 0..100
     val colorizeLayerId: String? = null,
     val selectiveTargetFxKey: String? = null, // null = layer.maskBitmap, non-null = layer.effects[key].localMask
     val showMaskHeatmap: Boolean = true,
@@ -2887,6 +2891,7 @@ class EditorViewModel : ViewModel() {
 
     // ============ COLORIZZA (DDColor) ============
     private var colorizeAb: FloatArray? = null
+    private var colorizeDirty = false
     private var colorizeSourceId: String? = null
 
     /** Colora automaticamente il livello foto attivo: il risultato è un livello "Colore (IA)" con modo Colore. */
@@ -2903,9 +2908,13 @@ class EditorViewModel : ViewModel() {
         val s = _state.value
         val src = s.layers.firstOrNull { it.id == colorizeSourceId } ?: return
         val bmp0 = src.bitmap ?: return
-        if (s.colorizeBusy) return
+        if (s.colorizeBusy) { colorizeDirty = true; return }
         _state.value = s.copy(colorizeBusy = true)
-        val sat = s.colorizeSaturation / 100f
+        val look = com.example.engine.ColorizeEngine.Look(
+            saturation = s.colorizeSaturation / 100f, warmth = s.colorizeWarmth / 100f, hue = s.colorizeHue,
+            depth = s.colorizeDepth / 100f, edges = s.colorizeEdges / 100f
+        )
+        colorizeDirty = false
         viewModelScope.launch(Dispatchers.Default) {
             val res = runCatching {
                 // si lavora al massimo a 2048 px: il colore stimato è a 512 px, la luminosità resta quella vera
@@ -2918,13 +2927,15 @@ class EditorViewModel : ViewModel() {
                     com.example.engine.AiSegmenter.runFile(file ?: com.example.engine.AiPacks.file("ddcolor_tiny")!!, input,
                         com.example.engine.ColorizeEngine.SIDE, com.example.engine.ColorizeEngine.SIDE).also { colorizeAb = it }
                 } else colorizeAb!!
-                val out = com.example.engine.ColorizeEngine.compose(px, w, h, ab, sat)
+                val out = com.example.engine.ColorizeEngine.compose(px, w, h, ab, look)
                 Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888).copy(Bitmap.Config.ARGB_8888, true)
             }
             withContext(Dispatchers.Main) {
                 _state.value = _state.value.copy(colorizeBusy = false)
                 res.onSuccess { colored -> placeColorLayer(src, colored) }
                     .onFailure { showToast("Colorizzazione non riuscita: ${it.message ?: "errore del modello"}") }
+                // un cursore mosso durante il calcolo: si riapplica con l'ultimo valore
+                if (colorizeDirty) runColorize(null, recompute = false)
             }
         }
     }
@@ -2939,7 +2950,7 @@ class EditorViewModel : ViewModel() {
             val layer = EditorLayer(
                 id = "colorize_${System.currentTimeMillis()}", type = LayerType.RASTER, name = "Colore (IA)",
                 x = src.x, y = src.y, w = src.w, h = src.h, rotation = src.rotation,
-                blend = BlendOption.COLOR, bitmap = colored
+                blend = BlendOption.NORMAL, bitmap = colored
             )
             val idx = s.layers.indexOfFirst { it.id == src.id }
             s.layers.toMutableList().apply { add(idx + 1, layer) }.also { _state.value = s.copy(colorizeLayerId = layer.id) }
@@ -2955,9 +2966,25 @@ class EditorViewModel : ViewModel() {
         scheduleCompositeRebuild()
     }
 
-    fun setColorizeSaturation(v: Float) {
-        _state.value = _state.value.copy(colorizeSaturation = v)
+    fun setColorizeSaturation(v: Float) = setColorizeLook(saturation = v)
+
+    /** Regolazioni del colore (vivacità, calore, tinta, profondità, bordi): istantanee, senza ricalcolare l'IA. */
+    fun setColorizeLook(saturation: Float? = null, warmth: Float? = null, hue: Float? = null, depth: Float? = null, edges: Float? = null) {
+        val s = _state.value
+        _state.value = s.copy(
+            colorizeSaturation = saturation ?: s.colorizeSaturation, colorizeWarmth = warmth ?: s.colorizeWarmth,
+            colorizeHue = hue ?: s.colorizeHue, colorizeDepth = depth ?: s.colorizeDepth, colorizeEdges = edges ?: s.colorizeEdges
+        )
         if (colorizeAb != null) runColorize(null, recompute = false)
+    }
+
+    /** Correggi una zona: Pennelli in modo "Colore" (ridipinge il colore mantenendo luci e ombre). */
+    fun openColorFixBrush() {
+        closeCurrentTool(confirm = true)
+        updatePaintBrush(kind = com.example.engine.BrushEngine.Kind.AIRBRUSH, blend = BlendOption.COLOR)
+        updatePaintBrush(flow = 35f, size = 60f)
+        openTool("brush")
+        showToast("Scegli il colore giusto e dipingi la zona sbagliata")
     }
 
     fun resetCloneSource() {

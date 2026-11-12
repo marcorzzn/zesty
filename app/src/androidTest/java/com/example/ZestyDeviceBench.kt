@@ -215,7 +215,7 @@ class ZestyDeviceBench {
         if (ab != null) {
             var mx = 0f; for (v in ab) mx = maxOf(mx, kotlin.math.abs(v))
             log("Uscita: ${ab.size} valori, |ab| massimo ${"%.1f".format(mx)}")
-            timed("Ricomposizione a 1536×2048") { com.example.engine.ColorizeEngine.compose(px, w, h, ab, 1f) }
+            timed("Ricomposizione a 1536×2048") { com.example.engine.ColorizeEngine.compose(px, w, h, ab, com.example.engine.ColorizeEngine.Look()) }
         }
         AiSegmenter.release()
     }

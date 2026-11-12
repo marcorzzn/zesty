@@ -41,13 +41,13 @@ class ColorizeEngineTest {
         val px = IntArray(w * h) { i -> val v = 40 + (i % w) * 4; (0xFF shl 24) or (v shl 16) or (v shl 8) or v }
         val plane = ColorizeEngine.SIDE * ColorizeEngine.SIDE
         val ab = FloatArray(2 * plane) { if (it < plane) 40f else 20f } // colore caldo uniforme
-        val out = ColorizeEngine.compose(px, w, h, ab, 1f, guidePx = null)
+        val out = ColorizeEngine.compose(px, w, h, ab, ColorizeEngine.Look(saturation = 1f, depth = 0f), guidePx = null)
         val lIn = ColorizeEngine.lightness(px); val lOut = ColorizeEngine.lightness(out)
         for (i in px.indices step 37) assertEquals(lIn[i], lOut[i], 1.5f)
         val c = out[15 * w + 20]
         assertTrue("caldo: r > b", r(c) > b(c) + 20)
         // saturazione zero = bianco e nero
-        val grey = ColorizeEngine.compose(px, w, h, ab, 0f, guidePx = null)[15 * w + 20]
+        val grey = ColorizeEngine.compose(px, w, h, ab, ColorizeEngine.Look(saturation = 0f, depth = 0f), guidePx = null)[15 * w + 20]
         assertTrue(abs(r(grey) - b(grey)) <= 2)
     }
 }

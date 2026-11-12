@@ -2,6 +2,9 @@ package com.example.engine
 
 import kotlin.math.cbrt
 import kotlin.math.max
+import kotlin.math.sqrt
+import kotlin.math.sin
+import kotlin.math.cos
 import kotlin.math.pow
 import kotlin.math.roundToInt
 
@@ -76,32 +79,52 @@ object ColorizeEngine {
         return out
     }
 
+    /** Regolazioni del colore, applicate all'istante senza rifare il calcolo dell'IA. */
+    data class Look(
+        val saturation: Float = 1.2f,  // vivacità (1 = come stimato dal modello)
+        val warmth: Float = 0f,        // -1..1: più freddo / più caldo
+        val hue: Float = 0f,           // gradi: ruota tutte le tinte (corregge una dominante sbagliata)
+        val depth: Float = 0.3f,       // 0..1: rinforza i colori deboli senza bruciare quelli forti
+        val edges: Float = 0.5f        // 0..1: precisione dei bordi del colore (alto = aderisce di più ai contorni)
+    )
+
     /**
      * Ricompone la foto a colori: luminosità originale + colore del modello ingrandito.
      * @param ab uscita del modello (2×512×512)
-     * @param saturation 0..2 (1 = come stimato dal modello)
      * @param guidePx pixel originali per far aderire il colore ai contorni (null = solo ingrandimento)
      */
-    fun compose(px: IntArray, w: Int, h: Int, ab: FloatArray, saturation: Float, guidePx: IntArray? = px): IntArray {
+    fun compose(px: IntArray, w: Int, h: Int, ab: FloatArray, look: Look, guidePx: IntArray? = px): IntArray {
         val plane = SIDE * SIDE
         // a e b portati in 0..1 per il filtro guidato, poi riportati alla scala Lab
         val a0 = FloatArray(plane) { ((ab[it] + 128f) / 256f).coerceIn(0f, 1f) }
         val b0 = FloatArray(plane) { ((ab[plane + it] + 128f) / 256f).coerceIn(0f, 1f) }
         var aUp = SubjectEngine.upscale(a0, SIDE, SIDE, w, h)
         var bUp = SubjectEngine.upscale(b0, SIDE, SIDE, w, h)
-        if (guidePx != null && max(w, h) > SIDE) {
-            val r = max(2, (max(w, h).toFloat() / SIDE * 2f).roundToInt())
-            aUp = CutoutEngine.refineEdge(guidePx, aUp, w, h, r, 1e-3f)
-            bUp = CutoutEngine.refineEdge(guidePx, bUp, w, h, r, 1e-3f)
+        if (guidePx != null && max(w, h) > SIDE && look.edges > 0.01f) {
+            // raggio piccolo e regolarizzazione più alta: il colore segue i contorni senza copiare la grana
+            val r = max(2, (max(w, h).toFloat() / SIDE * (2.5f - 1.5f * look.edges)).roundToInt())
+            val eps = 2e-2f * (1.05f - look.edges)
+            aUp = CutoutEngine.refineEdge(guidePx, aUp, w, h, r, eps)
+            bUp = CutoutEngine.refineEdge(guidePx, bUp, w, h, r, eps)
         }
         val lum = lightness(px)
-        val s = saturation.coerceIn(0f, 3f)
+        val s = look.saturation.coerceIn(0f, 3f)
+        val rad = Math.toRadians(look.hue.toDouble())
+        val ch = cos(rad).toFloat(); val sh = sin(rad).toFloat()
+        val depth = look.depth.coerceIn(0f, 1f)
         return IntArray(w * h) { i ->
-            val a = (aUp[i] * 256f - 128f) * s
-            val b = (bUp[i] * 256f - 128f) * s
+            var a = aUp[i] * 256f - 128f
+            var b = bUp[i] * 256f - 128f
+            // tinta: rotazione nel piano a-b
+            if (look.hue != 0f) { val na = a * ch - b * sh; b = a * sh + b * ch; a = na }
+            // profondità: i colori deboli crescono di più di quelli già forti
+            val c = sqrt(a * a + b * b)
+            val boost = s * (1f + depth * 0.9f * (1f - (c / 60f).coerceIn(0f, 1f)))
+            a *= boost; b *= boost
+            // calore: verso giallo-arancio (b positivo) o verso blu
+            b += look.warmth * 14f; a += look.warmth * 4f
             val rgb = labToRgbInGamut(lum[i], a, b)
             (px[i] and 0xFF000000.toInt()) or (rgb and 0xFFFFFF)
         }
     }
-
 }

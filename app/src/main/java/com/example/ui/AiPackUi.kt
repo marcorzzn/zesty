@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Brush
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.Text
@@ -86,11 +87,16 @@ fun ColorizePanel(state: EditorUiState, vm: EditorViewModel) {
         val layer = state.layers.firstOrNull { it.id == state.colorizeLayerId }
         if (layer != null) {
             PxSlider("Intensità", layer.opacity * 100f, 0f..100f, { vm.setColorizeIntensity(it) }, "%")
-            PxSlider("Saturazione", state.colorizeSaturation, 0f..200f, { vm.setColorizeSaturation(it) }, "%")
+            PxSlider("Vivacità", state.colorizeSaturation, 0f..200f, { vm.setColorizeLook(saturation = it) }, "%")
+            PxSlider("Profondità", state.colorizeDepth, 0f..100f, { vm.setColorizeLook(depth = it) }, "%")
+            PxSlider("Calore", state.colorizeWarmth, -100f..100f, { vm.setColorizeLook(warmth = it) })
+            PxSlider("Tinta", state.colorizeHue, -60f..60f, { vm.setColorizeLook(hue = it) }, "°")
+            PxSlider("Precisione bordi", state.colorizeEdges, 0f..100f, { vm.setColorizeLook(edges = it) }, "%")
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                 PxIconAction(Icons.Default.Refresh, "Ricalcola i colori") { vm.startColorize() }
+                PxIconAction(Icons.Default.Brush, "Correggi una zona con il pennello in modo Colore") { vm.openColorFixBrush() }
                 Text(
-                    "Un colore non ti convince? Pennelli → modo Colore lo corregge mantenendo luci e ombre",
+                    "Un colore sbagliato? Tinta per tutta la foto, pennello per una zona",
                     color = TextMute, fontSize = 11.sp, modifier = Modifier.padding(start = 8.dp)
                 )
             }
