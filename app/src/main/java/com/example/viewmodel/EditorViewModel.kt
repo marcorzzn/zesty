@@ -211,6 +211,8 @@ class EditorViewModel : ViewModel() {
         const val FILTER_FX_KEY = "filter"
         /** Zona da cancellare (Cancella oggetti): non è un effetto, vive solo mentre lo strumento è aperto. */
         const val ERASE_KEY = "erase"
+        /** LaMa con pesi compressi: ONNX Runtime li riporta in virgola mobile al caricamento. */
+        val LAMA_SESSION = mapOf("session.disable_quant_qdq" to "1")
     }
 
     init {
@@ -2919,6 +2921,10 @@ class EditorViewModel : ViewModel() {
             brushSize = 40f, brushHardness = 70f, brushOpacity = 100f,
             toastMessage = "Dipingi su ciò che vuoi togliere, poi tocca Cancella"
         )
+        // se il modello c'è già, si prepara mentre l'utente segna la zona: al tocco di Cancella resta solo il calcolo
+        com.example.engine.AiPacks.file("lama")?.let { f ->
+            viewModelScope.launch(Dispatchers.Default) { runCatching { com.example.engine.AiSegmenter.prepare(f, LAMA_SESSION) } }
+        }
     }
 
     /** Cancella la zona segnata: LaMa ricostruisce lo sfondo (pacchetto scaricato al primo uso). */
@@ -2947,7 +2953,7 @@ class EditorViewModel : ViewModel() {
                 val out = com.example.engine.AiSegmenter.runFileInputs(file, listOf(
                     "image" to (image to longArrayOf(1, 3, side, side)),
                     "mask" to (maskIn to longArrayOf(1, 1, side, side))
-                ), mapOf("session.disable_quant_qdq" to "1"))
+                ), LAMA_SESSION)
                 val newPx = com.example.engine.InpaintEngine.blend(px, alpha, w, h, crop, out)
                 Bitmap.createBitmap(newPx, w, h, Bitmap.Config.ARGB_8888).copy(Bitmap.Config.ARGB_8888, true)
             }

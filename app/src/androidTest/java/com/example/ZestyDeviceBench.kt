@@ -237,10 +237,11 @@ class ZestyDeviceBench {
         val crop = com.example.engine.InpaintEngine.crop(mask, w, h)!!
         val (image, m) = com.example.engine.InpaintEngine.inputs(px, mask, w, crop)
         var out: FloatArray? = null
-        repeat(2) { k ->
-            out = timed("LaMa ${k + 1}°") {
+        timed("Preparazione anticipata del modello") { AiSegmenter.prepare(file, mapOf("session.disable_quant_qdq" to "1")) }
+        for (full in listOf(false)) repeat(2) { k ->
+            out = timed("LaMa ${if (full) "ottimizzazione piena" else "ottimizzazione base"} ${k + 1}°") {
                 AiSegmenter.runFileInputs(file, listOf("image" to (image to longArrayOf(1, 3, 512, 512)), "mask" to (m to longArrayOf(1, 1, 512, 512))),
-                    mapOf("session.disable_quant_qdq" to "1"))
+                    mapOf("session.disable_quant_qdq" to "1"), fullOptimization = full)
             }
         }
         val o = out ?: return

@@ -89,22 +89,33 @@ object AiSegmenter {
     private var downloadedPath: String? = null
 
     /**
-     * Esegue un modello scaricato con più ingressi (nome → valori e forma) e restituisce la prima uscita.
-     * [entries] = voci di sessione (es. "session.disable_quant_qdq" per i modelli con pesi compressi).
+     * Prepara (o riusa) la sessione di un modello scaricato. Chiamata in anticipo, all'apertura dello strumento,
+     * toglie dall'attesa dell'utente la parte lenta (decine di secondi sui modelli grandi).
      */
     @Synchronized
-    fun runFileInputs(file: java.io.File, inputs: List<Pair<String, Pair<FloatArray, LongArray>>>, entries: Map<String, String> = emptyMap()): FloatArray {
+    fun prepare(file: java.io.File, entries: Map<String, String> = emptyMap(), fullOptimization: Boolean = false): OrtSession {
         val e = env ?: OrtEnvironment.getEnvironment().also { env = it }
-        val key = file.absolutePath + entries.toString()
-        if (downloadedPath != key) {
+        val key = file.absolutePath + entries.toString() + fullOptimization
+        if (downloadedPath != key || downloaded == null) {
             runCatching { downloaded?.close() }
             downloaded = e.createSession(file.absolutePath, options(config.copy(xnnpack = false)).apply {
-                setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
+                setOptimizationLevel(if (fullOptimization) OrtSession.SessionOptions.OptLevel.ALL_OPT else OrtSession.SessionOptions.OptLevel.BASIC_OPT)
                 entries.forEach { (k, v) -> addConfigEntry(k, v) }
             })
             downloadedPath = key
         }
-        val s = downloaded!!
+        return downloaded!!
+    }
+
+    /**
+     * Esegue un modello scaricato con più ingressi (nome → valori e forma) e restituisce la prima uscita.
+     * [entries] = voci di sessione (es. "session.disable_quant_qdq" per i modelli con pesi compressi).
+     */
+    @Synchronized
+    fun runFileInputs(file: java.io.File, inputs: List<Pair<String, Pair<FloatArray, LongArray>>>, entries: Map<String, String> = emptyMap(),
+                      fullOptimization: Boolean = false): FloatArray {
+        val e = env ?: OrtEnvironment.getEnvironment().also { env = it }
+        val s = prepare(file, entries, fullOptimization)
         val tensors = inputs.map { (name, v) -> name to OnnxTensor.createTensor(e, FloatBuffer.wrap(v.first), v.second) }
         try {
             s.run(tensors.toMap()).use { res ->
