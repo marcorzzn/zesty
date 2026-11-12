@@ -363,6 +363,21 @@ class EditorViewModel : ViewModel() {
     }
 
     // ============ COMPOSITE RENDER PIPELINE ============
+    /**
+     * La tela a piena risoluzione: se quella mostrata è ancora l'anteprima di un gesto (più piccola),
+     * la si ricalcola subito. Da usare per salvare, condividere, ritagliare e campionare colori.
+     */
+    private fun fullComposite(): Bitmap {
+        val s = _state.value
+        s.compositeBitmap?.takeIf { it.width == s.canvasW.coerceAtLeast(1) && it.height == s.canvasH.coerceAtLeast(1) }?.let { return it }
+        val bmp = PixelEngine.renderComposite(
+            s.canvasW, s.canvasH, s.bgColor, s.fitBgMode,
+            s.borderOuter, s.borderInner, s.borderRadius, s.borderColor, s.layers, scale = 1f
+        )
+        _state.value = _state.value.copy(compositeBitmap = bmp)
+        return bmp
+    }
+
     fun rebuildCompositeImmediate() {
         val s = _state.value
         val bmp = PixelEngine.renderComposite(
@@ -975,7 +990,7 @@ class EditorViewModel : ViewModel() {
         val source = PixelEngine.renderSingleLayerBitmap(active, s.layers)
         val others = s.layers.map { if (it.id == active.id) it.copy(visible = false) else it }
         val backdrop = PixelEngine.renderComposite(
-            s.canvasW, s.canvasH, s.bgColor, s.fitBgMode, s.borderOuter, s.borderInner, s.borderRadius, s.borderColor, others
+            s.canvasW, s.canvasH, s.bgColor, s.fitBgMode, s.borderOuter, s.borderInner, s.borderRadius, s.borderColor, others, scale = 1f
         )
         _state.value = _state.value.copy(perspSource = source, perspBackdrop = backdrop)
     }
@@ -1103,10 +1118,7 @@ class EditorViewModel : ViewModel() {
 
         // Apply rotation if non-zero to base/all layers
         if (abs(s.cropRotation) > 0.05f) {
-            val composite = s.compositeBitmap ?: PixelEngine.renderComposite(
-                s.canvasW, s.canvasH, s.bgColor, s.fitBgMode,
-                s.borderOuter, s.borderInner, s.borderRadius, s.borderColor, s.layers
-            )
+            val composite = fullComposite()
             val rotBmp = Bitmap.createBitmap(s.canvasW, s.canvasH, Bitmap.Config.ARGB_8888)
             val rc = Canvas(rotBmp)
             rc.translate(s.canvasW / 2f, s.canvasH / 2f)
@@ -1264,6 +1276,7 @@ class EditorViewModel : ViewModel() {
 
     // ============ 4. ADJUST (REGOLA) ============
     fun updateActiveLayerAdjust(transform: (AdjustParams) -> AdjustParams) {
+        interactiveEffectChange()
         updateActiveLayer { it.copy(adjust = transform(it.adjust)) }
         scheduleCompositeRebuild()
     }
@@ -1274,6 +1287,7 @@ class EditorViewModel : ViewModel() {
     }
 
     fun updateCurvePoints(channel: String, points: List<CurvePoint>) {
+        interactiveEffectChange()
         val sorted = points.sortedBy { it.x }
         updateActiveLayer { l ->
             val c = when (channel) {
@@ -1425,6 +1439,7 @@ class EditorViewModel : ViewModel() {
     }
 
     fun updateLayerEffect(key: String, config: EffectConfig) {
+        interactiveEffectChange()
         updateActiveLayer { l ->
             val map = l.effects.toMutableMap()
             map[key] = config
@@ -2799,7 +2814,7 @@ class EditorViewModel : ViewModel() {
     }
 
     private fun sampleColorAt(canvasX: Float, canvasY: Float) {
-        val bmp = _state.value.compositeBitmap ?: return
+        val bmp = fullComposite()
         val px = canvasX.roundToInt().coerceIn(0, bmp.width - 1)
         val py = canvasY.roundToInt().coerceIn(0, bmp.height - 1)
         val picked = bmp.getPixel(px, py)
@@ -3002,7 +3017,7 @@ class EditorViewModel : ViewModel() {
         scale: Float
     ) {
         val s = _state.value
-        val composite = s.compositeBitmap ?: return
+        val composite = fullComposite()
         viewModelScope.launch(Dispatchers.IO) {
             val res = ExportEngine.exportToDevice(
                 context = context,
@@ -3046,7 +3061,7 @@ class EditorViewModel : ViewModel() {
     /** ✓ dello strumento Dividi: salva ogni pannello come file separato. */
     fun exportSplit(context: Context) {
         val s = _state.value
-        val composite = s.compositeBitmap ?: return
+        val composite = fullComposite()
         val rects = splitRects()
         if (rects.isEmpty()) { showToast("Nessun pannello da salvare"); return }
         val format = if (s.splitJpg) ExportFormat.JPG else ExportFormat.PNG
@@ -3062,7 +3077,7 @@ class EditorViewModel : ViewModel() {
     }
 
     fun shareImage(context: Context) {
-        val bmp = _state.value.compositeBitmap ?: return
+        val bmp = fullComposite()
         ExportEngine.shareCurrentImage(context, bmp)
     }
 

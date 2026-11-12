@@ -156,4 +156,39 @@ class ZestyDeviceBench {
         AiSegmenter.release(); System.gc()
         log("dopo release: nativo ${Debug.getNativeHeapAllocatedSize() / 1048576} MB")
     }
+
+    /** Fase 1b: costo di un movimento di cursore nell'editor (ricomposizione completa della tela). */
+    @Test
+    fun editorPipeline() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        com.example.fx.FxEngine.load(ctx)
+        val cat = com.example.fx.FxEngine.catalog
+        log("Catalogo effetti: ${cat.effects.size} effetti; bw_classic presente: ${cat.get("bw_classic") != null}")
+        val w = 1536; val h = 2048
+        val bmp = Bitmap.createBitmap(scene(w, h), w, h, Bitmap.Config.ARGB_8888)
+        val base = com.example.model.EditorLayer(id = "foto", type = com.example.model.LayerType.IMAGE, name = "foto", w = w.toFloat(), h = h.toFloat(), bitmap = bmp)
+        val text = com.example.model.EditorLayer(id = "testo", type = com.example.model.LayerType.TEXT, name = "testo", x = 100f, y = 200f, w = 900f, h = 300f)
+        fun compose(layers: List<com.example.model.EditorLayer>) =
+            com.example.engine.PixelEngine.renderComposite(w, h, 0xFF000000.toInt(), 0, 0f, 0f, 0f, 0, layers)
+        fun series(label: String, n: Int = 8, layerAt: (Int) -> List<com.example.model.EditorLayer>) {
+            compose(layerAt(-1))
+            val times = LongArray(n) { k -> val t0 = SystemClock.elapsedRealtime(); compose(layerAt(k)); SystemClock.elapsedRealtime() - t0 }
+            log("%-40s mediana %4d ms  (min %d, max %d)".format(label, times.sorted()[n / 2], times.minOrNull(), times.maxOrNull()))
+        }
+        series("Nessun cambiamento (tutto in cache)") { listOf(base, text) }
+        com.example.engine.PixelEngine.interactivePreview = true
+        series("Luminosità durante il trascinamento") { k -> listOf(base.copy(adjust = com.example.model.AdjustParams(brightness = 10f + k)), text) }
+        com.example.engine.PixelEngine.interactivePreview = false
+        series("Luminosità a piena risoluzione", 3) { k -> listOf(base.copy(adjust = com.example.model.AdjustParams(brightness = 50f + k)), text) }
+        for (fx in listOf("bw_classic", "film_warm", "blur_gauss", "light_glow", "draw_pencil", "tex_grain")) {
+            com.example.engine.PixelEngine.interactivePreview = true
+            series("$fx durante il trascinamento") { k -> listOf(base.copy(activeFilterId = fx, activeFilterFade = k.toFloat()), text) }
+            com.example.engine.PixelEngine.interactivePreview = false
+            series("$fx a piena risoluzione", 3) { k -> listOf(base.copy(activeFilterId = fx, activeFilterFade = 50f + k), text) }
+        }
+        // costo della sola tela vuota e del caricamento sulla GPU non misurabili qui: solo la parte CPU
+        val t0 = SystemClock.elapsedRealtime()
+        repeat(10) { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) }
+        log("Nuova bitmap 1536×2048 (media)            %4d ms".format((SystemClock.elapsedRealtime() - t0) / 10))
+    }
 }

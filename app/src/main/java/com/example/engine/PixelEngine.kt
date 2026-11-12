@@ -130,12 +130,18 @@ object PixelEngine {
         borderInner: Float,
         borderRadius: Float,
         borderColor: Int,
-        layers: List<EditorLayer>
+        layers: List<EditorLayer>,
+        scale: Float = previewScale(canvasW, canvasH)
     ): Bitmap {
         val w = canvasW.coerceAtLeast(1)
         val h = canvasH.coerceAtLeast(1)
-        val out = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        // durante i gesti la tela si compone a ~INTERACTIVE_SIDE px (circa la risoluzione dello schermo)
+        val sc = scale.coerceIn(0.05f, 1f)
+        val ow = if (sc >= 1f) w else (w * sc).roundToInt().coerceAtLeast(1)
+        val oh = if (sc >= 1f) h else (h * sc).roundToInt().coerceAtLeast(1)
+        val out = Bitmap.createBitmap(ow, oh, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(out)
+        if (ow != w || oh != h) canvas.scale(ow / w.toFloat(), oh / h.toFloat())
         val paint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
         // 1. Base background
@@ -183,7 +189,8 @@ object PixelEngine {
         // 2. Render each visible layer bottom -> top
         for (layer in layers) {
             if (!layer.visible) continue
-            val layerBmp = renderSingleLayerBitmap(layer, layers)
+            val layerBmp = renderSingleLayerBitmap(layer, layers, sc)
+            val layerRect = RectF(0f, 0f, layer.w.toInt().coerceAtLeast(4).toFloat(), layer.h.toInt().coerceAtLeast(4).toFloat())
             val saveCount = canvas.save()
 
             val cx = layer.x + layer.w / 2f
@@ -203,11 +210,11 @@ object PixelEngine {
                 shadowPaint.maskFilter = BlurMaskFilter(layer.shadowBlur.coerceAtLeast(1f), BlurMaskFilter.Blur.NORMAL)
                 canvas.save()
                 canvas.translate(layer.shadowOffsetX, layer.shadowOffsetY)
-                canvas.drawBitmap(layerBmp.extractAlpha(), 0f, 0f, shadowPaint)
+                canvas.drawBitmap(layerBmp.extractAlpha(), null, layerRect, shadowPaint)
                 canvas.restore()
             }
 
-            canvas.drawBitmap(layerBmp, 0f, 0f, layerPaint)
+            canvas.drawBitmap(layerBmp, null, layerRect, layerPaint)
             canvas.restoreToCount(saveCount)
         }
 
@@ -252,7 +259,16 @@ object PixelEngine {
      * Le misure del motore sono proporzionali alla foto, quindi l'aspetto non cambia.
      */
     @Volatile var interactivePreview: Boolean = false
+    /** Lato a cui si calcola l'effetto durante i gesti (gli effetti pesanti costano col numero di pixel). */
     const val PREVIEW_MAX_SIDE = 720
+    /** Lato lungo della tela durante i gesti: circa la risoluzione dello schermo. */
+    const val INTERACTIVE_SIDE = 1080
+
+    fun previewScale(canvasW: Int, canvasH: Int): Float {
+        if (!interactivePreview) return 1f
+        val m = max(canvasW, canvasH)
+        return if (m <= INTERACTIVE_SIDE) 1f else INTERACTIVE_SIDE.toFloat() / m
+    }
 
     private fun applyFilterForPreview(bmp: Bitmap, layer: EditorLayer): Bitmap {
         val id = layer.activeFilterId ?: return bmp
@@ -311,17 +327,26 @@ object PixelEngine {
      * Renders a single layer's content at its bounding box (w x h), then applies mask, adjustments, curves, and FX
      * supporting both global FX (Path A) and per-effect selective localMask (Path B), with LRU caching (Bug C fix).
      */
-    fun renderSingleLayerBitmap(layer: EditorLayer, allLayers: List<EditorLayer> = emptyList()): Bitmap {
-        val cacheKey = computeLayerCacheKey(layer, allLayers)
+    /**
+     * @param scale risoluzione di rendering rispetto alle misure del livello (1 = piena; <1 anteprima durante i gesti).
+     * Il contenuto si disegna sempre in unità del livello: cambia solo la densità dei pixel.
+     */
+    fun renderSingleLayerBitmap(layer: EditorLayer, allLayers: List<EditorLayer> = emptyList(), scale: Float = 1f): Bitmap {
+        val lw = layer.w.toInt().coerceAtLeast(4)
+        val lh = layer.h.toInt().coerceAtLeast(4)
+        val sc = scale.coerceIn(0.05f, 1f)
+        val rw = if (sc >= 1f) lw else (lw * sc).roundToInt().coerceAtLeast(4)
+        val rh = if (sc >= 1f) lh else (lh * sc).roundToInt().coerceAtLeast(4)
+        // la scala fa parte della chiave: un'anteprima non viene mai riusata come risultato a piena qualità
+        val cacheKey = 31 * computeLayerCacheKey(layer, allLayers) + rw
         layerCompCache.get(cacheKey)?.let { cached ->
-            if (!cached.isRecycled && cached.width == layer.w.toInt().coerceAtLeast(4) && cached.height == layer.h.toInt().coerceAtLeast(4)) {
+            if (!cached.isRecycled && cached.width == rw && cached.height == rh) {
                 return cached
             }
         }
-        val lw = layer.w.toInt().coerceAtLeast(4)
-        val lh = layer.h.toInt().coerceAtLeast(4)
-        val rawBmp = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+        val rawBmp = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
         val c = Canvas(rawBmp)
+        if (rw != lw || rh != lh) c.scale(rw / lw.toFloat(), rh / lh.toFloat())
         val p = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
 
         when (layer.type) {
@@ -364,24 +389,24 @@ object PixelEngine {
                         bmp = fxOnly
                     } else {
                         // Combine original bmp + masked fxOnly
-                        val fxMasked = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+                        val fxMasked = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
                         val fmc = Canvas(fxMasked)
                         fmc.drawBitmap(fxOnly, 0f, 0f, null)
                         val mp = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
                         mp.xfermode = PorterDuffXfermode(
                             if (cfg.localInverted) PorterDuff.Mode.DST_OUT else PorterDuff.Mode.DST_IN
                         )
-                        fmc.drawBitmap(lMask, null, RectF(0f, 0f, lw.toFloat(), lh.toFloat()), mp)
+                        fmc.drawBitmap(lMask, null, RectF(0f, 0f, rw.toFloat(), rh.toFloat()), mp)
 
                         // Cut out masked area from original and draw fxMasked on top
-                        val combined = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+                        val combined = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
                         val cc = Canvas(combined)
                         cc.drawBitmap(bmp, 0f, 0f, null)
                         val cutPaint = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
                         cutPaint.xfermode = PorterDuffXfermode(
                             if (cfg.localInverted) PorterDuff.Mode.DST_IN else PorterDuff.Mode.DST_OUT
                         )
-                        cc.drawBitmap(lMask, null, RectF(0f, 0f, lw.toFloat(), lh.toFloat()), cutPaint)
+                        cc.drawBitmap(lMask, null, RectF(0f, 0f, rw.toFloat(), rh.toFloat()), cutPaint)
                         cc.drawBitmap(fxMasked, 0f, 0f, null)
                         bmp = combined
                     }
@@ -392,7 +417,7 @@ object PixelEngine {
         // Apply 170 Filter FX if active
         if (layer.activeFilterId != null) {
             val preview = interactivePreview
-            val filterKey = 31 * computeLayerCacheKey(layer.copy(activeFilterMask = null, activeFilterMaskInverted = false), allLayers) + (if (preview) 1 else 0)
+            val filterKey = 31 * (31 * computeLayerCacheKey(layer.copy(activeFilterMask = null, activeFilterMaskInverted = false), allLayers) + rw) + (if (preview) 1 else 0)
             val filtered = filterResultCache.get(filterKey)?.takeIf { !it.isRecycled && it.width == bmp.width && it.height == bmp.height }
                 ?: applyFilterForPreview(bmp, layer).also { filterResultCache.put(filterKey, it) }
             // Zona del filtro: pennello, gomma, forme, lazo o poligono (§ maschera selettiva)
@@ -401,14 +426,14 @@ object PixelEngine {
 
         // Apply layer visibility mask if present (independent and multiplicative with effect localMask)
         layer.maskBitmap?.let { mask ->
-            val masked = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+            val masked = Bitmap.createBitmap(rw, rh, Bitmap.Config.ARGB_8888)
             val mc = Canvas(masked)
             mc.drawBitmap(bmp, 0f, 0f, null)
             val mp = Paint(Paint.ANTI_ALIAS_FLAG or Paint.FILTER_BITMAP_FLAG)
             mp.xfermode = PorterDuffXfermode(
                 if (layer.maskInverted) PorterDuff.Mode.DST_OUT else PorterDuff.Mode.DST_IN
             )
-            mc.drawBitmap(mask, null, RectF(0f, 0f, lw.toFloat(), lh.toFloat()), mp)
+            mc.drawBitmap(mask, null, RectF(0f, 0f, rw.toFloat(), rh.toFloat()), mp)
             bmp = masked
         }
 

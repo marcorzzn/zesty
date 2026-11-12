@@ -49,18 +49,25 @@ android {
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true // R8: codice compatto e avvio più rapido (verificato sulla versione "ottimizzata")
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
       // AI Studio.
       signingConfig = signingConfigs.getByName("release")
     }
     // versione ottimizzata come quella finale ma firmata in debug: per misurare le prestazioni vere
+    // (senza R8, perché i test sul telefono usano classi che R8 toglierebbe dall'app)
     create("benchmark") {
       initWith(getByName("debug"))
       isDebuggable = false
       signingConfig = signingConfigs.getByName("debugConfig") // stessa firma dell'app installata
       matchingFallbacks += listOf("debug")
+    }
+    // versione da usare ogni giorno: come la finale (R8, non debuggabile) ma firmata in debug
+    create("ottimizzata") {
+      initWith(getByName("benchmark"))
+      isMinifyEnabled = true
+      proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
     }
     debug {
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in

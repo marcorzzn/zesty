@@ -19,3 +19,6 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# ONNX Runtime: classi chiamate dal codice nativo (JNI)
+-keep class ai.onnxruntime.** { *; }
