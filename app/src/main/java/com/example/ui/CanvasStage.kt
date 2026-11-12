@@ -420,7 +420,7 @@ fun InteractiveCanvasStage(
                         c.nativeCanvas.drawBitmap(src, m, android.graphics.Paint(android.graphics.Paint.FILTER_BITMAP_FLAG or android.graphics.Paint.ANTI_ALIAS_FLAG))
                     }
                 }
-                if (!perspPreview) state.compositeBitmap?.let { bmp ->
+                if (!perspPreview) (state.compositeDisplay ?: state.compositeBitmap)?.let { bmp ->
                     if (state.currentTool == "crop" || state.currentTool == "rotate") {
                         rotate(state.cropRotation, pivot = Offset(left + stageW / 2f, top + stageH / 2f)) {
                             drawImage(
@@ -747,7 +747,7 @@ fun InteractiveCanvasStage(
 
             // Lente: mostra ingrandita (2,5× la vista) la zona sotto il dito, nell'angolo opposto
             val lp = loupe
-            val comp = state.compositeBitmap
+            val comp = state.compositeDisplay ?: state.compositeBitmap
             if (lp != null && comp != null && state.currentTool == "selective_mask") {
                 val r = 56.dp.toPx()
                 val margin = 10.dp.toPx()

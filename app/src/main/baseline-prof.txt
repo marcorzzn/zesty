@@ -1,0 +1,18 @@
+# Profilo di avvio di Zesty: il codice elencato viene compilato in anticipo all'installazione,
+# così le prime schermate, la tela e i cursori non partono interpretati (avvio e primi gesti più rapidi).
+HSPLcom/example/MainActivity;->**(**)**
+Lcom/example/MainActivity;
+HSPLcom/example/ui/**;->**(**)**
+Lcom/example/ui/**;
+HSPLcom/example/viewmodel/**;->**(**)**
+Lcom/example/viewmodel/**;
+HSPLcom/example/model/**;->**(**)**
+Lcom/example/model/**;
+HSPLcom/example/engine/PixelEngine;->**(**)**
+Lcom/example/engine/PixelEngine;
+HSPLcom/example/engine/TransformGeometry;->**(**)**
+Lcom/example/engine/TransformGeometry;
+HSPLcom/example/engine/MaskGeometry;->**(**)**
+Lcom/example/engine/MaskGeometry;
+HSPLcom/example/fx/**;->**(**)**
+Lcom/example/fx/**;

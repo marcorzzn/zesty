@@ -36,6 +36,8 @@ data class EditorUiState(
     val layers: List<EditorLayer> = emptyList(),
     val activeLayerId: String? = null,
     val compositeBitmap: Bitmap? = null,
+    // copia della tela già caricata sulla GPU, solo per disegnarla (preparata fuori dal thread dello schermo)
+    val compositeDisplay: Bitmap? = null,
     // Viewport zoom / pan / rotate
     val viewScale: Float = 1f,
     val viewOffsetX: Float = 0f,
@@ -366,6 +368,16 @@ class EditorViewModel : ViewModel() {
 
     // ============ COMPOSITE RENDER PIPELINE ============
     /**
+     * Copia della tela per lo schermo, già caricata sulla GPU (Android 8+). Il caricamento avviene qui,
+     * in sottofondo, invece che durante il disegno del fotogramma (misurato: "caricamenti lenti" sulla GPU).
+     * La tela normale resta per salvare, campionare colori e calcolare.
+     */
+    private fun gpuCopy(bmp: Bitmap): Bitmap? =
+        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O)
+            runCatching { bmp.copy(Bitmap.Config.HARDWARE, false) }.getOrNull()
+        else { bmp.prepareToDraw(); null }
+
+    /**
      * La tela a piena risoluzione: se quella mostrata è ancora l'anteprima di un gesto (più piccola),
      * la si ricalcola subito. Da usare per salvare, condividere, ritagliare e campionare colori.
      */
@@ -376,7 +388,8 @@ class EditorViewModel : ViewModel() {
             s.canvasW, s.canvasH, s.bgColor, s.fitBgMode,
             s.borderOuter, s.borderInner, s.borderRadius, s.borderColor, s.layers, scale = 1f
         )
-        _state.value = _state.value.copy(compositeBitmap = bmp)
+        bmp.prepareToDraw()
+        _state.value = _state.value.copy(compositeBitmap = bmp, compositeDisplay = null)
         return bmp
     }
 
@@ -393,7 +406,8 @@ class EditorViewModel : ViewModel() {
             borderColor = s.borderColor,
             layers = s.layers
         )
-        _state.value = _state.value.copy(compositeBitmap = bmp)
+        bmp.prepareToDraw()
+        _state.value = _state.value.copy(compositeBitmap = bmp, compositeDisplay = null)
     }
 
     private val renderLock = Any()
@@ -426,8 +440,9 @@ class EditorViewModel : ViewModel() {
                         borderColor = s.borderColor,
                         layers = s.layers
                     )
+                    val display = gpuCopy(bmp)
                     withContext(Dispatchers.Main) {
-                        _state.value = _state.value.copy(compositeBitmap = bmp)
+                        _state.value = _state.value.copy(compositeBitmap = bmp, compositeDisplay = display)
                     }
                     synchronized(renderLock) {
                         if (!renderPending) { renderRunning = false; return@launch }
