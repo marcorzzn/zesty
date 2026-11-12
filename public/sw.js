@@ -2,7 +2,7 @@
 // ZESTY - SERVICE WORKER (OFFLINE PWA ENGINE)
 // =========================================================================
 
-const CACHE_NAME = 'zesty-v1';
+const CACHE_NAME = 'zesty-v3'; // v2: nuova icona
 
 // Asset critici per il caricamento immediato offline
 const PRECACHE_ASSETS = [
@@ -10,21 +10,11 @@ const PRECACHE_ASSETS = [
   './index.html',
   './manifest.json',
   './assets/aistudio/deepseek_html_20261030_ba07c6_cf515316.html',
-  './assets/icons/icon.svg',
+  './assets/icons/favicon-32.png',
+  './assets/icons/apple-touch-icon.png',
+  './assets/icons/icon-maskable-512.png',
   './assets/icons/icon-192.png',
-  './assets/icons/icon-512.png',
-  './assets/fonts/font_1.ttf',
-  './assets/fonts/font_2.ttf',
-  './assets/fonts/font_3.ttf',
-  './assets/fonts/font_5.ttf',
-  './assets/fonts/font_10.ttf',
-  './assets/fonts/font_15.ttf',
-  './assets/config/crop_ratios.json',
-  './assets/config/adjust_tools.json',
-  './assets/config/all_collages.json',
-  './assets/shaders/neon.fs',
-  './assets/shaders/comic.fs',
-  './assets/shaders/color_splash.fs'
+  './assets/icons/icon-512.png'
 ];
 
 // 1. INSTALL: Scarica e memorizza gli asset critici

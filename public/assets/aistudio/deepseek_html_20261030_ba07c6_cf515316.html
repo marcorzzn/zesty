@@ -9,8 +9,8 @@
 <meta name="apple-mobile-web-app-title" content="Zesty">
 <title>Zesty</title>
 <link rel="manifest" href="../../manifest.json">
-<link rel="icon" type="image/svg+xml" href="../icons/icon.svg">
-<link rel="apple-touch-icon" href="../icons/icon-192.png">
+<link rel="icon" type="image/png" sizes="32x32" href="../icons/favicon-32.png">
+<link rel="apple-touch-icon" href="../icons/apple-touch-icon.png">
 <style>
 /* ==========================================================================
    ZESTY MOBILE DESIGN SYSTEM
@@ -41,45 +41,46 @@
   --shadow-card: 0 4px 16px rgba(0, 0, 0, 0.4);
 }
 
-/* ============ AUTHENTIC FONTS (Estratti dall'APK) ============ */
+/* ============ FONT ============ */
+/* Font di sistema: i file di terzi non sono inclusi (restano in 'materiale terzi', in locale). */
 @font-face {
   font-family: 'ZestyDisplay';
-  src: url('../fonts/font_1.ttf') format('truetype');
+  src: local('Arial Black'), local('Roboto Black'), local('Helvetica Neue Bold');
   font-display: swap;
 }
 @font-face {
   font-family: 'ZestySans';
-  src: url('../fonts/font_3.ttf') format('truetype');
+  src: local('Roboto'), local('Segoe UI'), local('Helvetica Neue'), local('Arial');
   font-display: swap;
 }
 @font-face {
   font-family: 'ZestyFont1';
-  src: url('../fonts/font_1.ttf') format('truetype');
+  src: local('Arial Black'), local('Roboto Black');
   font-display: swap;
 }
 @font-face {
   font-family: 'ZestyFont2';
-  src: url('../fonts/font_2.ttf') format('truetype');
+  src: local('Courier New'), local('Roboto Mono');
   font-display: swap;
 }
 @font-face {
   font-family: 'ZestyFont3';
-  src: url('../fonts/font_3.ttf') format('truetype');
+  src: local('Roboto'), local('Segoe UI'), local('Arial');
   font-display: swap;
 }
 @font-face {
   font-family: 'ZestyFont5';
-  src: url('../fonts/font_5.ttf') format('truetype');
+  src: local('Roboto Light'), local('Segoe UI Light'), local('Arial');
   font-display: swap;
 }
 @font-face {
   font-family: 'ZestyFont10';
-  src: url('../fonts/font_10.ttf') format('truetype');
+  src: local('Georgia'), local('Noto Serif');
   font-display: swap;
 }
 @font-face {
   font-family: 'ZestyFont15';
-  src: url('../fonts/font_15.ttf') format('truetype');
+  src: local('Impact'), local('Arial Black');
   font-display: swap;
 }
 

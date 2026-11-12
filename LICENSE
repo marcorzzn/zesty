@@ -1,0 +1,52 @@
+Zesty — Copyright (c) 2026 Marco Razzano. All rights reserved.
+Zesty — Copyright (c) 2026 Marco Razzano. Tutti i diritti riservati.
+
+ENGLISH
+
+This repository is publicly visible for reference only. It is NOT open source.
+
+No licence or right is granted to you by the publication of this repository. Without the prior
+written permission of the copyright holder, you may not, in whole or in part:
+  - copy, reproduce or download the source code, assets, icons, logos or documentation for use
+    outside of viewing them on the hosting platform;
+  - modify, translate, adapt or create derivative works;
+  - distribute, publish, sublicense, sell, rent or otherwise make available the software or any
+    part of it, in source or compiled form;
+  - use the software, its name "Zesty", its icon or its visual identity in any product or service.
+
+The only permissions granted are those strictly required by the terms of service of the platform
+hosting this repository (for example, viewing it). Any other use requires a written licence.
+To request one, contact the author through the repository.
+
+THIRD-PARTY COMPONENTS
+Third-party software and models used by Zesty remain under their own licences, which are not
+modified by this notice. They are listed with their licence texts in app/src/main/assets/licenses
+and in assets/ai/registry.json (AI models downloaded on first use).
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED. IN NO EVENT
+SHALL THE AUTHOR BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY ARISING FROM ITS USE.
+
+ITALIANO
+
+Questo repository è visibile pubblicamente solo come riferimento. NON è software libero né open source.
+
+La pubblicazione del repository non concede alcuna licenza né alcun diritto. Senza il permesso scritto
+e preventivo del titolare dei diritti è vietato, in tutto o in parte:
+  - copiare, riprodurre o scaricare il codice sorgente, le risorse, le icone, i loghi o la
+    documentazione per usi diversi dalla consultazione sulla piattaforma che li ospita;
+  - modificarli, tradurli, adattarli o crearne opere derivate;
+  - distribuire, pubblicare, concedere in sublicenza, vendere, noleggiare o rendere disponibile in
+    altro modo il software o sue parti, in forma sorgente o compilata;
+  - usare il software, il nome "Zesty", la sua icona o la sua identità visiva in prodotti o servizi.
+
+Sono concessi solo i permessi strettamente richiesti dai termini di servizio della piattaforma che
+ospita il repository (per esempio la consultazione). Ogni altro uso richiede una licenza scritta,
+da richiedere all'autore tramite il repository.
+
+COMPONENTI DI TERZI
+I software e i modelli di terzi usati da Zesty restano soggetti alle proprie licenze, che questo avviso
+non modifica. Sono elencati con i testi delle licenze in app/src/main/assets/licenses e in
+assets/ai/registry.json (modelli di IA scaricati al primo uso).
+
+IL SOFTWARE È FORNITO "COSÌ COM'È", SENZA GARANZIE DI ALCUN TIPO, ESPLICITE O IMPLICITE. IN NESSUN CASO
+L'AUTORE SARÀ RESPONSABILE PER RECLAMI, DANNI O ALTRE RESPONSABILITÀ DERIVANTI DAL SUO UTILIZZO.
