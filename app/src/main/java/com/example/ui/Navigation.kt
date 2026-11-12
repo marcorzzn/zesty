@@ -55,6 +55,7 @@ val TOOL_FAMILIES = listOf(
         ToolNavItem("colorize", "Colorizza", Icons.Default.Palette)
     )),
     ToolFamily("ritocca", "Ritocca", Icons.Default.Healing, listOf(
+        ToolNavItem("erase", "Cancella oggetti", Icons.Default.AutoFixOff),
         ToolNavItem("clone", "Clona", Icons.Default.Healing),
         ToolNavItem("warp", "Fluidifica", Icons.Default.WaterDrop),
         ToolNavItem("brush", "Pennelli", Icons.Default.Brush),

@@ -89,6 +89,33 @@ object AiSegmenter {
     private var downloadedPath: String? = null
 
     /**
+     * Esegue un modello scaricato con più ingressi (nome → valori e forma) e restituisce la prima uscita.
+     * [entries] = voci di sessione (es. "session.disable_quant_qdq" per i modelli con pesi compressi).
+     */
+    @Synchronized
+    fun runFileInputs(file: java.io.File, inputs: List<Pair<String, Pair<FloatArray, LongArray>>>, entries: Map<String, String> = emptyMap()): FloatArray {
+        val e = env ?: OrtEnvironment.getEnvironment().also { env = it }
+        val key = file.absolutePath + entries.toString()
+        if (downloadedPath != key) {
+            runCatching { downloaded?.close() }
+            downloaded = e.createSession(file.absolutePath, options(config.copy(xnnpack = false)).apply {
+                setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
+                entries.forEach { (k, v) -> addConfigEntry(k, v) }
+            })
+            downloadedPath = key
+        }
+        val s = downloaded!!
+        val tensors = inputs.map { (name, v) -> name to OnnxTensor.createTensor(e, FloatBuffer.wrap(v.first), v.second) }
+        try {
+            s.run(tensors.toMap()).use { res ->
+                val out = res.get(0) as OnnxTensor
+                val fb = out.floatBuffer
+                return FloatArray(fb.remaining()).also { fb.get(it) }
+            }
+        } finally { tensors.forEach { it.second.close() } }
+    }
+
+    /**
      * Esegue un modello scaricato ([file] dal ModelStore) con un ingresso 1×3×h×w e restituisce la prima uscita.
      * Se manca l'acceleratore o il telefono non supporta un'operazione, l'errore risale al chiamante.
      */

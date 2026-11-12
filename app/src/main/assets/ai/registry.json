@@ -4,13 +4,67 @@
     {
       "id": "ddcolor_tiny",
       "file": "ddcolor-tiny-fp16.onnx",
-      "urls": ["https://huggingface.co/edgetools/ddcolor/resolve/main/ddcolor-tiny-fp16.onnx"],
+      "urls": [
+        "https://huggingface.co/edgetools/ddcolor/resolve/main/ddcolor-tiny-fp16.onnx"
+      ],
       "sha256": "2653da00dc15e54a45e5200b61dbf82ee9ceaf56b02bb9b9657569ac775e82e6",
       "bytes": 135444402,
       "title": "Colore automatico (DDColor)",
       "purpose": "Colorizza le foto in bianco e nero",
       "license": "Apache-2.0",
       "source": "https://github.com/piddnad/DDColor"
+    },
+    {
+      "id": "lama",
+      "file": "lama_int4_int8_r4.onnx",
+      "urls": [
+        "https://huggingface.co/othytenk/lama-int4-int8/resolve/main/lama_int4_int8_r4.onnx"
+      ],
+      "sha256": "4e3b78a253eb4abf21896811c928ffa91214b916e5d6ced24cecdd7999b4aaa1",
+      "bytes": 36931151,
+      "title": "Cancella oggetti (LaMa)",
+      "purpose": "Cancellare oggetti e ricostruire lo sfondo",
+      "license": "Apache-2.0",
+      "source": "https://github.com/advimman/lama"
+    },
+    {
+      "id": "lama_fp32",
+      "file": "lama_fp32.onnx",
+      "urls": [
+        "https://huggingface.co/Carve/LaMa-ONNX/resolve/main/lama_fp32.onnx"
+      ],
+      "sha256": "1faef5301d78db7dda502fe59966957ec4b79dd64e16f03ed96913c7a4eb68d6",
+      "bytes": 208044816,
+      "title": "Cancella oggetti (LaMa, versione completa)",
+      "purpose": "Cancellare oggetti e ricostruire lo sfondo",
+      "license": "Apache-2.0",
+      "source": "https://github.com/advimman/lama"
+    },
+    {
+      "id": "mobilesam_encoder",
+      "file": "mobile_sam_image_encoder.onnx",
+      "urls": [
+        "https://huggingface.co/Acly/MobileSAM/resolve/main/mobile_sam_image_encoder.onnx"
+      ],
+      "sha256": "580f5fb648ea1062c0aabc26217aed56921985f03f0cbbd852bba81d760cc749",
+      "bytes": 28157093,
+      "title": "Selezione a tocco (MobileSAM)",
+      "purpose": "Selezionare un oggetto toccandolo",
+      "license": "Apache-2.0 / MIT",
+      "source": "https://github.com/ChaoningZhang/MobileSAM"
+    },
+    {
+      "id": "mobilesam_decoder",
+      "file": "sam_mask_decoder_single.onnx",
+      "urls": [
+        "https://huggingface.co/Acly/MobileSAM/resolve/main/sam_mask_decoder_single.onnx"
+      ],
+      "sha256": "93915fc7c993ab9d59ab8c9ccd3bce37f7509c81ab4150a74abd4d2abbd8570d",
+      "bytes": 16501323,
+      "title": "Selezione a tocco (MobileSAM)",
+      "purpose": "Selezionare un oggetto toccandolo",
+      "license": "Apache-2.0 / MIT",
+      "source": "https://github.com/ChaoningZhang/MobileSAM"
     }
   ]
 }

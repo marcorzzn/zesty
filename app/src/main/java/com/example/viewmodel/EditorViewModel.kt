@@ -109,6 +109,9 @@ data class EditorUiState(
     val colorizeDepth: Float = 30f,   // 0..100
     val colorizeEdges: Float = 50f,   // 0..100
     val colorizeLayerId: String? = null,
+    // Cancella oggetti: la zona da togliere si segna con gli strumenti delle zone, poi LaMa ricostruisce
+    val eraseStudio: Boolean = false,
+    val eraseBusy: Boolean = false,
     val selectiveTargetFxKey: String? = null, // null = layer.maskBitmap, non-null = layer.effects[key].localMask
     val showMaskHeatmap: Boolean = true,
     // Strumenti zona: pennello, gomma, forme con maniglie, lazo, poligono modellabile
@@ -206,6 +209,8 @@ class EditorViewModel : ViewModel() {
     companion object {
         /** Chiave della maschera del filtro del catalogo (separata dagli FX classici). */
         const val FILTER_FX_KEY = "filter"
+        /** Zona da cancellare (Cancella oggetti): non è un effetto, vive solo mentre lo strumento è aperto. */
+        const val ERASE_KEY = "erase"
     }
 
     init {
@@ -522,6 +527,7 @@ class EditorViewModel : ViewModel() {
         }
 
         if (normalized == "cutout") { openCutoutStudio(); return }
+        if (normalized == "erase") { openEraseStudio(); return }
         if (normalized == "colorize") {
             _state.value = _state.value.copy(toolGridOpen = false, currentTool = "colorize", colorizeLayerId = null)
             colorizeAb = null
@@ -1861,7 +1867,12 @@ class EditorViewModel : ViewModel() {
         commitMaskDraft()
         maskOnEnter = null
         val s = _state.value
-        val prevTool = if (s.cutoutStudio) null else (s.returnToolAfterSelective ?: "effects")
+        val prevTool = if (s.cutoutStudio || s.eraseStudio) null else (s.returnToolAfterSelective ?: "effects")
+        if (s.eraseStudio) {
+            // la zona di cancellazione non resta nel livello
+            updateActiveLayer { it.copy(effects = it.effects - ERASE_KEY) }
+            _state.value = _state.value.copy(eraseStudio = false, eraseBusy = false)
+        }
         if (s.cutoutStudio) releaseAiAnalysis() // la memoria dell'IA torna libera all'uscita
         _state.value = s.copy(
             currentTool = prevTool,
@@ -2888,6 +2899,75 @@ class EditorViewModel : ViewModel() {
 
     fun dismissPack() { packAction = null; _state.value = _state.value.copy(aiPackPrompt = null) }
     fun cancelPackDownload() { packCancel = true }
+
+    // ============ CANCELLA OGGETTI (LaMa) ============
+    /** Apre Cancella oggetti: si dipinge (o si cerchia) ciò che va tolto, in rosso sulla foto. */
+    fun openEraseStudio() {
+        val s0 = _state.value
+        val a = s0.activeLayer?.takeIf { it.type == LayerType.IMAGE || it.type == LayerType.RASTER }
+            ?: s0.layers.firstOrNull { (it.type == LayerType.IMAGE || it.type == LayerType.RASTER) && it.bitmap != null }
+            ?: run { showToast("Apri prima una foto"); return }
+        if (a.id != s0.activeLayerId) _state.value = s0.copy(activeLayerId = a.id)
+        ensureActiveLayerRasterized()
+        openSelectivePaintMode(ERASE_KEY, initBlackMask = true)
+        _state.value = _state.value.copy(
+            eraseStudio = true,
+            returnToolAfterSelective = null,
+            maskTool = MaskTool.BRUSH,
+            maskSubtract = false,
+            showMaskHeatmap = true, // la zona da togliere si vede in rosso
+            brushSize = 40f, brushHardness = 70f, brushOpacity = 100f,
+            toastMessage = "Dipingi su ciò che vuoi togliere, poi tocca Cancella"
+        )
+    }
+
+    /** Cancella la zona segnata: LaMa ricostruisce lo sfondo (pacchetto scaricato al primo uso). */
+    fun eraseNow() {
+        commitMaskDraft()
+        val s = _state.value
+        if (s.eraseBusy) return
+        val layer = s.activeLayer ?: return
+        val mask = layer.effects[ERASE_KEY]?.localMask ?: return
+        requirePack("lama") { file -> runErase(file, layer.id, mask) }
+    }
+
+    private fun runErase(file: java.io.File, layerId: String, maskBmp: Bitmap) {
+        val layer = _state.value.layers.firstOrNull { it.id == layerId } ?: return
+        val bmp = layer.bitmap ?: return
+        _state.value = _state.value.copy(eraseBusy = true)
+        viewModelScope.launch(Dispatchers.Default) {
+            val res = runCatching {
+                val w = bmp.width; val h = bmp.height
+                val m = if (maskBmp.width == w && maskBmp.height == h) maskBmp else Bitmap.createScaledBitmap(maskBmp, w, h, true)
+                val alpha = maskToAlpha(m)
+                val crop = com.example.engine.InpaintEngine.crop(alpha, w, h) ?: return@runCatching null
+                val px = IntArray(w * h); bmp.getPixels(px, 0, w, 0, 0, w, h)
+                val (image, maskIn) = com.example.engine.InpaintEngine.inputs(px, alpha, w, crop)
+                val side = com.example.engine.InpaintEngine.SIDE.toLong()
+                val out = com.example.engine.AiSegmenter.runFileInputs(file, listOf(
+                    "image" to (image to longArrayOf(1, 3, side, side)),
+                    "mask" to (maskIn to longArrayOf(1, 1, side, side))
+                ), mapOf("session.disable_quant_qdq" to "1"))
+                val newPx = com.example.engine.InpaintEngine.blend(px, alpha, w, h, crop, out)
+                Bitmap.createBitmap(newPx, w, h, Bitmap.Config.ARGB_8888).copy(Bitmap.Config.ARGB_8888, true)
+            }
+            withContext(Dispatchers.Main) {
+                _state.value = _state.value.copy(eraseBusy = false)
+                res.onSuccess { done ->
+                    if (done == null) { showToast("Dipingi prima su ciò che vuoi togliere"); return@onSuccess }
+                    val lw = layer.w.toInt().coerceAtLeast(4); val lh = layer.h.toInt().coerceAtLeast(4)
+                    val empty = Bitmap.createBitmap(lw, lh, Bitmap.Config.ARGB_8888)
+                    _state.value = _state.value.copy(layers = _state.value.layers.map {
+                        if (it.id == layerId) it.copy(bitmap = done, effects = it.effects + (ERASE_KEY to (it.effects[ERASE_KEY] ?: EffectConfig()).copy(localMask = empty))) else it
+                    })
+                    maskOnEnter = empty
+                    pushHistorySnapshot()
+                    scheduleCompositeRebuild()
+                    showToast("Fatto: segna altro da togliere oppure conferma")
+                }.onFailure { showToast("Cancellazione non riuscita: ${it.message ?: "errore del modello"}") }
+            }
+        }
+    }
 
     // ============ COLORIZZA (DDColor) ============
     private var colorizeAb: FloatArray? = null

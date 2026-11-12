@@ -219,4 +219,36 @@ class ZestyDeviceBench {
         }
         AiSegmenter.release()
     }
+
+    /** Cancella oggetti sul telefono: pacchetto LaMa, un oggetto rosso su prato e cielo viene tolto. */
+    @Test
+    fun erase() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        AiSegmenter.attach(ctx)
+        com.example.engine.AiPacks.attach(ctx)
+        val file = timed("Pacchetto LaMa (scarica o trova)") {
+            com.example.engine.AiPacks.download("lama", progress = { _, _ -> }, cancelled = { false })
+        } ?: return
+        val w = 1536; val h = 2048
+        // cielo sopra, prato sotto, un quadrato rosso a cavallo dell'orizzonte da togliere
+        val px = IntArray(w * h) { i -> val y = i / w; if (y < h / 2) 0xFF7FB2E5.toInt() else 0xFF3C7A32.toInt() }
+        val mask = FloatArray(w * h)
+        for (y in 900 until 1150) for (x in 600 until 900) { px[y * w + x] = 0xFFD02020.toInt(); mask[y * w + x] = 1f }
+        val crop = com.example.engine.InpaintEngine.crop(mask, w, h)!!
+        val (image, m) = com.example.engine.InpaintEngine.inputs(px, mask, w, crop)
+        var out: FloatArray? = null
+        repeat(2) { k ->
+            out = timed("LaMa ${k + 1}°") {
+                AiSegmenter.runFileInputs(file, listOf("image" to (image to longArrayOf(1, 3, 512, 512)), "mask" to (m to longArrayOf(1, 1, 512, 512))),
+                    mapOf("session.disable_quant_qdq" to "1"))
+            }
+        }
+        val o = out ?: return
+        val res = timed("Ricomposizione") { com.example.engine.InpaintEngine.blend(px, mask, w, h, crop, o) }!!
+        fun red(p: Int) = (p shr 16) and 255
+        val sky = res[950 * w + 750]; val grass = res[1100 * w + 750]
+        log("Uscita min %.0f max %.0f; cielo ricostruito #%06X, prato ricostruito #%06X (prima #D02020)".format(o.min(), o.max(), sky and 0xFFFFFF, grass and 0xFFFFFF))
+        log("Rosso rimasto: cielo ${red(sky)}, prato ${red(grass)} (sotto 160 = oggetto tolto)")
+        AiSegmenter.release()
+    }
 }
