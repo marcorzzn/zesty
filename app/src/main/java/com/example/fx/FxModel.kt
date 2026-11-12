@@ -36,7 +36,9 @@ data class FxEffect(
     val category: String,
     val params: List<FxParam>,
     val steps: JSONArray,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    // sottogruppo dentro la categoria (es. Cinema → "I grandi autori"); vuoto = nessuno
+    val group: String = ""
 ) {
     /**
      * Valori predefiniti dei parametri. I colori sono salvati come numero RGB 0..16777215
@@ -115,7 +117,8 @@ class FxCatalog(
                 category = o.optString("category", defaultCat),
                 params = params,
                 steps = o.getJSONArray("steps"),
-                tags = tags
+                tags = tags,
+                group = o.optString("group", "")
             )
         }
     }

@@ -1,73 +1,17 @@
 {
   "category": "sfocatura",
   "effects": [
-    { "id": "blur_gauss", "label": "Sfocatura",
-      "params": [{ "id": "radius", "label": "Raggio", "min": 0.1, "max": 20, "default": 2, "step": 0.1 }],
-      "steps": [{ "op": "blur", "radius": "$radius" }] },
-    { "id": "blur_soften", "label": "Ammorbidisci",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
-      "steps": [{ "op": "layer", "steps": [{ "op": "blur", "radius": 1.5 }], "opacity": "$amount / 100 * 0.7" }] },
-    { "id": "blur_motion", "label": "Movimento",
-      "params": [
-        { "id": "angle", "label": "Direzione", "min": 0, "max": 360, "default": 0 },
-        { "id": "distance", "label": "Distanza", "min": 0.5, "max": 20, "default": 5, "step": 0.5 }
-      ],
-      "steps": [{ "op": "motion_blur", "angle": "$angle", "distance": "$distance" }] },
-    { "id": "blur_zoom", "label": "Zoom",
-      "params": [
-        { "id": "amount", "label": "Intensità", "default": 35 },
-        { "id": "cx", "label": "Centro X", "min": 0, "max": 100, "default": 50 },
-        { "id": "cy", "label": "Centro Y", "min": 0, "max": 100, "default": 50 }
-      ],
-      "steps": [{ "op": "zoom_blur", "amount": "$amount", "cx": "$cx / 100", "cy": "$cy / 100" }] },
-    { "id": "blur_tilt_shift", "label": "Tilt-shift",
-      "params": [
-        { "id": "position", "label": "Posizione", "min": 0, "max": 100, "default": 55 },
-        { "id": "width", "label": "Fascia nitida", "min": 2, "max": 80, "default": 22 },
-        { "id": "blur", "label": "Sfocatura", "min": 0.5, "max": 10, "default": 3, "step": 0.1 },
-        { "id": "angle", "label": "Angolo", "min": -90, "max": 90, "default": 0 }
-      ],
-      "steps": [
-        { "op": "blur", "radius": "$blur", "mask": { "type": "linear", "position": "$position / 100", "width": "$width / 100", "feather": 0.18, "angle": "$angle" } },
-        { "op": "adjust", "saturation": 20, "contrast": 8 }
-      ] },
-    { "id": "blur_focus", "label": "Fuoco centrale",
-      "params": [
-        { "id": "radius", "label": "Area nitida", "min": 5, "max": 80, "default": 25 },
-        { "id": "blur", "label": "Sfocatura", "min": 0.5, "max": 12, "default": 3, "step": 0.1 },
-        { "id": "cx", "label": "Centro X", "min": 0, "max": 100, "default": 50 },
-        { "id": "cy", "label": "Centro Y", "min": 0, "max": 100, "default": 50 }
-      ],
-      "steps": [{ "op": "blur", "radius": "$blur", "mask": { "type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": "$radius / 100", "feather": 0.25, "invert": true } }] },
-    { "id": "blur_edges", "label": "Bordi sfocati",
-      "params": [{ "id": "blur", "label": "Sfocatura", "min": 0.5, "max": 10, "default": 2.5, "step": 0.1 }],
-      "steps": [{ "op": "blur", "radius": "$blur", "mask": { "type": "radial", "radius": 0.35, "feather": 0.35, "invert": true } }] },
-    { "id": "blur_orton", "label": "Sogno",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [
-        { "op": "layer", "steps": [{ "op": "blur", "radius": 2.5 }, { "op": "adjust", "brightness": 20 }], "blend": "screen", "opacity": "$amount / 100" },
-        { "op": "adjust", "contrast": 15, "saturation": 10 }
-      ] },
-    { "id": "blur_ethereal", "label": "Etereo",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [
-        { "op": "glow", "threshold": 45, "radius": 4, "strength": "$amount" },
-        { "op": "adjust", "fade": "$amount * 0.3", "saturation": -10 }
-      ] },
-    { "id": "blur_smart", "label": "Sfocatura intelligente",
-      "params": [
-        { "id": "radius", "label": "Raggio", "min": 0.5, "max": 6, "default": 2, "step": 0.1 },
-        { "id": "strength", "label": "Rispetto dei bordi", "default": 50 }
-      ],
-      "steps": [{ "op": "smooth", "radius": "$radius", "strength": "100 - $strength * 0.8" }] },
-    { "id": "blur_lens", "label": "Bokeh obiettivo",
-      "params": [{ "id": "blur", "label": "Sfocatura", "min": 1, "max": 12, "default": 4, "step": 0.1 }, { "id": "radius", "label": "Area nitida", "min": 5, "max": 80, "default": 28 }],
-      "steps": [
-        { "op": "layer", "steps": [{ "op": "glow", "threshold": 65, "radius": 1.5, "strength": 80 }, { "op": "blur", "radius": "$blur" }],
-          "mask": { "type": "radial", "radius": "$radius / 100", "feather": 0.2, "invert": true } }
-      ] },
-    { "id": "blur_spotlight", "label": "Fuoco morbido",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
-      "steps": [{ "op": "layer", "steps": [{ "op": "blur", "radius": 3 }], "blend": "lighten", "opacity": "$amount / 100" }] }
+    {"id": "blur_gauss", "label": "Sfocatura", "params": [{"id": "radius", "label": "Raggio", "min": 0.1, "max": 20, "default": 2, "step": 0.1}], "steps": [{"op": "blur", "radius": "$radius"}]},
+    {"id": "blur_soften", "label": "Ammorbidisci", "params": [{"id": "amount", "label": "Intensità", "default": 50}], "steps": [{"op": "layer", "steps": [{"op": "blur", "radius": 1.5}], "opacity": "$amount / 100 * 0.7"}]},
+    {"id": "blur_motion", "label": "Movimento", "params": [{"id": "angle", "label": "Direzione", "min": 0, "max": 360, "default": 0}, {"id": "distance", "label": "Distanza", "min": 0.5, "max": 20, "default": 5, "step": 0.5}], "steps": [{"op": "motion_blur", "angle": "$angle", "distance": "$distance"}]},
+    {"id": "blur_zoom", "label": "Zoom", "params": [{"id": "amount", "label": "Intensità", "default": 35}, {"id": "cx", "label": "Centro X", "min": 0, "max": 100, "default": 50}, {"id": "cy", "label": "Centro Y", "min": 0, "max": 100, "default": 50}], "steps": [{"op": "zoom_blur", "amount": "$amount", "cx": "$cx / 100", "cy": "$cy / 100"}]},
+    {"id": "blur_tilt_shift", "label": "Tilt-shift", "params": [{"id": "position", "label": "Posizione", "min": 0, "max": 100, "default": 55}, {"id": "width", "label": "Fascia nitida", "min": 2, "max": 80, "default": 22}, {"id": "blur", "label": "Sfocatura", "min": 0.5, "max": 10, "default": 3, "step": 0.1}, {"id": "angle", "label": "Angolo", "min": -90, "max": 90, "default": 0}], "steps": [{"op": "blur", "radius": "$blur", "mask": {"type": "linear", "position": "$position / 100", "width": "$width / 100", "feather": 0.18, "angle": "$angle"}}, {"op": "adjust", "saturation": 20, "contrast": 8}]},
+    {"id": "blur_focus", "label": "Fuoco centrale", "params": [{"id": "radius", "label": "Area nitida", "min": 5, "max": 80, "default": 25}, {"id": "blur", "label": "Sfocatura", "min": 0.5, "max": 12, "default": 3, "step": 0.1}, {"id": "cx", "label": "Centro X", "min": 0, "max": 100, "default": 50}, {"id": "cy", "label": "Centro Y", "min": 0, "max": 100, "default": 50}], "steps": [{"op": "blur", "radius": "$blur", "mask": {"type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": "$radius / 100", "feather": 0.25, "invert": true}}]},
+    {"id": "blur_edges", "label": "Bordi sfocati", "params": [{"id": "blur", "label": "Sfocatura", "min": 0.5, "max": 10, "default": 2.5, "step": 0.1}], "steps": [{"op": "blur", "radius": "$blur", "mask": {"type": "radial", "radius": 0.35, "feather": 0.35, "invert": true}}]},
+    {"id": "blur_orton", "label": "Sogno", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "layer", "steps": [{"op": "blur", "radius": 2.5}, {"op": "adjust", "brightness": 20}], "blend": "screen", "opacity": "$amount / 100"}, {"op": "adjust", "contrast": 15, "saturation": 10}]},
+    {"id": "blur_ethereal", "label": "Etereo", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "glow", "threshold": 45, "radius": 4, "strength": "$amount"}, {"op": "adjust", "fade": "$amount * 0.3", "saturation": -10}]},
+    {"id": "blur_smart", "label": "Sfocatura intelligente", "params": [{"id": "radius", "label": "Raggio", "min": 0.5, "max": 6, "default": 2, "step": 0.1}, {"id": "strength", "label": "Rispetto dei bordi", "default": 50}], "steps": [{"op": "smooth", "radius": "$radius", "strength": "100 - $strength * 0.8"}]},
+    {"id": "blur_lens", "label": "Bokeh obiettivo", "params": [{"id": "blur", "label": "Sfocatura", "min": 1, "max": 12, "default": 4, "step": 0.1}, {"id": "radius", "label": "Area nitida", "min": 5, "max": 80, "default": 28}], "steps": [{"op": "layer", "steps": [{"op": "glow", "threshold": 65, "radius": 1.5, "strength": 80}, {"op": "blur", "radius": "$blur"}], "mask": {"type": "radial", "radius": "$radius / 100", "feather": 0.2, "invert": true}}]},
+    {"id": "blur_spotlight", "label": "Fuoco morbido", "params": [{"id": "amount", "label": "Intensità", "default": 50}], "steps": [{"op": "layer", "steps": [{"op": "blur", "radius": 3}], "blend": "lighten", "opacity": "$amount / 100"}]}
   ]
 }

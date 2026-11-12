@@ -1,83 +1,18 @@
 {
   "category": "atmosfera",
   "effects": [
-    { "id": "atm_snow", "label": "Neve",
-      "params": [
-        { "id": "density", "label": "Quantità", "default": 45 },
-        { "id": "size", "label": "Fiocchi", "min": 0.1, "max": 2, "default": 0.5, "step": 0.05 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [{ "op": "particles", "kind": "snow", "density": "$density", "size": "$size" }] },
-    { "id": "atm_blizzard", "label": "Bufera",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [
-        { "op": "adjust", "temperature": -30, "saturation": -30, "fade": 25, "brightness": 10 },
-        { "op": "texture", "kind": "clouds", "scale": 3, "amount": 40, "blend": "screen", "opacity": "$amount / 200" },
-        { "op": "layer", "steps": [{ "op": "particles", "kind": "snow", "density": "$amount", "size": 0.6 }, { "op": "motion_blur", "angle": 20, "distance": 1.5 }] }
-      ] },
-    { "id": "atm_rain", "label": "Pioggia",
-      "params": [
-        { "id": "density", "label": "Quantità", "default": 45 },
-        { "id": "angle", "label": "Direzione", "min": 45, "max": 135, "default": 80 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [
-        { "op": "adjust", "exposure": -15, "saturation": -20, "temperature": -15 },
-        { "op": "particles", "kind": "rain", "density": "$density", "size": 0.35, "angle": "$angle", "color": "#dde8f5", "opacity": 70 }
-      ] },
-    { "id": "atm_fog", "label": "Nebbia",
-      "params": [{ "id": "amount", "label": "Densità", "default": 55 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [
-        { "op": "adjust", "saturation": "-$amount * 0.4", "contrast": "-$amount * 0.3" },
-        { "op": "layer", "steps": [{ "op": "texture", "kind": "clouds", "scale": 4, "amount": 90 }, { "op": "adjust", "brightness": 40 }], "blend": "screen", "opacity": "$amount / 100" }
-      ] },
-    { "id": "atm_mist", "label": "Foschia al suolo",
-      "params": [{ "id": "amount", "label": "Densità", "default": 60 }],
-      "steps": [{ "op": "gradient", "type": "linear", "angle": 90, "stops": [[0, "#ffffff00"], [0.55, "#ffffff00"], [1, "#f2f4f8"]], "blend": "screen", "opacity": "$amount / 100" }] },
-    { "id": "atm_starry", "label": "Cielo stellato",
-      "params": [{ "id": "density", "label": "Stelle", "default": 50 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [
-        { "op": "particles", "kind": "stars", "density": "$density", "size": 0.4, "mask": { "type": "linear", "position": 1, "width": 1, "feather": 0.4 } }
-      ] },
-    { "id": "atm_sunset", "label": "Tramonto",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
-      "steps": [
-        { "op": "gradient", "type": "linear", "angle": 90, "stops": [[0, "#6a2c91"], [0.45, "#ff5e62"], [1, "#ffb347"]], "blend": "soft-light", "opacity": "$amount / 100" },
-        { "op": "adjust", "temperature": "$amount * 0.2", "vibrance": 15 }
-      ] },
-    { "id": "atm_autumn", "label": "Autunno",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 80 }],
-      "steps": [
-        { "op": "hue_replace", "from": 100, "to": 30, "range": 45, "softness": 25, "saturation": 15, "opacity": "$amount / 100" },
-        { "op": "adjust", "temperature": 15, "vibrance": 10 }
-      ] },
-    { "id": "atm_spring", "label": "Primavera",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [
-        { "op": "adjust", "vibrance": "$amount * 0.5", "brightness": 8, "tint": 6 },
-        { "op": "split_tone", "shadows": "#3a7a5a", "highlights": "#ffe0f0", "amount": "$amount * 0.3" }
-      ] },
-    { "id": "atm_summer", "label": "Estate",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [{ "op": "adjust", "temperature": "$amount * 0.35", "vibrance": "$amount * 0.4", "brightness": 8, "contrast": 10 }] },
-    { "id": "atm_winter", "label": "Inverno",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [{ "op": "adjust", "temperature": "-$amount * 0.5", "saturation": "-$amount * 0.3", "brightness": 10, "fade": 10 }] },
-    { "id": "atm_storm", "label": "Tempesta",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
-      "steps": [
-        { "op": "adjust", "exposure": "-$amount * 0.3", "saturation": "-$amount * 0.5", "temperature": -20, "contrast": 20 },
-        { "op": "clarity", "amount": 50, "radius": 6 },
-        { "op": "vignette", "amount": 50, "radius": 50 }
-      ] },
-    { "id": "atm_underwater", "label": "Sott'acqua",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
-      "steps": [
-        { "op": "ripple", "mode": "both", "amplitude": 0.3, "wavelength": 9 },
-        { "op": "tint", "color": "#0a8a9a", "amount": "$amount * 0.5" },
-        { "op": "gradient", "type": "linear", "angle": 90, "stops": [[0, "#9ff0ff"], [1, "#00264a"]], "blend": "soft-light", "opacity": 0.6 },
-        { "op": "glow", "threshold": 60, "radius": 3, "strength": 40 },
-        { "op": "vignette", "amount": 50, "radius": 55, "color": "#002030" }
-      ] }
+    {"id": "atm_snow", "label": "Neve", "params": [{"id": "density", "label": "Quantità", "default": 45}, {"id": "size", "label": "Fiocchi", "min": 0.1, "max": 2, "default": 0.5, "step": 0.05}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "particles", "kind": "snow", "density": "$density", "size": "$size"}]},
+    {"id": "atm_blizzard", "label": "Bufera", "params": [{"id": "amount", "label": "Intensità", "default": 70}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "adjust", "temperature": -30, "saturation": -30, "fade": 25, "brightness": 10}, {"op": "texture", "kind": "clouds", "scale": 3, "amount": 40, "blend": "screen", "opacity": "$amount / 200"}, {"op": "layer", "steps": [{"op": "particles", "kind": "snow", "density": "$amount", "size": 0.6}, {"op": "motion_blur", "angle": 20, "distance": 1.5}]}]},
+    {"id": "atm_rain", "label": "Pioggia", "params": [{"id": "density", "label": "Quantità", "default": 45}, {"id": "angle", "label": "Direzione", "min": 45, "max": 135, "default": 80}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "adjust", "exposure": -15, "saturation": -20, "temperature": -15}, {"op": "particles", "kind": "rain", "density": "$density", "size": 0.35, "angle": "$angle", "color": "#dde8f5", "opacity": 70}]},
+    {"id": "atm_fog", "label": "Nebbia", "params": [{"id": "amount", "label": "Densità", "default": 55}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "adjust", "saturation": "-$amount * 0.4", "contrast": "-$amount * 0.3"}, {"op": "layer", "steps": [{"op": "texture", "kind": "clouds", "scale": 4, "amount": 90}, {"op": "adjust", "brightness": 40}], "blend": "screen", "opacity": "$amount / 100"}]},
+    {"id": "atm_mist", "label": "Foschia al suolo", "params": [{"id": "amount", "label": "Densità", "default": 60}], "steps": [{"op": "gradient", "type": "linear", "angle": 90, "stops": [[0, "#ffffff00"], [0.55, "#ffffff00"], [1, "#f2f4f8"]], "blend": "screen", "opacity": "$amount / 100"}]},
+    {"id": "atm_starry", "label": "Cielo stellato", "params": [{"id": "density", "label": "Stelle", "default": 50}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "particles", "kind": "stars", "density": "$density", "size": 0.4, "mask": {"type": "linear", "position": 1, "width": 1, "feather": 0.4}}]},
+    {"id": "atm_sunset", "label": "Tramonto", "params": [{"id": "amount", "label": "Intensità", "default": 70}], "steps": [{"op": "gradient", "type": "linear", "angle": 90, "stops": [[0, "#6a2c91"], [0.45, "#ff5e62"], [1, "#ffb347"]], "blend": "soft-light", "opacity": "$amount / 100"}, {"op": "adjust", "temperature": "$amount * 0.2", "vibrance": 15}]},
+    {"id": "atm_autumn", "label": "Autunno", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "hue_replace", "from": 100, "to": 30, "range": 45, "softness": 25, "saturation": 15, "opacity": "$amount / 100"}, {"op": "adjust", "temperature": 15, "vibrance": 10}]},
+    {"id": "atm_spring", "label": "Primavera", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "adjust", "vibrance": "$amount * 0.5", "brightness": 8, "tint": 6}, {"op": "split_tone", "shadows": "#3a7a5a", "highlights": "#ffe0f0", "amount": "$amount * 0.3"}]},
+    {"id": "atm_summer", "label": "Estate", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "adjust", "temperature": "$amount * 0.35", "vibrance": "$amount * 0.4", "brightness": 8, "contrast": 10}]},
+    {"id": "atm_winter", "label": "Inverno", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "adjust", "temperature": "-$amount * 0.5", "saturation": "-$amount * 0.3", "brightness": 10, "fade": 10}]},
+    {"id": "atm_storm", "label": "Tempesta", "params": [{"id": "amount", "label": "Intensità", "default": 70}], "steps": [{"op": "adjust", "exposure": "-$amount * 0.3", "saturation": "-$amount * 0.5", "temperature": -20, "contrast": 20}, {"op": "clarity", "amount": 50, "radius": 6}, {"op": "vignette", "amount": 50, "radius": 50}]},
+    {"id": "atm_underwater", "label": "Sott'acqua", "params": [{"id": "amount", "label": "Intensità", "default": 70}], "steps": [{"op": "ripple", "mode": "both", "amplitude": 0.3, "wavelength": 9}, {"op": "tint", "color": "#0a8a9a", "amount": "$amount * 0.5"}, {"op": "gradient", "type": "linear", "angle": 90, "stops": [[0, "#9ff0ff"], [1, "#00264a"]], "blend": "soft-light", "opacity": 0.6}, {"op": "glow", "threshold": 60, "radius": 3, "strength": 40}, {"op": "vignette", "amount": 50, "radius": 55, "color": "#002030"}]}
   ]
 }

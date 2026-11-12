@@ -1,99 +1,22 @@
 {
   "category": "luce",
   "effects": [
-    { "id": "light_glow", "label": "Bagliore",
-      "params": [
-        { "id": "threshold", "label": "Soglia", "default": 60 },
-        { "id": "radius", "label": "Raggio", "min": 0.5, "max": 10, "default": 3, "step": 0.1 },
-        { "id": "strength", "label": "Intensità", "default": 70 }
-      ],
-      "steps": [{ "op": "glow", "threshold": "$threshold", "radius": "$radius", "strength": "$strength" }] },
-    { "id": "light_soft", "label": "Luce soffusa",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
-      "steps": [{ "op": "glow", "threshold": 35, "radius": 5, "strength": "$amount" }, { "op": "adjust", "contrast": -5 }] },
-    { "id": "light_bloom", "label": "Bloom",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "color", "label": "Colore", "type": "color", "default": "#ffd9a8" }],
-      "steps": [{ "op": "glow", "threshold": 55, "radius": 4, "strength": "$amount", "color": "$color" }] },
-    { "id": "light_leak_warm", "label": "Light leak caldo",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "cx", "label": "Posizione", "min": 0, "max": 100, "default": 8 }],
-      "steps": [{ "op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": 0.2, "radius": 75, "stops": [[0, "#ff7a1a"], [0.5, "#ff3d3d80"], [1, "#ff3d3d00"]], "blend": "screen", "opacity": "$amount / 100" }] },
-    { "id": "light_leak_pink", "label": "Light leak rosa",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "cx", "label": "Posizione", "min": 0, "max": 100, "default": 92 }],
-      "steps": [{ "op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": 0.75, "radius": 70, "stops": [[0, "#ff4fb8"], [0.55, "#a83dff70"], [1, "#a83dff00"]], "blend": "screen", "opacity": "$amount / 100" }] },
-    { "id": "light_leak_rainbow", "label": "Arcobaleno",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 45 }, { "id": "angle", "label": "Angolo", "min": 0, "max": 360, "default": 30 }],
-      "steps": [{ "op": "gradient", "type": "linear", "angle": "$angle", "stops": [[0, "#ff0040"], [0.2, "#ff9900"], [0.4, "#ffee00"], [0.6, "#00dd66"], [0.8, "#0099ff"], [1, "#9933ff"]], "blend": "screen", "opacity": "$amount / 100" }] },
-    { "id": "light_leak_side", "label": "Luce laterale",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }, { "id": "color", "label": "Colore", "type": "color", "default": "#ffb347" }],
-      "steps": [{ "op": "gradient", "type": "linear", "angle": 0, "stops": [[0, "$color"], [0.45, "#00000000"], [1, "#00000000"]], "blend": "screen", "opacity": "$amount / 100" }] },
-    { "id": "light_sunbeam", "label": "Raggio di sole",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "cx", "label": "Sole X", "min": 0, "max": 100, "default": 85 }, { "id": "cy", "label": "Sole Y", "min": 0, "max": 100, "default": 10 }],
-      "steps": [
-        { "op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": 80, "stops": [[0, "#fff6d8"], [0.3, "#ffd27080"], [1, "#ffd27000"]], "blend": "screen", "opacity": "$amount / 100" },
-        { "op": "adjust", "temperature": "$amount * 0.15" }
-      ] },
-    { "id": "light_neon", "label": "Neon",
-      "params": [{ "id": "amount", "label": "Bagliore", "default": 80 }],
-      "steps": [
-        { "op": "adjust", "saturation": 100 },
-        { "op": "edges", "mode": "glow", "keepColor": true, "strength": 200, "smooth": 0.3 },
-        { "op": "glow", "threshold": 10, "radius": 2, "strength": "$amount" },
-        { "op": "glow", "threshold": 10, "radius": 6, "strength": "$amount * 0.6" }
-      ] },
-    { "id": "light_vignette", "label": "Vignetta",
-      "params": [
-        { "id": "amount", "label": "Intensità", "min": -100, "max": 100, "default": 50 },
-        { "id": "radius", "label": "Raggio", "min": 10, "max": 120, "default": 60 },
-        { "id": "softness", "label": "Morbidezza", "min": 5, "max": 100, "default": 50 },
-        { "id": "roundness", "label": "Rotondità", "default": 0 }
-      ],
-      "steps": [{ "op": "vignette", "amount": "$amount", "radius": "$radius", "softness": "$softness", "roundness": "$roundness" }] },
-    { "id": "light_vignette_color", "label": "Vignetta colorata",
-      "params": [
-        { "id": "color", "label": "Colore", "type": "color", "default": "#5a1a6a" },
-        { "id": "amount", "label": "Intensità", "default": 60 },
-        { "id": "radius", "label": "Raggio", "min": 10, "max": 120, "default": 55 }
-      ],
-      "steps": [{ "op": "vignette", "amount": "$amount", "radius": "$radius", "softness": 55, "color": "$color" }] },
-    { "id": "light_spotlight", "label": "Riflettore",
-      "params": [
-        { "id": "amount", "label": "Intensità", "default": 75 },
-        { "id": "radius", "label": "Raggio", "min": 5, "max": 80, "default": 30 },
-        { "id": "cx", "label": "Centro X", "min": 0, "max": 100, "default": 50 },
-        { "id": "cy", "label": "Centro Y", "min": 0, "max": 100, "default": 45 }
-      ],
-      "steps": [
-        { "op": "adjust", "brightness": 10, "mask": { "type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": "$radius / 100", "feather": 0.2 } },
-        { "op": "vignette", "amount": "$amount", "radius": "$radius", "softness": 35, "cx": "$cx / 100", "cy": "$cy / 100", "roundness": 100 }
-      ] },
-    { "id": "light_bokeh", "label": "Bokeh",
-      "params": [
-        { "id": "density", "label": "Quantità", "default": 45 },
-        { "id": "size", "label": "Dimensione", "min": 0.3, "max": 3, "default": 1, "step": 0.1 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [{ "op": "particles", "kind": "bokeh", "density": "$density", "size": "$size", "opacity": 80 }] },
-    { "id": "light_halo", "label": "Alone colorato",
-      "params": [{ "id": "color", "label": "Colore", "type": "color", "default": "#ff5fd2" }, { "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [{ "op": "gradient", "type": "radial", "radius": 60, "stops": [[0, "#00000000"], [0.6, "#00000000"], [1, "$color"]], "blend": "screen", "opacity": "$amount / 100" }] },
-    { "id": "light_golden", "label": "Luce dorata",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 65 }],
-      "steps": [
-        { "op": "gradient", "type": "linear", "angle": 120, "stops": [[0, "#ffcc66"], [1, "#a05020"]], "blend": "soft-light", "opacity": "$amount / 100" },
-        { "op": "glow", "threshold": 65, "radius": 3, "strength": "$amount * 0.5", "color": "#ffd890" }
-      ] },
-    { "id": "light_moonlight", "label": "Chiaro di luna",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }],
-      "steps": [
-        { "op": "adjust", "exposure": "-$amount * 0.3", "temperature": "-$amount * 0.6", "saturation": "-$amount * 0.4" },
-        { "op": "glow", "threshold": 60, "radius": 3, "strength": 50, "color": "#cfe0ff" }
-      ] },
-    { "id": "light_lens_flare", "label": "Riflesso obiettivo",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 70 }, { "id": "cx", "label": "Sorgente X", "min": 0, "max": 100, "default": 25 }, { "id": "cy", "label": "Sorgente Y", "min": 0, "max": 100, "default": 25 }],
-      "steps": [
-        { "op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": 18, "stops": [[0, "#ffffff"], [0.25, "#ffe9b0"], [1, "#ffd08000"]], "blend": "screen", "opacity": "$amount / 100" },
-        { "op": "gradient", "type": "radial", "cx": "1 - $cx / 100", "cy": "1 - $cy / 100", "radius": 10, "stops": [[0, "#00000000"], [0.7, "#7fd4ff60"], [1, "#00000000"]], "blend": "screen", "opacity": "$amount / 100" },
-        { "op": "gradient", "type": "radial", "cx": "0.5 + (0.5 - $cx / 100) * 0.3", "cy": "0.5 + (0.5 - $cy / 100) * 0.3", "radius": 5, "stops": [[0, "#ff9ad860"], [1, "#00000000"]], "blend": "screen", "opacity": "$amount / 100" }
-      ] }
+    {"id": "light_glow", "label": "Bagliore", "params": [{"id": "threshold", "label": "Soglia", "default": 60}, {"id": "radius", "label": "Raggio", "min": 0.5, "max": 10, "default": 3, "step": 0.1}, {"id": "strength", "label": "Intensità", "default": 70}], "steps": [{"op": "glow", "threshold": "$threshold", "radius": "$radius", "strength": "$strength"}]},
+    {"id": "light_soft", "label": "Luce soffusa", "params": [{"id": "amount", "label": "Intensità", "default": 50}], "steps": [{"op": "glow", "threshold": 35, "radius": 5, "strength": "$amount"}, {"op": "adjust", "contrast": -5}]},
+    {"id": "light_bloom", "label": "Bloom", "params": [{"id": "amount", "label": "Intensità", "default": 70}, {"id": "color", "label": "Colore", "type": "color", "default": "#ffd9a8"}], "steps": [{"op": "glow", "threshold": 55, "radius": 4, "strength": "$amount", "color": "$color"}]},
+    {"id": "light_leak_warm", "label": "Light leak caldo", "params": [{"id": "amount", "label": "Intensità", "default": 70}, {"id": "cx", "label": "Posizione", "min": 0, "max": 100, "default": 8}], "steps": [{"op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": 0.2, "radius": 75, "stops": [[0, "#ff7a1a"], [0.5, "#ff3d3d80"], [1, "#ff3d3d00"]], "blend": "screen", "opacity": "$amount / 100"}]},
+    {"id": "light_leak_pink", "label": "Light leak rosa", "params": [{"id": "amount", "label": "Intensità", "default": 70}, {"id": "cx", "label": "Posizione", "min": 0, "max": 100, "default": 92}], "steps": [{"op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": 0.75, "radius": 70, "stops": [[0, "#ff4fb8"], [0.55, "#a83dff70"], [1, "#a83dff00"]], "blend": "screen", "opacity": "$amount / 100"}]},
+    {"id": "light_leak_rainbow", "label": "Arcobaleno", "params": [{"id": "amount", "label": "Intensità", "default": 45}, {"id": "angle", "label": "Angolo", "min": 0, "max": 360, "default": 30}], "steps": [{"op": "gradient", "type": "linear", "angle": "$angle", "stops": [[0, "#ff0040"], [0.2, "#ff9900"], [0.4, "#ffee00"], [0.6, "#00dd66"], [0.8, "#0099ff"], [1, "#9933ff"]], "blend": "screen", "opacity": "$amount / 100"}]},
+    {"id": "light_leak_side", "label": "Luce laterale", "params": [{"id": "amount", "label": "Intensità", "default": 60}, {"id": "color", "label": "Colore", "type": "color", "default": "#ffb347"}], "steps": [{"op": "gradient", "type": "linear", "angle": 0, "stops": [[0, "$color"], [0.45, "#00000000"], [1, "#00000000"]], "blend": "screen", "opacity": "$amount / 100"}]},
+    {"id": "light_sunbeam", "label": "Raggio di sole", "params": [{"id": "amount", "label": "Intensità", "default": 70}, {"id": "cx", "label": "Sole X", "min": 0, "max": 100, "default": 85}, {"id": "cy", "label": "Sole Y", "min": 0, "max": 100, "default": 10}], "steps": [{"op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": 80, "stops": [[0, "#fff6d8"], [0.3, "#ffd27080"], [1, "#ffd27000"]], "blend": "screen", "opacity": "$amount / 100"}, {"op": "adjust", "temperature": "$amount * 0.15"}]},
+    {"id": "light_neon", "label": "Neon", "params": [{"id": "amount", "label": "Bagliore", "default": 80}], "steps": [{"op": "adjust", "saturation": 100}, {"op": "edges", "mode": "glow", "keepColor": true, "strength": 200, "smooth": 0.3}, {"op": "glow", "threshold": 10, "radius": 2, "strength": "$amount"}, {"op": "glow", "threshold": 10, "radius": 6, "strength": "$amount * 0.6"}]},
+    {"id": "light_vignette", "label": "Vignetta", "params": [{"id": "amount", "label": "Intensità", "min": -100, "max": 100, "default": 50}, {"id": "radius", "label": "Raggio", "min": 10, "max": 120, "default": 60}, {"id": "softness", "label": "Morbidezza", "min": 5, "max": 100, "default": 50}, {"id": "roundness", "label": "Rotondità", "default": 0}], "steps": [{"op": "vignette", "amount": "$amount", "radius": "$radius", "softness": "$softness", "roundness": "$roundness"}]},
+    {"id": "light_vignette_color", "label": "Vignetta colorata", "params": [{"id": "color", "label": "Colore", "type": "color", "default": "#5a1a6a"}, {"id": "amount", "label": "Intensità", "default": 60}, {"id": "radius", "label": "Raggio", "min": 10, "max": 120, "default": 55}], "steps": [{"op": "vignette", "amount": "$amount", "radius": "$radius", "softness": 55, "color": "$color"}]},
+    {"id": "light_spotlight", "label": "Riflettore", "params": [{"id": "amount", "label": "Intensità", "default": 75}, {"id": "radius", "label": "Raggio", "min": 5, "max": 80, "default": 30}, {"id": "cx", "label": "Centro X", "min": 0, "max": 100, "default": 50}, {"id": "cy", "label": "Centro Y", "min": 0, "max": 100, "default": 45}], "steps": [{"op": "adjust", "brightness": 10, "mask": {"type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": "$radius / 100", "feather": 0.2}}, {"op": "vignette", "amount": "$amount", "radius": "$radius", "softness": 35, "cx": "$cx / 100", "cy": "$cy / 100", "roundness": 100}]},
+    {"id": "light_bokeh", "label": "Bokeh", "params": [{"id": "density", "label": "Quantità", "default": 45}, {"id": "size", "label": "Dimensione", "min": 0.3, "max": 3, "default": 1, "step": 0.1}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "particles", "kind": "bokeh", "density": "$density", "size": "$size", "opacity": 80}]},
+    {"id": "light_halo", "label": "Alone colorato", "params": [{"id": "color", "label": "Colore", "type": "color", "default": "#ff5fd2"}, {"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "gradient", "type": "radial", "radius": 60, "stops": [[0, "#00000000"], [0.6, "#00000000"], [1, "$color"]], "blend": "screen", "opacity": "$amount / 100"}]},
+    {"id": "light_golden", "label": "Luce dorata", "params": [{"id": "amount", "label": "Intensità", "default": 65}], "steps": [{"op": "gradient", "type": "linear", "angle": 120, "stops": [[0, "#ffcc66"], [1, "#a05020"]], "blend": "soft-light", "opacity": "$amount / 100"}, {"op": "glow", "threshold": 65, "radius": 3, "strength": "$amount * 0.5", "color": "#ffd890"}]},
+    {"id": "light_moonlight", "label": "Chiaro di luna", "params": [{"id": "amount", "label": "Intensità", "default": 70}], "steps": [{"op": "adjust", "exposure": "-$amount * 0.3", "temperature": "-$amount * 0.6", "saturation": "-$amount * 0.4"}, {"op": "glow", "threshold": 60, "radius": 3, "strength": 50, "color": "#cfe0ff"}]},
+    {"id": "light_lens_flare", "label": "Riflesso obiettivo", "params": [{"id": "amount", "label": "Intensità", "default": 70}, {"id": "cx", "label": "Sorgente X", "min": 0, "max": 100, "default": 25}, {"id": "cy", "label": "Sorgente Y", "min": 0, "max": 100, "default": 25}], "steps": [{"op": "gradient", "type": "radial", "cx": "$cx / 100", "cy": "$cy / 100", "radius": 18, "stops": [[0, "#ffffff"], [0.25, "#ffe9b0"], [1, "#ffd08000"]], "blend": "screen", "opacity": "$amount / 100"}, {"op": "gradient", "type": "radial", "cx": "1 - $cx / 100", "cy": "1 - $cy / 100", "radius": 10, "stops": [[0, "#00000000"], [0.7, "#7fd4ff60"], [1, "#00000000"]], "blend": "screen", "opacity": "$amount / 100"}, {"op": "gradient", "type": "radial", "cx": "0.5 + (0.5 - $cx / 100) * 0.3", "cy": "0.5 + (0.5 - $cy / 100) * 0.3", "radius": 5, "stops": [[0, "#ff9ad860"], [1, "#00000000"]], "blend": "screen", "opacity": "$amount / 100"}]}
   ]
 }

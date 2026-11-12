@@ -1,46 +1,16 @@
 {
   "category": "texture",
   "effects": [
-    { "id": "tex_grain", "label": "Grana",
-      "params": [
-        { "id": "amount", "label": "Quantità", "default": 35 },
-        { "id": "size", "label": "Dimensione", "min": 0.05, "max": 1.5, "default": 0.15, "step": 0.05 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [{ "op": "grain", "amount": "$amount", "size": "$size", "mono": true }] },
-    { "id": "tex_grain_color", "label": "Grana colorata",
-      "params": [{ "id": "amount", "label": "Quantità", "default": 35 }, { "id": "size", "label": "Dimensione", "min": 0.05, "max": 1.5, "default": 0.2, "step": 0.05 }],
-      "steps": [{ "op": "grain", "amount": "$amount", "size": "$size", "mono": false }] },
-    { "id": "tex_paper", "label": "Carta",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }, { "id": "scale", "label": "Scala", "min": 0.3, "max": 4, "default": 1, "step": 0.1 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [{ "op": "texture", "kind": "paper", "amount": "$amount", "scale": "$scale", "blend": "overlay" }] },
-    { "id": "tex_canvas", "label": "Tela",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 45 }, { "id": "scale", "label": "Trama", "min": 0.2, "max": 2, "default": 0.4, "step": 0.05 }],
-      "steps": [{ "op": "texture", "kind": "canvas", "amount": "$amount", "scale": "$scale", "blend": "overlay" }] },
-    { "id": "tex_concrete", "label": "Cemento",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [{ "op": "texture", "kind": "concrete", "amount": "$amount", "scale": 1.2, "blend": "overlay" }] },
-    { "id": "tex_marble", "label": "Marmo",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 45 }, { "id": "scale", "label": "Venature", "min": 0.5, "max": 5, "default": 2, "step": 0.1 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [{ "op": "texture", "kind": "marble", "amount": "$amount", "scale": "$scale", "blend": "soft-light" }] },
-    { "id": "tex_clouds", "label": "Nuvole",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }, { "id": "scale", "label": "Scala", "min": 1, "max": 8, "default": 3, "step": 0.1 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [{ "op": "texture", "kind": "clouds", "amount": "$amount", "scale": "$scale", "blend": "soft-light" }] },
-    { "id": "tex_dust", "label": "Polvere",
-      "params": [{ "id": "amount", "label": "Quantità", "default": 45 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [{ "op": "dust", "amount": "$amount" }] },
-    { "id": "tex_scratches", "label": "Graffi",
-      "params": [{ "id": "amount", "label": "Quantità", "default": 80 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [{ "op": "dust", "amount": "$amount", "opacity": 90 }, { "op": "grain", "amount": 20 }] },
-    { "id": "tex_noise", "label": "Rumore digitale",
-      "params": [{ "id": "amount", "label": "Quantità", "default": 40 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [{ "op": "grain", "amount": "$amount", "size": 0.06, "mono": false }] },
-    { "id": "tex_parchment", "label": "Pergamena",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [
-        { "op": "gradient_map", "stops": [[0, "#3a2512"], [0.6, "#b08a58"], [1, "#f6e7c4"]], "opacity": 0.6 },
-        { "op": "texture", "kind": "clouds", "scale": 2, "amount": "$amount", "blend": "multiply" },
-        { "op": "vignette", "amount": 50, "radius": 55, "color": "#5a3818" }
-      ] }
+    {"id": "tex_grain", "label": "Grana", "params": [{"id": "amount", "label": "Quantità", "default": 35}, {"id": "size", "label": "Dimensione", "min": 0.05, "max": 1.5, "default": 0.15, "step": 0.05}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "grain", "amount": "$amount", "size": "$size", "mono": true}]},
+    {"id": "tex_grain_color", "label": "Grana colorata", "params": [{"id": "amount", "label": "Quantità", "default": 35}, {"id": "size", "label": "Dimensione", "min": 0.05, "max": 1.5, "default": 0.2, "step": 0.05}], "steps": [{"op": "grain", "amount": "$amount", "size": "$size", "mono": false}]},
+    {"id": "tex_paper", "label": "Carta", "params": [{"id": "amount", "label": "Intensità", "default": 50}, {"id": "scale", "label": "Scala", "min": 0.3, "max": 4, "default": 1, "step": 0.1}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "texture", "kind": "paper", "amount": "$amount", "scale": "$scale", "blend": "overlay"}]},
+    {"id": "tex_canvas", "label": "Tela", "params": [{"id": "amount", "label": "Intensità", "default": 45}, {"id": "scale", "label": "Trama", "min": 0.2, "max": 2, "default": 0.4, "step": 0.05}], "steps": [{"op": "texture", "kind": "canvas", "amount": "$amount", "scale": "$scale", "blend": "overlay"}]},
+    {"id": "tex_concrete", "label": "Cemento", "params": [{"id": "amount", "label": "Intensità", "default": 50}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "texture", "kind": "concrete", "amount": "$amount", "scale": 1.2, "blend": "overlay"}]},
+    {"id": "tex_marble", "label": "Marmo", "params": [{"id": "amount", "label": "Intensità", "default": 45}, {"id": "scale", "label": "Venature", "min": 0.5, "max": 5, "default": 2, "step": 0.1}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "texture", "kind": "marble", "amount": "$amount", "scale": "$scale", "blend": "soft-light"}]},
+    {"id": "tex_clouds", "label": "Nuvole", "params": [{"id": "amount", "label": "Intensità", "default": 50}, {"id": "scale", "label": "Scala", "min": 1, "max": 8, "default": 3, "step": 0.1}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "texture", "kind": "clouds", "amount": "$amount", "scale": "$scale", "blend": "soft-light"}]},
+    {"id": "tex_dust", "label": "Polvere", "params": [{"id": "amount", "label": "Quantità", "default": 45}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "dust", "amount": "$amount"}]},
+    {"id": "tex_scratches", "label": "Graffi", "params": [{"id": "amount", "label": "Quantità", "default": 80}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "dust", "amount": "$amount", "opacity": 90}, {"op": "grain", "amount": 20}]},
+    {"id": "tex_noise", "label": "Rumore digitale", "params": [{"id": "amount", "label": "Quantità", "default": 40}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "grain", "amount": "$amount", "size": 0.06, "mono": false}]},
+    {"id": "tex_parchment", "label": "Pergamena", "params": [{"id": "amount", "label": "Intensità", "default": 60}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "gradient_map", "stops": [[0, "#3a2512"], [0.6, "#b08a58"], [1, "#f6e7c4"]], "opacity": 0.6}, {"op": "texture", "kind": "clouds", "scale": 2, "amount": "$amount", "blend": "multiply"}, {"op": "vignette", "amount": 50, "radius": 55, "color": "#5a3818"}]}
   ]
 }

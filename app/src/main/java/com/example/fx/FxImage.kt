@@ -298,12 +298,11 @@ object FxSample {
         val p = img.px
         val c00 = p[y0 * w + x0]; val c10 = p[y0 * w + x1]; val c01 = p[y1 * w + x0]; val c11 = p[y1 * w + x1]
         val w00 = (256 - tx) * (256 - ty); val w10 = tx * (256 - ty); val w01 = (256 - tx) * ty; val w11 = tx * ty
-        // due canali per volta (rosso+blu e alfa+verde) in un solo intero: metà delle moltiplicazioni
-        val rb = ((c00 and 0xFF00FF).toLong() * w00 + (c10 and 0xFF00FF).toLong() * w10 +
-                (c01 and 0xFF00FF).toLong() * w01 + (c11 and 0xFF00FF).toLong() * w11 + 0x0000800000008000L)
-        val ag = (((c00 ushr 8) and 0xFF00FF).toLong() * w00 + ((c10 ushr 8) and 0xFF00FF).toLong() * w10 +
-                ((c01 ushr 8) and 0xFF00FF).toLong() * w01 + ((c11 ushr 8) and 0xFF00FF).toLong() * w11 + 0x0000800000008000L)
-        return (((ag ushr 16) and 0xFF00FF).toInt() shl 8) or ((rb ushr 16) and 0xFF00FF).toInt()
+        // un canale alla volta: la somma dei pesi è 65536, quindi due canali nello stesso intero si sovrapporrebbero
+        // (era la causa dei puntini gialli e blu su cornici e deformazioni)
+        fun ch(sh: Int): Int = ((((c00 ushr sh) and 0xFF) * w00 + ((c10 ushr sh) and 0xFF) * w10 +
+            ((c01 ushr sh) and 0xFF) * w01 + ((c11 ushr sh) and 0xFF) * w11 + 32768) ushr 16)
+        return (ch(24) shl 24) or (ch(16) shl 16) or (ch(8) shl 8) or ch(0)
     }
 }
 

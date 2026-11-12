@@ -566,8 +566,16 @@ fun CurvesToolPanel(state: EditorUiState, vm: EditorViewModel) {
 fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
     val active = state.activeLayer
     val categories = remember { PixelEngine.getFilterCategories() }
-    val filters = remember(state.filterCategory) {
+    val allFilters = remember(state.filterCategory) {
         PixelEngine.getFiltersByCategory(state.filterCategory)
+    }
+    // sottogruppi della categoria (es. Cinema: I grandi autori, Generi ed epoche...), nell'ordine del catalogo
+    val groups = remember(state.filterCategory) {
+        allFilters.mapNotNull { com.example.fx.FxEngine.catalog.get(it.id)?.group?.takeIf { g -> g.isNotEmpty() } }.distinct()
+    }
+    var group by androidx.compose.runtime.saveable.rememberSaveable(state.filterCategory) { mutableStateOf("") }
+    val filters = remember(allFilters, group) {
+        if (group.isEmpty()) allFilters else allFilters.filter { com.example.fx.FxEngine.catalog.get(it.id)?.group == group }
     }
 
     LaunchedEffect(active?.id) {
@@ -579,6 +587,14 @@ fun EffectsToolPanel(state: EditorUiState, vm: EditorViewModel) {
         PxCollectionRow {
             categories.forEach { (catId, catLabel) ->
                 PxChip(catLabel, selected = state.filterCategory == catId) { vm.setEffectCategory(catId) }
+            }
+        }
+
+        // 1b. Sottogruppi della categoria, se ce ne sono
+        if (groups.size > 1) {
+            PxCollectionRow {
+                PxChip("Tutti", selected = group.isEmpty()) { group = "" }
+                groups.forEach { g -> PxChip(g, selected = group == g) { group = g } }
             }
         }
 

@@ -3,38 +3,84 @@
   "version": 1,
   "about": "Catalogo effetti di Zesty. Ogni file elenca effetti composti da operazioni primitive (vedi README.md). Aggiungere un effetto = aggiungere una voce JSON.",
   "categories": [
-    { "id": "poster", "label": "Poster e cornici" },
-    { "id": "correzione", "label": "Correzione" },
-    { "id": "bn", "label": "B&N" },
-    { "id": "pellicola", "label": "Pellicola" },
-    { "id": "vintage", "label": "Vintage" },
-    { "id": "cinema", "label": "Cinema" },
-    { "id": "colore", "label": "Colore" },
-    { "id": "popart", "label": "Pop Art" },
-    { "id": "disegno", "label": "Disegno" },
-    { "id": "sfocatura", "label": "Sfocatura" },
-    { "id": "distorsione", "label": "Distorsione" },
-    { "id": "glitch", "label": "Glitch & Retro" },
-    { "id": "luce", "label": "Luce" },
-    { "id": "texture", "label": "Texture & Grana" },
-    { "id": "atmosfera", "label": "Atmosfera" },
-    { "id": "pattern", "label": "Pattern" },
-    { "id": "ritratto", "label": "Ritratto" }
+    {
+      "id": "correzione",
+      "label": "Correzione"
+    },
+    {
+      "id": "bn",
+      "label": "Bianco e nero"
+    },
+    {
+      "id": "cinema",
+      "label": "Cinema"
+    },
+    {
+      "id": "analogico",
+      "label": "Analogico e pellicola"
+    },
+    {
+      "id": "fumetti",
+      "label": "Fumetti"
+    },
+    {
+      "id": "poster",
+      "label": "Poster e stampa"
+    },
+    {
+      "id": "arte",
+      "label": "Arte e stili"
+    },
+    {
+      "id": "specchi",
+      "label": "Specchi e illusioni"
+    },
+    {
+      "id": "glitch",
+      "label": "Glitch e ottica"
+    },
+    {
+      "id": "colore",
+      "label": "Colore"
+    },
+    {
+      "id": "luce",
+      "label": "Luce"
+    },
+    {
+      "id": "sfocatura",
+      "label": "Sfocatura"
+    },
+    {
+      "id": "texture",
+      "label": "Texture e grana"
+    },
+    {
+      "id": "atmosfera",
+      "label": "Atmosfera"
+    },
+    {
+      "id": "pattern",
+      "label": "Pattern"
+    },
+    {
+      "id": "ritratto",
+      "label": "Ritratto"
+    }
   ],
   "files": [
-    "catalog/poster.json",
     "catalog/correzione.json",
     "catalog/bn.json",
-    "catalog/pellicola.json",
-    "catalog/vintage.json",
     "catalog/cinema.json",
-    "catalog/colore.json",
-    "catalog/popart.json",
-    "catalog/disegno.json",
-    "catalog/sfocatura.json",
-    "catalog/distorsione.json",
+    "catalog/analogico.json",
+    "catalog/fumetti.json",
+    "catalog/poster.json",
+    "catalog/arte.json",
+    "catalog/specchi.json",
     "catalog/glitch.json",
+    "catalog/colore.json",
     "catalog/luce.json",
+    "catalog/sfocatura.json",
     "catalog/texture.json",
     "catalog/atmosfera.json",
     "catalog/pattern.json",

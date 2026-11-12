@@ -1,143 +1,44 @@
 {
   "category": "poster",
   "effects": [
-    { "id": "poster_vintage", "label": "Poster vintage",
-      "tags": ["poster", "serigrafia", "anni 70"],
-      "params": [
-        { "id": "colors", "label": "Colori", "min": 3, "max": 8, "default": 5 },
-        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 3 },
-        { "id": "tone", "label": "Sfumature", "min": 0, "max": 40, "default": 15 },
-        { "id": "grain", "label": "Grana", "min": 0, "max": 40, "default": 14 },
-        { "id": "aged", "label": "Carta invecchiata", "default": 40 },
-        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [
-        { "op": "blur", "radius": "$simplify * 0.12", "if": "$simplify" },
-        { "op": "palette_quantize", "colors": "$colors", "tone": "$tone", "aged": "$aged" },
-        { "op": "fill", "color": "rgb(246 - $aged * 0.14, 238 - $aged * 0.22, 218 - $aged * 0.4)", "blend": "multiply", "opacity": 0.5 },
-        { "op": "grain", "amount": "$grain * 1.6", "size": 0.08 },
-        { "op": "fibers", "amount": 100, "aged": "$aged" },
-        { "op": "mat", "size": 5, "color": "rgb(246 - $aged * 0.14, 238 - $aged * 0.22, 218 - $aged * 0.4)", "if": "$margin" }
-      ] },
-    { "id": "poster_screenprint3", "label": "Serigrafia 3 colori",
-      "params": [
-        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 5 },
-        { "id": "offset", "label": "Fuori registro", "min": 0, "max": 3, "default": 0.5, "step": 0.1 },
-        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [
-        { "op": "blur", "radius": "$simplify * 0.15", "if": "$simplify" },
-        { "op": "palette_quantize", "colors": 3, "tone": 0, "aged": 30 },
-        { "op": "rgb_shift", "amount": "$offset", "angle": 35 },
-        { "op": "fill", "color": "#F1E7D2", "blend": "multiply", "opacity": 0.45 },
-        { "op": "grain", "amount": 18, "size": 0.08 },
-        { "op": "fibers", "amount": 80, "aged": 30 },
-        { "op": "mat", "size": 6, "color": "#F1E7D2", "if": "$margin" }
-      ] },
-    { "id": "poster_pop", "label": "Poster pop",
-      "params": [
-        { "id": "colors", "label": "Colori", "min": 3, "max": 8, "default": 6 },
-        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 3 },
-        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 }
-      ],
-      "steps": [
-        { "op": "adjust", "saturation": 45, "contrast": 15 },
-        { "op": "blur", "radius": "$simplify * 0.12", "if": "$simplify" },
-        { "op": "palette_quantize", "colors": "$colors", "tone": 5, "aged": 0 },
-        { "op": "mat", "size": 5, "color": "#FFFFFF", "if": "$margin" }
-      ] },
-    { "id": "poster_noir", "label": "Poster noir",
-      "params": [
-        { "id": "colors", "label": "Toni", "min": 2, "max": 5, "default": 3 },
-        { "id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 4 },
-        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 }
-      ],
-      "steps": [
-        { "op": "mono" },
-        { "op": "adjust", "contrast": 20 },
-        { "op": "blur", "radius": "$simplify * 0.12", "if": "$simplify" },
-        { "op": "palette_quantize", "colors": "$colors", "tone": 0, "aged": 20 },
-        { "op": "gradient_map", "stops": [[0, "#141210"], [1, "#EFE6D2"]] },
-        { "op": "grain", "amount": 20, "size": 0.08 },
-        { "op": "mat", "size": 6, "color": "#EFE6D2", "if": "$margin" }
-      ] },
-    { "id": "poster_risograph", "label": "Risografia",
-      "params": [
-        { "id": "ink1", "label": "Inchiostro 1", "type": "color", "default": "#FF48B0" },
-        { "id": "ink2", "label": "Inchiostro 2", "type": "color", "default": "#0078BF" },
-        { "id": "offset", "label": "Fuori registro", "min": 0, "max": 3, "default": 0.6, "step": 0.1 },
-        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 },
-        { "id": "seed", "label": "Variante", "max": 50, "default": 0 }
-      ],
-      "steps": [
-        { "op": "blur", "radius": 0.3 },
-        { "op": "posterize", "levels": 4 },
-        { "op": "gradient_map", "stops": [[0, "$ink2"], [0.55, "$ink1"], [1, "#F7F2E7"]] },
-        { "op": "rgb_shift", "amount": "$offset", "angle": 20 },
-        { "op": "grain", "amount": 30, "size": 0.1, "mono": false },
-        { "op": "mat", "size": 5, "color": "#F7F2E7", "if": "$margin" }
-      ] },
-    { "id": "poster_litho", "label": "Litografia",
-      "params": [
-        { "id": "size", "label": "Tratteggio", "min": 0.3, "max": 3, "default": 0.8, "step": 0.1 },
-        { "id": "colors", "label": "Colori", "min": 2, "max": 6, "default": 4 },
-        { "id": "margin", "label": "Margine", "type": "toggle", "default": 1 }
-      ],
-      "steps": [
-        { "op": "blur", "radius": 0.25 },
-        { "op": "palette_quantize", "colors": "$colors", "tone": 10, "aged": 50 },
-        { "op": "layer", "steps": [{ "op": "halftone", "mode": "lines", "size": "$size", "angle": 30, "ink": "#2A2218", "paper": "#FFFFFF" }], "blend": "multiply", "opacity": 0.55 },
-        { "op": "fill", "color": "#EFE2C6", "blend": "multiply", "opacity": 0.4 },
-        { "op": "mat", "size": 6, "color": "#EFE2C6", "if": "$margin" }
-      ] },
-    { "id": "poster_minimal", "label": "Poster minimale",
-      "params": [
-        { "id": "ink", "label": "Inchiostro", "type": "color", "default": "#1D2A44" },
-        { "id": "paper", "label": "Carta", "type": "color", "default": "#F2EBDD" },
-        { "id": "level", "label": "Soglia", "min": 40, "max": 220, "default": 120 },
-        { "id": "margin", "label": "Margine", "min": 0, "max": 15, "default": 9 }
-      ],
-      "steps": [
-        { "op": "smooth", "radius": 1.5, "strength": 70 },
-        { "op": "threshold", "level": "$level", "softness": 3, "dark": "$ink", "light": "$paper" },
-        { "op": "mat", "size": "$margin", "bottom": "$margin * 1.4", "color": "$paper" }
-      ] },
-    { "id": "frame_white", "label": "Cornice bianca",
-      "params": [{ "id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 5 }],
-      "steps": [{ "op": "mat", "size": "$size", "color": "#FFFFFF" }] },
-    { "id": "frame_black", "label": "Cornice nera",
-      "params": [{ "id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 5 }],
-      "steps": [{ "op": "mat", "size": "$size", "color": "#111111" }] },
-    { "id": "frame_color", "label": "Cornice colorata",
-      "params": [
-        { "id": "color", "label": "Colore", "type": "color", "default": "#F28C28" },
-        { "id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 6 }
-      ],
-      "steps": [{ "op": "mat", "size": "$size", "color": "$color" }] },
-    { "id": "frame_instant", "label": "Istantanea",
-      "params": [
-        { "id": "size", "label": "Bordo", "min": 2, "max": 12, "default": 5 },
-        { "id": "fade", "label": "Sbiadito", "default": 25 }
-      ],
-      "steps": [
-        { "op": "adjust", "fade": "$fade", "saturation": -10, "temperature": 8 },
-        { "op": "mat", "size": "$size", "bottom": "$size * 3.6", "color": "#F6F3EC", "shadow": 30 }
-      ] },
-    { "id": "frame_gallery", "label": "Passe-partout",
-      "params": [
-        { "id": "size", "label": "Margine", "min": 4, "max": 20, "default": 11 },
-        { "id": "color", "label": "Carta", "type": "color", "default": "#F4F1EA" }
-      ],
-      "steps": [{ "op": "mat", "size": "$size", "bottom": "$size * 1.15", "color": "$color", "line": 0.25, "lineColor": "#3A342C", "shadow": 45 }] },
-    { "id": "frame_postcard", "label": "Cartolina",
-      "params": [{ "id": "size", "label": "Bordo", "min": 2, "max": 12, "default": 4 }, { "id": "seed", "label": "Variante", "max": 50, "default": 0 }],
-      "steps": [
-        { "op": "adjust", "vibrance": 15, "fade": 10 },
-        { "op": "mat", "size": "$size", "color": "#F3EAD6" },
-        { "op": "texture", "kind": "paper", "amount": 30, "blend": "multiply", "opacity": 0.5 },
-        { "op": "fibers", "amount": 70, "aged": 50 }
-      ] }
+    {"id": "poster_vintage", "label": "Poster vintage", "tags": ["poster", "serigrafia", "anni 70"], "params": [{"id": "colors", "label": "Colori", "min": 3, "max": 8, "default": 5}, {"id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 3}, {"id": "tone", "label": "Sfumature", "min": 0, "max": 40, "default": 15}, {"id": "grain", "label": "Grana", "min": 0, "max": 40, "default": 14}, {"id": "aged", "label": "Carta invecchiata", "default": 40}, {"id": "margin", "label": "Margine", "type": "toggle", "default": 1}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "blur", "radius": "$simplify * 0.12", "if": "$simplify"}, {"op": "palette_quantize", "colors": "$colors", "tone": "$tone", "aged": "$aged"}, {"op": "fill", "color": "rgb(246 - $aged * 0.14, 238 - $aged * 0.22, 218 - $aged * 0.4)", "blend": "multiply", "opacity": 0.5}, {"op": "grain", "amount": "$grain * 1.6", "size": 0.08}, {"op": "fibers", "amount": 100, "aged": "$aged"}, {"op": "mat", "size": 5, "color": "rgb(246 - $aged * 0.14, 238 - $aged * 0.22, 218 - $aged * 0.4)", "if": "$margin"}], "group": "Classici"},
+    {"id": "poster_screenprint3", "label": "Serigrafia 3 colori", "params": [{"id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 5}, {"id": "offset", "label": "Fuori registro", "min": 0, "max": 3, "default": 0.5, "step": 0.1}, {"id": "margin", "label": "Margine", "type": "toggle", "default": 1}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "blur", "radius": "$simplify * 0.15", "if": "$simplify"}, {"op": "palette_quantize", "colors": 3, "tone": 0, "aged": 30}, {"op": "rgb_shift", "amount": "$offset", "angle": 35}, {"op": "fill", "color": "#F1E7D2", "blend": "multiply", "opacity": 0.45}, {"op": "grain", "amount": 18, "size": 0.08}, {"op": "fibers", "amount": 80, "aged": 30}, {"op": "mat", "size": 6, "color": "#F1E7D2", "if": "$margin"}], "group": "Classici"},
+    {"id": "poster_pop", "label": "Poster pop", "params": [{"id": "colors", "label": "Colori", "min": 3, "max": 8, "default": 6}, {"id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 3}, {"id": "margin", "label": "Margine", "type": "toggle", "default": 1}], "steps": [{"op": "adjust", "saturation": 45, "contrast": 15}, {"op": "blur", "radius": "$simplify * 0.12", "if": "$simplify"}, {"op": "palette_quantize", "colors": "$colors", "tone": 5, "aged": 0}, {"op": "mat", "size": 5, "color": "#FFFFFF", "if": "$margin"}], "group": "Classici"},
+    {"id": "poster_noir", "label": "Poster noir", "params": [{"id": "colors", "label": "Toni", "min": 2, "max": 5, "default": 3}, {"id": "simplify", "label": "Semplificazione", "min": 0, "max": 10, "default": 4}, {"id": "margin", "label": "Margine", "type": "toggle", "default": 1}], "steps": [{"op": "mono"}, {"op": "adjust", "contrast": 20}, {"op": "blur", "radius": "$simplify * 0.12", "if": "$simplify"}, {"op": "palette_quantize", "colors": "$colors", "tone": 0, "aged": 20}, {"op": "gradient_map", "stops": [[0, "#141210"], [1, "#EFE6D2"]]}, {"op": "grain", "amount": 20, "size": 0.08}, {"op": "mat", "size": 6, "color": "#EFE6D2", "if": "$margin"}], "group": "Classici"},
+    {"id": "poster_risograph", "label": "Risografia", "params": [{"id": "ink1", "label": "Inchiostro 1", "type": "color", "default": "#FF48B0"}, {"id": "ink2", "label": "Inchiostro 2", "type": "color", "default": "#0078BF"}, {"id": "offset", "label": "Fuori registro", "min": 0, "max": 3, "default": 0.6, "step": 0.1}, {"id": "margin", "label": "Margine", "type": "toggle", "default": 1}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "blur", "radius": 0.3}, {"op": "posterize", "levels": 4}, {"op": "gradient_map", "stops": [[0, "$ink2"], [0.55, "$ink1"], [1, "#F7F2E7"]]}, {"op": "rgb_shift", "amount": "$offset", "angle": 20}, {"op": "grain", "amount": 30, "size": 0.1, "mono": false}, {"op": "mat", "size": 5, "color": "#F7F2E7", "if": "$margin"}], "group": "Classici"},
+    {"id": "poster_litho", "label": "Litografia", "params": [{"id": "size", "label": "Tratteggio", "min": 0.3, "max": 3, "default": 0.8, "step": 0.1}, {"id": "colors", "label": "Colori", "min": 2, "max": 6, "default": 4}, {"id": "margin", "label": "Margine", "type": "toggle", "default": 1}], "steps": [{"op": "blur", "radius": 0.25}, {"op": "palette_quantize", "colors": "$colors", "tone": 10, "aged": 50}, {"op": "layer", "steps": [{"op": "halftone", "mode": "lines", "size": "$size", "angle": 30, "ink": "#2A2218", "paper": "#FFFFFF"}], "blend": "multiply", "opacity": 0.55}, {"op": "fill", "color": "#EFE2C6", "blend": "multiply", "opacity": 0.4}, {"op": "mat", "size": 6, "color": "#EFE2C6", "if": "$margin"}], "group": "Classici"},
+    {"id": "poster_minimal", "label": "Poster minimale", "params": [{"id": "ink", "label": "Inchiostro", "type": "color", "default": "#1D2A44"}, {"id": "paper", "label": "Carta", "type": "color", "default": "#F2EBDD"}, {"id": "level", "label": "Soglia", "min": 40, "max": 220, "default": 120}, {"id": "margin", "label": "Margine", "min": 0, "max": 15, "default": 9}], "steps": [{"op": "smooth", "radius": 1.5, "strength": 70}, {"op": "threshold", "level": "$level", "softness": 3, "dark": "$ink", "light": "$paper"}, {"op": "mat", "size": "$margin", "bottom": "$margin * 1.4", "color": "$paper"}], "group": "Classici"},
+    {"id": "pop_grid4", "label": "Pop 4 riquadri", "params": [{"id": "levels", "label": "Livelli", "min": 2, "max": 6, "default": 3}], "steps": [{"op": "smooth", "radius": 1, "strength": 50}, {"op": "warhol", "rows": 2, "cols": 2, "levels": "$levels", "palettes": [["#1b1b3a", "#e03a8c", "#ffd23f"], ["#0b3d2e", "#2ec4b6", "#f7f7a8"], ["#3a0ca3", "#f72585", "#4cc9f0"], ["#5f0f40", "#fb8b24", "#e9f5db"]]}], "group": "Pop e serigrafia"},
+    {"id": "pop_grid9", "label": "Pop 9 riquadri", "params": [{"id": "levels", "label": "Livelli", "min": 2, "max": 6, "default": 3}], "steps": [{"op": "smooth", "radius": 1, "strength": 50}, {"op": "warhol", "rows": 3, "cols": 3, "levels": "$levels", "palettes": [["#1b1b3a", "#e03a8c", "#ffd23f"], ["#0b3d2e", "#2ec4b6", "#f7f7a8"], ["#3a0ca3", "#f72585", "#4cc9f0"], ["#5f0f40", "#fb8b24", "#e9f5db"], ["#03045e", "#00b4d8", "#caf0f8"], ["#370617", "#e85d04", "#ffba08"], ["#10002b", "#9d4edd", "#e0aaff"], ["#073b4c", "#06d6a0", "#ffd166"], ["#240046", "#ff006e", "#fbf8cc"]]}], "group": "Pop e serigrafia"},
+    {"id": "pop_four_tones", "label": "Quattro tinte", "params": [{"id": "c1", "label": "Colore 1", "type": "color", "default": "#ff006e"}, {"id": "c2", "label": "Colore 2", "type": "color", "default": "#3a86ff"}, {"id": "c3", "label": "Colore 3", "type": "color", "default": "#ffbe0b"}, {"id": "c4", "label": "Colore 4", "type": "color", "default": "#06d6a0"}], "steps": [{"op": "warhol", "rows": 2, "cols": 2, "levels": 2, "palettes": [["#111111", "$c1"], ["#111111", "$c2"], ["#111111", "$c3"], ["#111111", "$c4"]]}], "group": "Pop e serigrafia"},
+    {"id": "pop_two_tone", "label": "Pop bicolore", "params": [{"id": "dark", "label": "Inchiostro", "type": "color", "default": "#1d1d6b"}, {"id": "light", "label": "Fondo", "type": "color", "default": "#ff4fa3"}, {"id": "level", "label": "Soglia", "min": 30, "max": 220, "default": 120}], "steps": [{"op": "smooth", "radius": 1, "strength": 60}, {"op": "threshold", "level": "$level", "softness": 4, "dark": "$dark", "light": "$light"}], "group": "Pop e serigrafia"},
+    {"id": "pop_poster", "label": "Poster audace", "params": [{"id": "levels", "label": "Livelli", "min": 2, "max": 8, "default": 4}], "steps": [{"op": "smooth", "radius": 1.5, "strength": 60}, {"op": "adjust", "saturation": 40}, {"op": "posterize", "levels": "$levels"}, {"op": "edges", "mode": "overlay", "strength": 100, "smooth": 0.3}], "group": "Pop e serigrafia"},
+    {"id": "pop_screenprint", "label": "Serigrafia", "params": [{"id": "ink", "label": "Inchiostro", "type": "color", "default": "#e4003a"}, {"id": "paper", "label": "Carta", "type": "color", "default": "#f5ecd7"}, {"id": "offset", "label": "Fuori registro", "min": 0, "max": 3, "default": 0.6, "step": 0.1}], "steps": [{"op": "smooth", "radius": 1, "strength": 60}, {"op": "threshold", "level": 120, "softness": 6, "dark": "$ink", "light": "$paper"}, {"op": "rgb_shift", "amount": "$offset", "angle": 30}, {"op": "texture", "kind": "paper", "amount": 30, "blend": "multiply", "opacity": 0.6}], "group": "Pop e serigrafia"},
+    {"id": "poster_hope", "label": "Speranza", "group": "Stili iconici", "params": [{"id": "amount", "label": "Intensità", "default": 95}, {"id": "margin", "label": "Bordo bianco", "type": "toggle", "default": 0}], "steps": [{"op": "smooth", "radius": 1.0}, {"op": "gradient_map", "stops": [[0, "#112e51"], [0.33, "#112e51"], [0.34, "#d7262e"], [0.6, "#d7262e"], [0.61, "#71a3b8"], [0.8, "#71a3b8"], [0.81, "#f3e3b5"], [1, "#f3e3b5"]]}, {"op": "mat", "size": 5, "color": "#f6f1e6", "if": "$margin"}], "tags": ["pop politico", "4 colori"]},
+    {"id": "poster_propaganda", "label": "Propaganda", "group": "Stili iconici", "params": [{"id": "amount", "label": "Intensità", "default": 90}, {"id": "grain", "label": "Grana", "min": 0, "max": 60, "default": 20}, {"id": "margin", "label": "Bordo bianco", "type": "toggle", "default": 1}], "steps": [{"op": "gradient_map", "stops": [[0, "#1b1b1b"], [0.45, "#1b1b1b"], [0.46, "#a8322a"], [0.72, "#a8322a"], [0.73, "#efe6d2"], [1, "#efe6d2"]]}, {"op": "grain", "amount": "$grain", "size": 0.25, "if": "$grain"}, {"op": "mat", "size": 5, "color": "#efe6d2", "if": "$margin"}], "tags": ["costruttivismo", "stampa d'epoca"]},
+    {"id": "poster_mucha", "label": "Art Nouveau", "group": "Stili iconici", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "smooth", "radius": 1.0}, {"op": "palette_quantize", "colors": 7, "tone": 10}, {"op": "split_tone", "shadows": "#5a6b4a", "highlights": "#e8c890", "amount": 55}, {"op": "edges", "mode": "overlay", "strength": 40, "threshold": 14}, {"op": "mat", "size": 6, "color": "#efe2c4", "line": 0.6, "lineColor": "#a8823a"}], "tags": ["mucha", "decorativo"]},
+    {"id": "poster_zine", "label": "Zine fotocopiata", "group": "Musica e cultura pop", "params": [{"id": "amount", "label": "Intensità", "default": 90}, {"id": "level", "label": "Soglia", "min": 60, "max": 200, "default": 125}, {"id": "grain", "label": "Grana", "min": 0, "max": 60, "default": 40}], "steps": [{"op": "mono"}, {"op": "threshold", "level": "$level", "softness": 3}, {"op": "grain", "amount": "$grain", "size": 0.3, "if": "$grain"}, {"op": "dust", "amount": 30, "opacity": 60, "color": "#111111"}], "tags": ["punk", "fotocopia"]},
+    {"id": "poster_psychedelic", "label": "Psichedelico anni '60", "group": "Musica e cultura pop", "params": [{"id": "amount", "label": "Intensità", "default": 85}], "steps": [{"op": "gradient_map", "stops": [[0, "#4a0a7a"], [0.35, "#ff6a00"], [0.65, "#9bff2a"], [1, "#ffe6f8"]]}, {"op": "turbulence", "amount": 1.2, "scale": 12}, {"op": "adjust", "saturation": 20}], "tags": ["anni 60", "rock"]},
+    {"id": "poster_airbrush80", "label": "Locandina anni '80", "group": "Musica e cultura pop", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "split_tone", "shadows": "#0b1a40", "highlights": "#ffb347", "amount": 65}, {"op": "oil", "radius": 0.7}, {"op": "glow", "threshold": 62, "radius": 6, "strength": 55, "color": "#ffcf7a"}], "tags": ["aerografo", "anni 80"]},
+    {"id": "poster_rave", "label": "Rave brutalista", "group": "Musica e cultura pop", "params": [{"id": "amount", "label": "Intensità", "default": 90}], "steps": [{"op": "gradient_map", "stops": [[0, "#0d0d0d"], [0.5, "#3a3a3a"], [0.7, "#c6ff00"], [1, "#ff2bd6"]]}, {"op": "sharpen", "amount": 90}, {"op": "posterize", "levels": 5}], "tags": ["rave", "acido"]},
+    {"id": "poster_duotone", "label": "Bicromia", "group": "Tecniche di stampa", "params": [{"id": "dark", "label": "Ombre", "type": "color", "default": "#1c1446"}, {"id": "light", "label": "Luci", "type": "color", "default": "#2de38f"}], "steps": [{"op": "duotone", "dark": "$dark", "light": "$light"}], "tags": ["duotone", "musica"]},
+    {"id": "poster_billboard", "label": "Manifesto affisso", "group": "Tecniche di stampa", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "adjust", "saturation": -25, "contrast": -10}, {"op": "curves", "rgb": [[0, 30], [255, 240]]}, {"op": "texture", "kind": "paper", "amount": 55, "blend": "multiply"}, {"op": "texture", "kind": "concrete", "amount": 15, "blend": "overlay"}], "tags": ["carta incollata", "muro"]},
+    {"id": "poster_swiss_minimal", "label": "Minimal svizzero", "group": "Tecniche di stampa", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "adjust", "saturation": -60, "contrast": 15}, {"op": "sharpen", "amount": 40}, {"op": "mat", "size": 4, "bottom": 14, "color": "#f5f5f2"}], "tags": ["svizzero", "griglia"]},
+    {"id": "poster_receipt", "label": "Scontrino", "group": "Tecniche avanzate", "params": [{"id": "amount", "label": "Intensità", "default": 90}], "steps": [{"op": "mono"}, {"op": "dither", "mode": "bayer", "size": 0.25}, {"op": "fill", "color": "#f2f2ee", "blend": "lighten", "opacity": 0.5}, {"op": "scanlines", "opacity": 10}], "tags": ["stampa termica"]},
+    {"id": "poster_acid", "label": "Acid graphics", "group": "Tecniche avanzate", "params": [{"id": "amount", "label": "Intensità", "default": 90}], "steps": [{"op": "gradient_map", "stops": [[0, "#000000"], [0.3, "#2b00ff"], [0.55, "#ff0055"], [0.8, "#ffe600"], [1, "#ffffff"]]}, {"op": "posterize", "levels": 6}, {"op": "sharpen", "amount": 80}], "tags": ["termico", "brutalismo"]},
+    {"id": "poster_crt", "label": "Scanline CRT", "group": "Tecniche avanzate", "params": [{"id": "amount", "label": "Intensità", "default": 85}], "steps": [{"op": "rgb_shift", "amount": 0.45}, {"op": "scanlines", "opacity": 35}, {"op": "glow", "threshold": 65, "radius": 2, "strength": 35}], "tags": ["crt", "monitor"]},
+    {"id": "poster_travel", "label": "Manifesto turistico", "group": "Storici", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "smooth", "radius": 1.6}, {"op": "palette_quantize", "colors": 8, "tone": 18}, {"op": "split_tone", "shadows": "#1f3c88", "highlights": "#ffcf70", "amount": 60}, {"op": "mat", "size": 5, "color": "#f2e6c8"}], "tags": ["anni 30", "viaggio"]},
+    {"id": "poster_polish", "label": "Scuola polacca", "group": "Storici", "params": [{"id": "amount", "label": "Intensità", "default": 85}], "steps": [{"op": "gradient_map", "stops": [[0, "#0d0d0d"], [0.4, "#8a0f12"], [0.7, "#a6c43a"], [1, "#e8c87a"]]}, {"op": "texture", "kind": "paper", "amount": 40, "blend": "multiply"}, {"op": "edges", "mode": "overlay", "strength": 45, "threshold": 14}], "tags": ["polonia", "espressivo"]},
+    {"id": "poster_showa", "label": "Locandina giapponese", "group": "Storici", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "adjust", "saturation": -15}, {"op": "split_tone", "shadows": "#1d2a5a", "highlights": "#e04a2a", "amount": 45}, {"op": "fibers", "amount": 70, "aged": 30}, {"op": "mat", "size": 3, "bottom": 9, "color": "#efe6d4"}], "tags": ["showa", "washi"]},
+    {"id": "poster_deco_rail", "label": "Ferrovia art déco", "group": "Storici", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "smooth", "radius": 1.2}, {"op": "palette_quantize", "colors": 7, "tone": 22}, {"op": "split_tone", "shadows": "#2e3f55", "highlights": "#ecd9a8", "amount": 60}, {"op": "oil", "radius": 0.5}, {"op": "fibers", "amount": 60, "aged": 25}, {"op": "mat", "size": 5, "color": "#efe4c6"}], "tags": ["art déco", "viaggio", "anni 40"]},
+    {"id": "poster_retrofuture", "label": "Retrofuturismo anni '50", "group": "Storici", "params": [{"id": "amount", "label": "Intensità", "default": 80}], "steps": [{"op": "smooth", "radius": 1.0}, {"op": "palette_quantize", "colors": 8, "tone": 15}, {"op": "split_tone", "shadows": "#5f8f7a", "highlights": "#f2e6c8", "amount": 50}, {"op": "edges", "mode": "overlay", "strength": 35, "threshold": 15}, {"op": "fibers", "amount": 50, "aged": 20}], "tags": ["anni 50", "googie"]},
+    {"id": "poster_editorial_vintage", "label": "Poster editoriale vintage", "group": "Storici", "params": [{"id": "amount", "label": "Intensità", "default": 80}, {"id": "grain", "label": "Grana", "min": 0, "max": 60, "default": 14}], "steps": [{"op": "adjust", "saturation": -30, "contrast": -12}, {"op": "split_tone", "shadows": "#4a4a32", "highlights": "#efe2c0", "amount": 40}, {"op": "curves", "rgb": [[0, 26], [255, 242]]}, {"op": "layer", "steps": [{"op": "halftone", "mode": "mono", "size": 0.35}], "blend": "multiply", "opacity": 0.08}, {"op": "grain", "amount": "$grain", "size": 0.12, "if": "$grain"}, {"op": "mat", "size": 4, "color": "#f2ead8", "shadow": 15}], "tags": ["editoriale", "fotografico"]},
+    {"id": "poster_minimal_screen", "label": "Locandina serigrafica", "group": "Storici", "params": [{"id": "amount", "label": "Intensità", "default": 85}, {"id": "colors", "label": "Colori", "min": 4, "max": 12, "default": 7}], "steps": [{"op": "smooth", "radius": 1.2}, {"op": "palette_quantize", "colors": "$colors", "tone": 6}, {"op": "texture", "kind": "paper", "amount": 25, "blend": "multiply"}, {"op": "grain", "amount": 10, "size": 0.1}], "tags": ["serigrafia", "minimale", "film"]},
+    {"id": "frame_white", "label": "Cornice bianca", "params": [{"id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 5}], "steps": [{"op": "mat", "size": "$size", "color": "#FFFFFF"}], "group": "Cornici"},
+    {"id": "frame_black", "label": "Cornice nera", "params": [{"id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 5}], "steps": [{"op": "mat", "size": "$size", "color": "#111111"}], "group": "Cornici"},
+    {"id": "frame_color", "label": "Cornice colorata", "params": [{"id": "color", "label": "Colore", "type": "color", "default": "#F28C28"}, {"id": "size", "label": "Spessore", "min": 1, "max": 20, "default": 6}], "steps": [{"op": "mat", "size": "$size", "color": "$color"}], "group": "Cornici"},
+    {"id": "frame_instant", "label": "Istantanea", "params": [{"id": "size", "label": "Bordo", "min": 2, "max": 12, "default": 5}, {"id": "fade", "label": "Sbiadito", "default": 25}], "steps": [{"op": "adjust", "fade": "$fade", "saturation": -10, "temperature": 8}, {"op": "mat", "size": "$size", "bottom": "$size * 3.6", "color": "#F6F3EC", "shadow": 30}], "group": "Cornici"},
+    {"id": "frame_gallery", "label": "Passe-partout", "params": [{"id": "size", "label": "Margine", "min": 4, "max": 20, "default": 11}, {"id": "color", "label": "Carta", "type": "color", "default": "#F4F1EA"}], "steps": [{"op": "mat", "size": "$size", "bottom": "$size * 1.15", "color": "$color", "line": 0.25, "lineColor": "#3A342C", "shadow": 45}], "group": "Cornici"},
+    {"id": "frame_postcard", "label": "Cartolina", "params": [{"id": "size", "label": "Bordo", "min": 2, "max": 12, "default": 4}, {"id": "seed", "label": "Variante", "max": 50, "default": 0}], "steps": [{"op": "adjust", "vibrance": 15, "fade": 10}, {"op": "mat", "size": "$size", "color": "#F3EAD6"}, {"op": "texture", "kind": "paper", "amount": 30, "blend": "multiply", "opacity": 0.5}, {"op": "fibers", "amount": 70, "aged": 50}], "group": "Cornici"}
   ]
 }

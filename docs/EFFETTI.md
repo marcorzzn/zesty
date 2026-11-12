@@ -50,7 +50,7 @@ In grassetto le categorie nuove o rifatte. Pop Art si distribuisce tra Fumetti (
 
 ## 1. Cinema
 
-Ogni filtro ha: **Intensità** · **Grana** · **bande** facoltative con il formato tipico dello stile. Le bande non coprono la foto: la tela si allarga.
+Ogni filtro ha: **Intensità** · **Grana** · **bande** facoltative con il formato tipico dello stile (2.39:1, 1.85:1, 1.37:1). Come al cinema, le bande coprono i margini sopra e sotto; si possono spegnere.
 
 ### 1.1 I grandi autori (stili iconici)
 | Nome in app | Ispirazione | Colore e luce | Real. | Extra | Font |

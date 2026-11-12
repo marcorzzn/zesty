@@ -1,57 +1,13 @@
 {
   "category": "ritratto",
   "effects": [
-    { "id": "port_skin", "label": "Pelle levigata",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }, { "id": "radius", "label": "Raggio", "min": 0.3, "max": 4, "default": 1.2, "step": 0.1 }],
-      "steps": [{ "op": "skin_smooth", "amount": "$amount", "radius": "$radius" }] },
-    { "id": "port_radiant", "label": "Pelle luminosa",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [
-        { "op": "skin_smooth", "amount": "$amount", "radius": 1.2 },
-        { "op": "glow", "threshold": 50, "radius": 3, "strength": "$amount * 0.4" },
-        { "op": "adjust", "temperature": 6, "vibrance": 8 }
-      ] },
-    { "id": "port_warm_skin", "label": "Incarnato caldo",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
-      "steps": [
-        { "op": "hue_replace", "from": 22, "to": 26, "range": 25, "softness": 20, "saturation": "$amount * 0.3" },
-        { "op": "adjust", "temperature": "$amount * 0.15" }
-      ] },
-    { "id": "port_tan", "label": "Abbronzatura",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 55 }],
-      "steps": [
-        { "op": "hue_replace", "from": 25, "to": 20, "range": 25, "softness": 18, "saturation": "$amount * 0.5" },
-        { "op": "adjust", "exposure": "-$amount * 0.12", "mask": { "type": "luma", "from": 30, "to": 95 } }
-      ] },
-    { "id": "port_soft_focus", "label": "Soft focus",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 50 }],
-      "steps": [
-        { "op": "skin_smooth", "amount": "$amount * 0.6", "radius": 1 },
-        { "op": "layer", "steps": [{ "op": "blur", "radius": 2 }], "blend": "screen", "opacity": "$amount / 250" }
-      ] },
-    { "id": "port_bw", "label": "Ritratto B&N",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [
-        { "op": "skin_smooth", "amount": "$amount * 0.5", "radius": 1 },
-        { "op": "mono", "reds": 30, "oranges": 25, "yellows": 10 },
-        { "op": "curves", "rgb": [[0, 10], [128, 130], [255, 250]] },
-        { "op": "vignette", "amount": 30, "radius": 60 }
-      ] },
-    { "id": "port_studio", "label": "Studio",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 60 }],
-      "steps": [
-        { "op": "skin_smooth", "amount": "$amount * 0.5", "radius": 1 },
-        { "op": "clarity", "amount": 20, "radius": 4 },
-        { "op": "adjust", "contrast": 12, "vibrance": 10 },
-        { "op": "vignette", "amount": "$amount * 0.6", "radius": 55 }
-      ] },
-    { "id": "port_beauty", "label": "Bellezza",
-      "params": [{ "id": "amount", "label": "Intensità", "default": 65 }],
-      "steps": [
-        { "op": "skin_smooth", "amount": "$amount", "radius": 1.4 },
-        { "op": "adjust", "brightness": "$amount * 0.1", "vibrance": "$amount * 0.2", "fade": 5 },
-        { "op": "glow", "threshold": 60, "radius": 3, "strength": "$amount * 0.3" },
-        { "op": "sharpen", "amount": 40, "radius": 0.3 }
-      ] }
+    {"id": "port_skin", "label": "Pelle levigata", "params": [{"id": "amount", "label": "Intensità", "default": 60}, {"id": "radius", "label": "Raggio", "min": 0.3, "max": 4, "default": 1.2, "step": 0.1}], "steps": [{"op": "skin_smooth", "amount": "$amount", "radius": "$radius"}]},
+    {"id": "port_radiant", "label": "Pelle luminosa", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "skin_smooth", "amount": "$amount", "radius": 1.2}, {"op": "glow", "threshold": 50, "radius": 3, "strength": "$amount * 0.4"}, {"op": "adjust", "temperature": 6, "vibrance": 8}]},
+    {"id": "port_warm_skin", "label": "Incarnato caldo", "params": [{"id": "amount", "label": "Intensità", "default": 50}], "steps": [{"op": "hue_replace", "from": 22, "to": 26, "range": 25, "softness": 20, "saturation": "$amount * 0.3"}, {"op": "adjust", "temperature": "$amount * 0.15"}]},
+    {"id": "port_tan", "label": "Abbronzatura", "params": [{"id": "amount", "label": "Intensità", "default": 55}], "steps": [{"op": "hue_replace", "from": 25, "to": 20, "range": 25, "softness": 18, "saturation": "$amount * 0.5"}, {"op": "adjust", "exposure": "-$amount * 0.12", "mask": {"type": "luma", "from": 30, "to": 95}}]},
+    {"id": "port_soft_focus", "label": "Soft focus", "params": [{"id": "amount", "label": "Intensità", "default": 50}], "steps": [{"op": "skin_smooth", "amount": "$amount * 0.6", "radius": 1}, {"op": "layer", "steps": [{"op": "blur", "radius": 2}], "blend": "screen", "opacity": "$amount / 250"}]},
+    {"id": "port_bw", "label": "Ritratto B&N", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "skin_smooth", "amount": "$amount * 0.5", "radius": 1}, {"op": "mono", "reds": 30, "oranges": 25, "yellows": 10}, {"op": "curves", "rgb": [[0, 10], [128, 130], [255, 250]]}, {"op": "vignette", "amount": 30, "radius": 60}]},
+    {"id": "port_studio", "label": "Studio", "params": [{"id": "amount", "label": "Intensità", "default": 60}], "steps": [{"op": "skin_smooth", "amount": "$amount * 0.5", "radius": 1}, {"op": "clarity", "amount": 20, "radius": 4}, {"op": "adjust", "contrast": 12, "vibrance": 10}, {"op": "vignette", "amount": "$amount * 0.6", "radius": 55}]},
+    {"id": "port_beauty", "label": "Bellezza", "params": [{"id": "amount", "label": "Intensità", "default": 65}], "steps": [{"op": "skin_smooth", "amount": "$amount", "radius": 1.4}, {"op": "adjust", "brightness": "$amount * 0.1", "vibrance": "$amount * 0.2", "fade": 5}, {"op": "glow", "threshold": 60, "radius": 3, "strength": "$amount * 0.3"}, {"op": "sharpen", "amount": 40, "radius": 0.3}]}
   ]
 }

@@ -19,6 +19,13 @@ class FxArgs(val o: JSONObject, val vars: Map<String, Double>) {
             is Number -> v.toFloat()
             is Boolean -> if (v) 1f else 0f
             is String -> FxExpr.eval(v, vars).toFloat()
+            // scelta numerica da un parametro: { "pick": "$bands", "from": [0, 2.39, 1.85, 1.37] }
+            is JSONObject -> {
+                val from = v.optJSONArray("from") ?: return def
+                if (from.length() == 0) return def
+                val idx = Math.round(numOf(v.opt("pick"))).coerceIn(0, from.length() - 1)
+                from.optDouble(idx, def.toDouble()).toFloat()
+            }
             else -> def
         }
     }
@@ -72,6 +79,10 @@ class FxArgs(val o: JSONObject, val vars: Map<String, Double>) {
             else -> 0xFF000000.toInt() or (FxExpr.eval(v, vars).toLong().toInt() and 0xFFFFFF)
         }
         is Number -> 0xFF000000.toInt() or (v.toInt() and 0xFFFFFF)
+        // colore scelto da un parametro: { "pick": "$mat", "from": ["#8a8a86", "#6a5f52"] }
+        is JSONObject -> v.optJSONArray("from")?.takeIf { it.length() > 0 }?.let { from ->
+            colorOf(from.get(Math.round(numOf(v.opt("pick"))).coerceIn(0, from.length() - 1)), def)
+        } ?: def
         else -> def
     }
 

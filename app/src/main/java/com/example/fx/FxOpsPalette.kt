@@ -17,8 +17,33 @@ object FxOpsPalette {
         "palette_quantize" to FxOp { img, a, _ -> paletteQuantize(img, a) },
         "frame" to FxOp { img, a, _ -> frame(img, a) },
         "mat" to FxOp { img, a, _ -> mat(img, a) },
-        "fibers" to FxOp { img, a, ctx -> fibers(img, a, ctx.seed) }
+        "fibers" to FxOp { img, a, ctx -> fibers(img, a, ctx.seed) },
+        "bands" to FxOp { img, a, _ -> bands(img, a) }
     )
+
+    /**
+     * Bande cinema: oscura sopra e sotto (o ai lati) fino al formato [ratio] (es. 2.39, 1.85, 1.37),
+     * come in sala. [offset] sposta la finestra in verticale (-1..1) per scegliere cosa resta visibile.
+     */
+    fun bands(img: FxImage, a: FxArgs): FxImage {
+        val ratio = a.num("ratio", 2.39f).coerceIn(0.3f, 5f)
+        val color = a.color("color", 0xFF000000.toInt())
+        val opacity = a.num("opacity", 100f) / 100f
+        val offset = a.num("offset", 0f).coerceIn(-1f, 1f)
+        val out = img.px.copyOf()
+        val w = img.w; val h = img.h
+        if (w.toFloat() / h < ratio) {
+            val vis = (w / ratio).toInt().coerceIn(1, h)
+            val free = h - vis
+            val top = (free / 2f * (1f + offset)).toInt().coerceIn(0, free)
+            for (y in 0 until h) if (y < top || y >= top + vis) for (x in 0 until w) out[y * w + x] = Px.mix(out[y * w + x], color, opacity)
+        } else {
+            val vis = (h * ratio).toInt().coerceIn(1, w)
+            val left = (w - vis) / 2
+            for (y in 0 until h) for (x in 0 until w) if (x < left || x >= left + vis) out[y * w + x] = Px.mix(out[y * w + x], color, opacity)
+        }
+        return FxImage(w, h, out)
+    }
 
     /**
      * Passe-partout: la foto intera viene rimpicciolita (proporzioni invariate) dentro un margine di carta,
