@@ -81,6 +81,37 @@ object AiSegmenter {
     fun release() {
         runCatching { isnet?.close() }; isnet = null
         runCatching { modnet?.close() }; modnet = null
+        runCatching { downloaded?.close() }; downloaded = null; downloadedPath = null
+    }
+
+    // modello scaricato (pacchetti IA): uno alla volta, aperto dal file senza copiarlo in memoria
+    private var downloaded: OrtSession? = null
+    private var downloadedPath: String? = null
+
+    /**
+     * Esegue un modello scaricato ([file] dal ModelStore) con un ingresso 1×3×h×w e restituisce la prima uscita.
+     * Se manca l'acceleratore o il telefono non supporta un'operazione, l'errore risale al chiamante.
+     */
+    @Synchronized
+    fun runFile(file: java.io.File, input: FloatArray, w: Int, h: Int): FloatArray {
+        val e = env ?: OrtEnvironment.getEnvironment().also { env = it }
+        if (downloadedPath != file.absolutePath) {
+            runCatching { downloaded?.close() }
+            // ottimizzazione di base: le fusioni avanzate creano operazioni a mezza precisione (es. Gelu fp16)
+            // che il processore del telefono non ha; le operazioni standard invece sì
+            downloaded = e.createSession(file.absolutePath, options(config.copy(xnnpack = false)).apply {
+                setOptimizationLevel(OrtSession.SessionOptions.OptLevel.BASIC_OPT)
+            })
+            downloadedPath = file.absolutePath
+        }
+        val s = downloaded!!
+        OnnxTensor.createTensor(e, FloatBuffer.wrap(input), longArrayOf(1, 3, h.toLong(), w.toLong())).use { t ->
+            s.run(mapOf(s.inputNames.first() to t)).use { res ->
+                val out = res.get(0) as OnnxTensor
+                val fb = out.floatBuffer
+                return FloatArray(fb.remaining()).also { fb.get(it) }
+            }
+        }
     }
 
     private fun run(s: OrtSession, input: FloatArray, w: Int, h: Int): FloatArray {

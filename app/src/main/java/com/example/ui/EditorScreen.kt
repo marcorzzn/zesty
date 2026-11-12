@@ -93,6 +93,7 @@ fun ZestyEditorScreen(vm: EditorViewModel) {
             "adjust" -> AdjustToolPanel(state, vm)
             "curve" -> CurvesToolPanel(state, vm)
             "effects" -> EffectsToolPanel(state, vm)
+            "colorize" -> ColorizePanel(state, vm)
             "shapes", "sticker", "callout" -> ShapesToolPanel(state, vm)
             "text" -> TextToolPanel(
                 state = state,
@@ -238,6 +239,7 @@ fun ZestyEditorScreen(vm: EditorViewModel) {
         // 5. MODALS (Color Picker, Export, Rename Layer, New Project, Confirm Localize FX)
         ColorPickerModal(state = state, vm = vm)
         ExportDialogModal(state = state, vm = vm)
+        AiPackDialog(state = state, vm = vm)
         RenameLayerModal(state = state, vm = vm)
         NewProjectModal(state = state, vm = vm, onOpenPhoto = {
             pickingForCollage = false

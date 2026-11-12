@@ -98,6 +98,13 @@ data class EditorUiState(
     val brushSmoothing: Float = 30f,
     val brushBlend: BlendOption = BlendOption.NORMAL, // "Colore" colora mantenendo luci e ombre
     val recentColors: List<Int> = emptyList(),
+    // Pacchetti IA: richiesta di download in attesa di conferma, avanzamento (0..1) durante il download
+    val aiPackPrompt: String? = null,
+    val aiPackProgress: Float? = null,
+    // Colorizza
+    val colorizeBusy: Boolean = false,
+    val colorizeSaturation: Float = 100f,
+    val colorizeLayerId: String? = null,
     val selectiveTargetFxKey: String? = null, // null = layer.maskBitmap, non-null = layer.effects[key].localMask
     val showMaskHeatmap: Boolean = true,
     // Strumenti zona: pennello, gomma, forme con maniglie, lazo, poligono modellabile
@@ -511,6 +518,12 @@ class EditorViewModel : ViewModel() {
         }
 
         if (normalized == "cutout") { openCutoutStudio(); return }
+        if (normalized == "colorize") {
+            _state.value = _state.value.copy(toolGridOpen = false, currentTool = "colorize", colorizeLayerId = null)
+            colorizeAb = null
+            startColorize()
+            return
+        }
 
         // Auto-create layer or select existing layer of that type (Bug E fix)
         when (normalized) {
@@ -2806,6 +2819,125 @@ class EditorViewModel : ViewModel() {
             colorPickerOpen = false,
             toastMessage = "Tocca la foto per prendere il colore"
         )
+    }
+
+    // ============ PACCHETTI IA (scaricati al primo uso) ============
+    private var packAction: ((java.io.File) -> Unit)? = null
+    @Volatile private var packCancel = false
+
+    /** Esegue [action] con il file del modello; se non c'è ancora, chiede prima il permesso di scaricarlo. */
+    fun requirePack(id: String, action: (java.io.File) -> Unit) {
+        val f = com.example.engine.AiPacks.file(id)
+        if (f != null) { action(f); return }
+        if (com.example.engine.AiPacks.entry(id) == null) { showToast("Funzione non disponibile in questa versione"); return }
+        packAction = action
+        _state.value = _state.value.copy(aiPackPrompt = id)
+    }
+
+    fun acceptPack() {
+        val id = _state.value.aiPackPrompt ?: return
+        val action = packAction
+        packCancel = false
+        _state.value = _state.value.copy(aiPackPrompt = null, aiPackProgress = 0f)
+        viewModelScope.launch(Dispatchers.IO) {
+            var lastPct = -1
+            val res = runCatching {
+                com.example.engine.AiPacks.download(id, progress = { d, t ->
+                    val pct = if (t > 0) (d * 100 / t).toInt() else 0
+                    if (pct != lastPct) {
+                        lastPct = pct
+                        _state.value = _state.value.copy(aiPackProgress = pct / 100f)
+                    }
+                }, cancelled = { packCancel })
+            }
+            withContext(Dispatchers.Main) {
+                _state.value = _state.value.copy(aiPackProgress = null)
+                res.onSuccess { f -> packAction = null; action?.invoke(f) }
+                    .onFailure {
+                        packAction = null
+                        if (it is com.example.engine.ModelStore.CancelledException) showToast("Download sospeso: riprenderà da dove si è fermato")
+                        else showToast("Download non riuscito: ${it.message ?: "controlla la connessione"}")
+                    }
+            }
+        }
+    }
+
+    fun dismissPack() { packAction = null; _state.value = _state.value.copy(aiPackPrompt = null) }
+    fun cancelPackDownload() { packCancel = true }
+
+    // ============ COLORIZZA (DDColor) ============
+    private var colorizeAb: FloatArray? = null
+    private var colorizeSourceId: String? = null
+
+    /** Colora automaticamente il livello foto attivo: il risultato è un livello "Colore (IA)" con modo Colore. */
+    fun startColorize() {
+        val s = _state.value
+        val src = s.activeLayer?.takeIf { it.bitmap != null && !it.isPaintLayer && (it.type == LayerType.IMAGE || it.type == LayerType.RASTER) }
+            ?: s.layers.firstOrNull { it.bitmap != null && (it.type == LayerType.IMAGE || it.type == LayerType.RASTER) && !it.isPaintLayer }
+            ?: run { showToast("Apri prima una foto"); return }
+        colorizeSourceId = src.id
+        requirePack("ddcolor_tiny") { file -> runColorize(file, recompute = true) }
+    }
+
+    private fun runColorize(file: java.io.File?, recompute: Boolean) {
+        val s = _state.value
+        val src = s.layers.firstOrNull { it.id == colorizeSourceId } ?: return
+        val bmp0 = src.bitmap ?: return
+        if (s.colorizeBusy) return
+        _state.value = s.copy(colorizeBusy = true)
+        val sat = s.colorizeSaturation / 100f
+        viewModelScope.launch(Dispatchers.Default) {
+            val res = runCatching {
+                // si lavora al massimo a 2048 px: il colore stimato è a 512 px, la luminosità resta quella vera
+                val k = minOf(1f, 2048f / maxOf(bmp0.width, bmp0.height))
+                val bmp = if (k < 1f) Bitmap.createScaledBitmap(bmp0, (bmp0.width * k).roundToInt(), (bmp0.height * k).roundToInt(), true) else bmp0
+                val w = bmp.width; val h = bmp.height
+                val px = IntArray(w * h); bmp.getPixels(px, 0, w, 0, 0, w, h)
+                val ab = if (recompute || colorizeAb == null) {
+                    val input = com.example.engine.ColorizeEngine.modelInput(com.example.engine.ColorizeEngine.lightness(px), w, h)
+                    com.example.engine.AiSegmenter.runFile(file ?: com.example.engine.AiPacks.file("ddcolor_tiny")!!, input,
+                        com.example.engine.ColorizeEngine.SIDE, com.example.engine.ColorizeEngine.SIDE).also { colorizeAb = it }
+                } else colorizeAb!!
+                val out = com.example.engine.ColorizeEngine.compose(px, w, h, ab, sat)
+                Bitmap.createBitmap(out, w, h, Bitmap.Config.ARGB_8888).copy(Bitmap.Config.ARGB_8888, true)
+            }
+            withContext(Dispatchers.Main) {
+                _state.value = _state.value.copy(colorizeBusy = false)
+                res.onSuccess { colored -> placeColorLayer(src, colored) }
+                    .onFailure { showToast("Colorizzazione non riuscita: ${it.message ?: "errore del modello"}") }
+            }
+        }
+    }
+
+    /** Il colore va su un livello sopra la foto, con modo "Colore": la foto resta intatta, l'intensità è l'opacità. */
+    private fun placeColorLayer(src: EditorLayer, colored: Bitmap) {
+        val s = _state.value
+        val existing = s.layers.firstOrNull { it.id == s.colorizeLayerId }
+        val layers = if (existing != null) {
+            s.layers.map { if (it.id == existing.id) it.copy(bitmap = colored, x = src.x, y = src.y, w = src.w, h = src.h, rotation = src.rotation) else it }
+        } else {
+            val layer = EditorLayer(
+                id = "colorize_${System.currentTimeMillis()}", type = LayerType.RASTER, name = "Colore (IA)",
+                x = src.x, y = src.y, w = src.w, h = src.h, rotation = src.rotation,
+                blend = BlendOption.COLOR, bitmap = colored
+            )
+            val idx = s.layers.indexOfFirst { it.id == src.id }
+            s.layers.toMutableList().apply { add(idx + 1, layer) }.also { _state.value = s.copy(colorizeLayerId = layer.id) }
+        }
+        _state.value = _state.value.copy(layers = layers, handlesHidden = true)
+        scheduleCompositeRebuild()
+    }
+
+    fun setColorizeIntensity(v: Float) {
+        val id = _state.value.colorizeLayerId ?: return
+        interactiveEffectChange()
+        _state.value = _state.value.copy(layers = _state.value.layers.map { if (it.id == id) it.copy(opacity = (v / 100f).coerceIn(0f, 1f)) else it })
+        scheduleCompositeRebuild()
+    }
+
+    fun setColorizeSaturation(v: Float) {
+        _state.value = _state.value.copy(colorizeSaturation = v)
+        if (colorizeAb != null) runColorize(null, recompute = false)
     }
 
     fun resetCloneSource() {

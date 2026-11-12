@@ -50,6 +50,10 @@ val TOOL_FAMILIES = listOf(
         // (i vecchi "Ritaglio libero", "Ritaglio a forma" e "Maschera" confluiscono qui; il codice resta)
         ToolNavItem("cutout", "Scontorna", Icons.Default.ContentCut)
     )),
+    // foto vecchie: colore, riparazioni, toni (Colorizza per primo; gli altri strumenti arrivano a seguire)
+    ToolFamily("restauro", "Restauro", Icons.Default.Palette, listOf(
+        ToolNavItem("colorize", "Colorizza", Icons.Default.Palette)
+    )),
     ToolFamily("ritocca", "Ritocca", Icons.Default.Healing, listOf(
         ToolNavItem("clone", "Clona", Icons.Default.Healing),
         ToolNavItem("warp", "Fluidifica", Icons.Default.WaterDrop),

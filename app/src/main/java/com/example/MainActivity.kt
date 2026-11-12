@@ -27,6 +27,8 @@ class MainActivity : ComponentActivity() {
         FxEngine.load(applicationContext)
         // modelli di scontorno sul telefono (si caricano solo al primo uso)
         com.example.engine.AiSegmenter.attach(applicationContext)
+        // pacchetti IA scaricati al primo uso (registro in assets/ai/registry.json)
+        com.example.engine.AiPacks.attach(applicationContext)
         enableEdgeToEdge()
         setContent {
             MyApplicationTheme(darkTheme = true, dynamicColor = false) {

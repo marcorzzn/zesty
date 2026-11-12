@@ -191,4 +191,32 @@ class ZestyDeviceBench {
         repeat(10) { Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888) }
         log("Nuova bitmap 1536×2048 (media)            %4d ms".format((SystemClock.elapsedRealtime() - t0) / 10))
     }
+
+    /** Colorizza sul telefono: download verificato del pacchetto DDColor (se manca) e tempi del colore. */
+    @Test
+    fun colorize() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        AiSegmenter.attach(ctx)
+        com.example.engine.AiPacks.attach(ctx)
+        var lastPct = -10L
+        val file = timed("Pacchetto DDColor (scarica o trova)") {
+            com.example.engine.AiPacks.download("ddcolor_tiny", progress = { d, t ->
+                val pct = d * 100 / t
+                if (pct >= lastPct + 10) { lastPct = pct; log("  download $pct%") }
+            }, cancelled = { false })
+        } ?: return
+        log("File: ${file.length() / 1048576} MB, pronto: ${com.example.engine.AiPacks.isReady("ddcolor_tiny")}")
+        val w = 1536; val h = 2048
+        val px = scene(w, h)
+        val lum = timed("Luminosità") { com.example.engine.ColorizeEngine.lightness(px) }!!
+        val input = com.example.engine.ColorizeEngine.modelInput(lum, w, h)
+        val ab = timed("DDColor 1° (con caricamento)") { AiSegmenter.runFile(file, input, 512, 512) }
+        timed("DDColor 2°") { AiSegmenter.runFile(file, input, 512, 512) }
+        if (ab != null) {
+            var mx = 0f; for (v in ab) mx = maxOf(mx, kotlin.math.abs(v))
+            log("Uscita: ${ab.size} valori, |ab| massimo ${"%.1f".format(mx)}")
+            timed("Ricomposizione a 1536×2048") { com.example.engine.ColorizeEngine.compose(px, w, h, ab, 1f) }
+        }
+        AiSegmenter.release()
+    }
 }

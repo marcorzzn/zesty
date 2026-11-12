@@ -1,0 +1,16 @@
+{
+  "about": "Pacchetti IA di Zesty: scaricati al primo uso dalla fonte ufficiale, accettati solo se l'impronta SHA-256 coincide. Condiviso con la webapp.",
+  "models": [
+    {
+      "id": "ddcolor_tiny",
+      "file": "ddcolor-tiny-fp16.onnx",
+      "urls": ["https://huggingface.co/edgetools/ddcolor/resolve/main/ddcolor-tiny-fp16.onnx"],
+      "sha256": "2653da00dc15e54a45e5200b61dbf82ee9ceaf56b02bb9b9657569ac775e82e6",
+      "bytes": 135444402,
+      "title": "Colore automatico (DDColor)",
+      "purpose": "Colorizza le foto in bianco e nero",
+      "license": "Apache-2.0",
+      "source": "https://github.com/piddnad/DDColor"
+    }
+  ]
+}
