@@ -8,15 +8,28 @@ import java.nio.FloatBuffer
 
 /**
  * Modelli di scontorno eseguiti sul telefono (ONNX Runtime, nessuna rete):
- * - IS-Net general-use: qualunque soggetto (oggetti, animali, persone), 1024×1024;
+ * - IS-Net general-use: qualunque soggetto (oggetti, animali, persone);
  * - MODNet: persone, con opacità fine sui capelli.
- * I modelli si caricano alla prima richiesta e restano in memoria. Se il telefono non li supporta
- * (es. processore a 32 bit) [available] è false e Scontorna usa solo il motore classico di Zesty.
+ *
+ * Memoria: niente riserva interna di ONNX Runtime (che non restituisce mai la memoria) e modelli
+ * chiusi con [release] dopo l'uso; ricaricarli costa ~0,1–0,2 s.
+ * Se il telefono non li supporta [available] è false e Scontorna usa solo il motore classico di Zesty.
  * Licenze in assets/licenses.
  */
 object AiSegmenter {
     private const val ISNET = "models/isnet_general.onnx"
     private const val MODNET = "models/modnet_portrait.onnx"
+
+    /** Impostazioni del motore (regolabili per le misure sul telefono). */
+    data class Config(
+        val xnnpack: Boolean = false, // misurato sul telefono: con IS-Net 3× più lento e 550 MB non restituiti
+        val threads: Int = 4,
+        val arena: Boolean = false,
+        val isnetSide: Int = 1024
+    )
+
+    @Volatile var config = Config()
+        set(v) { field = v; release() }
 
     @Volatile private var app: Context? = null
     private var env: OrtEnvironment? = null
@@ -28,6 +41,20 @@ object AiSegmenter {
 
     val available: Boolean get() = app != null && !failed
 
+    private fun options(c: Config) = OrtSession.SessionOptions().apply {
+        setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
+        setCPUArenaAllocator(c.arena)
+        setMemoryPatternOptimization(c.arena)
+        if (c.xnnpack) {
+            // XNNPACK usa i propri thread: quelli di ONNX Runtime restano 1 (indicazione della documentazione)
+            addXnnpack(mapOf("intra_op_num_threads" to c.threads.toString()))
+            setIntraOpNumThreads(1)
+            addConfigEntry("session.intra_op.allow_spinning", "0")
+        } else {
+            setIntraOpNumThreads(c.threads)
+        }
+    }
+
     @Synchronized
     private fun session(path: String, current: OrtSession?, keep: (OrtSession) -> Unit): OrtSession? {
         if (current != null) return current
@@ -35,16 +62,25 @@ object AiSegmenter {
         return try {
             val e = env ?: OrtEnvironment.getEnvironment().also { env = it }
             val bytes = ctx.assets.open(path).use { it.readBytes() }
-            val opts = OrtSession.SessionOptions().apply {
-                setIntraOpNumThreads(Runtime.getRuntime().availableProcessors().coerceIn(1, 4))
-                setOptimizationLevel(OrtSession.SessionOptions.OptLevel.ALL_OPT)
+            val s = try {
+                e.createSession(bytes, options(config))
+            } catch (x: Exception) {
+                // acceleratore non disponibile su questo telefono: processore normale
+                e.createSession(bytes, options(config.copy(xnnpack = false)))
             }
-            e.createSession(bytes, opts).also(keep)
+            s.also(keep)
         } catch (t: Throwable) {
             // UnsatisfiedLinkError su processori non supportati, OutOfMemory su telefoni molto vecchi
             failed = true
             null
         }
+    }
+
+    /** Chiude i modelli e restituisce la loro memoria. */
+    @Synchronized
+    fun release() {
+        runCatching { isnet?.close() }; isnet = null
+        runCatching { modnet?.close() }; modnet = null
     }
 
     private fun run(s: OrtSession, input: FloatArray, w: Int, h: Int): FloatArray {
@@ -59,9 +95,10 @@ object AiSegmenter {
     }
 
     /** Probabilità di "soggetto" per ogni pixel (w×h), o null se il modello non è disponibile. */
+    @Synchronized // un calcolo alla volta; release() aspetta che finisca prima di chiudere il modello
     fun salientObject(px: IntArray, w: Int, h: Int): FloatArray? {
         val s = session(ISNET, isnet) { isnet = it } ?: return null
-        val side = 1024
+        val side = config.isnetSide
         val input = AiPrep.toChw(px, w, h, side, side, mean = 128f, std = 256f, scale = 1f)
         val out = run(s, input, side, side)
         AiPrep.normalizeMinMax(out)
@@ -69,6 +106,7 @@ object AiSegmenter {
     }
 
     /** Opacità della persona (w×h, capelli inclusi), o null se il modello non è disponibile. */
+    @Synchronized
     fun portraitMatte(px: IntArray, w: Int, h: Int): FloatArray? {
         val s = session(MODNET, modnet) { modnet = it } ?: return null
         val (tw, th) = AiPrep.modnetSize(w, h)

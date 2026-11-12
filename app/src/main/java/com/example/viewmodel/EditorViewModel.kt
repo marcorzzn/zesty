@@ -15,6 +15,7 @@ import com.example.engine.PixelEngine
 import com.example.model.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -1735,6 +1736,7 @@ class EditorViewModel : ViewModel() {
         maskOnEnter = null
         val s = _state.value
         val prevTool = if (s.cutoutStudio) null else (s.returnToolAfterSelective ?: "effects")
+        if (s.cutoutStudio) releaseAiAnalysis() // la memoria dell'IA torna libera all'uscita
         _state.value = s.copy(
             currentTool = prevTool,
             cutoutStudio = false,
@@ -1975,6 +1977,7 @@ class EditorViewModel : ViewModel() {
             showMaskHeatmap = false,
             toastMessage = "Tocca lo sfondo per toglierlo. Con ＋ lo rimetti"
         )
+        prefetchAiAnalysis()
     }
 
     fun setCutoutBackdrop(v: Int) { _state.value = _state.value.copy(cutoutBackdrop = v.mod(4)) }
@@ -2054,7 +2057,7 @@ class EditorViewModel : ViewModel() {
     }
 
     /** Esegue un'operazione su tutta la zona in sottofondo, poi la salva nella cronologia. */
-    private fun runCutoutOp(done: String, op: (CutoutSource, FloatArray, Int, Int) -> FloatArray) {
+    private fun runCutoutOp(done: String, op: suspend (CutoutSource, FloatArray, Int, Int) -> FloatArray) {
         commitMaskDraft()
         val s = _state.value
         if (s.cutoutBusy) return
@@ -2087,6 +2090,7 @@ class EditorViewModel : ViewModel() {
      */
     fun cutoutAutoSubject() {
         runCutoutOp("Soggetto isolato: ritocca con bacchetta o pennello se serve") { src, a, w, h ->
+            aiPrefetch?.join() // l'analisi anticipata, se in corso, viene riusata
             subjectInArea(src.px, w, h, a)
         }
     }
@@ -2116,11 +2120,50 @@ class EditorViewModel : ViewModel() {
 
     /** Il mix: IS-Net (qualunque soggetto) + MODNet (persone) + taglio su grafo e rifinitura di Zesty. */
     private fun mixedSubject(px: IntArray, w: Int, h: Int, keep: FloatArray): FloatArray {
-        val faces = runCatching { detectFaces(px, w, h) }.getOrDefault(emptyList())
-        val salient = (if (AiSegmenter.available) runCatching { AiSegmenter.salientObject(px, w, h) }.getOrNull() else null)
-            ?: return SubjectEngine.subject(px, w, h, faces, keep) // senza IA: solo il motore di Zesty
-        val portrait = if (faces.isNotEmpty()) runCatching { AiSegmenter.portraitMatte(px, w, h) }.getOrNull() else null
-        return SubjectEngine.fuse(px, w, h, salient, portrait, faces, keep)
+        val a = aiAnalysis?.takeIf { it.px === px } ?: analyze(px, w, h)
+        val salient = a.salient ?: return SubjectEngine.subject(px, w, h, a.faces, keep) // senza IA: solo il motore di Zesty
+        return SubjectEngine.fuse(px, w, h, salient, a.portrait, a.faces, keep)
+    }
+
+    /** Risultati dell'IA per una foto: si calcolano una volta e si riusano finché la foto non cambia. */
+    private class AiAnalysis(val px: IntArray, val faces: List<SubjectEngine.Face>, val salient: FloatArray?, val portrait: FloatArray?)
+    @Volatile private var aiAnalysis: AiAnalysis? = null
+    private var aiPrefetch: Job? = null
+
+    /** Volti e IS-Net in parallelo (il rilevatore usa un core libero), poi MODNet solo se ci sono persone. */
+    private fun analyze(px: IntArray, w: Int, h: Int): AiAnalysis {
+        var faces: List<SubjectEngine.Face> = emptyList()
+        val faceThread = kotlin.concurrent.thread(name = "zesty-volti") {
+            faces = runCatching { detectFaces(px, w, h) }.getOrDefault(emptyList())
+        }
+        val salient = if (AiSegmenter.available) runCatching { AiSegmenter.salientObject(px, w, h) }.getOrNull() else null
+        faceThread.join()
+        val portrait = if (salient != null && faces.isNotEmpty()) runCatching { AiSegmenter.portraitMatte(px, w, h) }.getOrNull() else null
+        return AiAnalysis(px, faces, salient, portrait).also { aiAnalysis = it }
+    }
+
+    /** All'apertura di Scontorna l'IA inizia a guardare la foto: al tocco di "Soggetto" resta solo la fusione. */
+    private fun prefetchAiAnalysis() {
+        if (!AiSegmenter.available) return
+        val s = _state.value
+        val active = s.activeLayer ?: return
+        val mask = currentSelectiveMaskOrNew() ?: return
+        val w = mask.width; val h = mask.height
+        aiPrefetch?.cancel()
+        aiPrefetch = viewModelScope.launch(Dispatchers.Default) {
+            runCatching {
+                val src = cutoutSource(active, s.layers, w, h)
+                if (aiAnalysis?.px !== src.px) analyze(src.px, w, h)
+            }
+            // uscito da Scontorna mentre l'IA lavorava: niente risultati né modelli lasciati in memoria
+            if (!isActive) { aiAnalysis = null; AiSegmenter.release() }
+        }
+    }
+
+    private fun releaseAiAnalysis() {
+        aiPrefetch?.cancel(); aiPrefetch = null
+        aiAnalysis = null
+        viewModelScope.launch(Dispatchers.Default) { AiSegmenter.release() }
     }
 
     private fun detectFaces(px: IntArray, w: Int, h: Int): List<SubjectEngine.Face> {

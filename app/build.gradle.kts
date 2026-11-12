@@ -55,6 +55,13 @@ android {
       // AI Studio.
       signingConfig = signingConfigs.getByName("release")
     }
+    // versione ottimizzata come quella finale ma firmata in debug: per misurare le prestazioni vere
+    create("benchmark") {
+      initWith(getByName("debug"))
+      isDebuggable = false
+      signingConfig = signingConfigs.getByName("debugConfig") // stessa firma dell'app installata
+      matchingFallbacks += listOf("debug")
+    }
     debug {
       // Do not remove or modify this signingConfig assignment. It is necessary for Android apps in
       // AI Studio.
@@ -70,6 +77,8 @@ android {
     buildConfig = true
   }
   testOptions { unitTests { isIncludeAndroidResources = true } }
+  // -PbenchBuild: i test sul telefono girano sulla versione ottimizzata
+  testBuildType = if (project.hasProperty("benchBuild")) "benchmark" else "debug"
   dependenciesInfo {
     includeInApk = false
     includeInBundle = true

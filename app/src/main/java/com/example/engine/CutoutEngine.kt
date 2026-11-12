@@ -341,9 +341,16 @@ object CutoutEngine {
         val keepMin = if (minFraction >= 1f) largest else max(1, (largest * minFraction).toInt())
         val out = alpha.copyOf()
         for (i in 0 until n) { val id = label[i]; if (id >= 0 && sizes[id] < keepMin) out[i] = 0f }
-        // le sfumature attorno ai pezzi tolti non devono restare come aloni
-        val drop = grow(FloatArray(n) { if (label[it] >= 0 && sizes[label[it]] < keepMin) 1f else 0f }, w, h, 2)
-        for (i in 0 until n) if (drop[i] > 0f && out[i] < threshold) out[i] = 0f
+        // le sfumature attorno ai pezzi tolti non devono restare come aloni (raggio 2 attorno ai soli pezzi tolti)
+        for (i in 0 until n) {
+            val id = label[i]
+            if (id < 0 || sizes[id] >= keepMin) continue
+            val cx = i % w; val cy = i / w
+            for (yy in max(0, cy - 2)..min(h - 1, cy + 2)) for (xx in max(0, cx - 2)..min(w - 1, cx + 2)) {
+                val j = yy * w + xx
+                if (out[j] < threshold) out[j] = 0f
+            }
+        }
         return out
     }
 

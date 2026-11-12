@@ -92,4 +92,68 @@ class ZestyDeviceBench {
         runSize(3000, 4000)  // foto da 12 MP a piena risoluzione
         log("IA disponibile: ${AiSegmenter.available}")
     }
+
+    /** Fase 1: confronto delle impostazioni del motore IA (tempo e memoria). */
+    @Test
+    fun aiOptions() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        AiSegmenter.attach(ctx)
+        val w = 1536; val h = 2048 // tela massima dell'editor
+        val px = scene(w, h)
+        val configs = listOf(
+            AiSegmenter.Config(xnnpack = false, threads = 4),
+            AiSegmenter.Config(xnnpack = false, threads = 6),
+            AiSegmenter.Config(xnnpack = false, threads = 8),
+            AiSegmenter.Config(xnnpack = false, threads = 4, isnetSide = 768)
+        )
+        for (c in configs) {
+            AiSegmenter.config = c
+            System.gc()
+            log("--- $c")
+            timed("IS-Net 1° (con caricamento)") { AiSegmenter.salientObject(px, w, h) }
+            timed("IS-Net 2°") { AiSegmenter.salientObject(px, w, h) }
+            timed("MODNet 1°") { AiSegmenter.portraitMatte(px, w, h) }
+            timed("MODNet 2°") { AiSegmenter.portraitMatte(px, w, h) }
+            AiSegmenter.release()
+            System.gc()
+            log("dopo release: nativo ${Debug.getNativeHeapAllocatedSize() / 1048576} MB")
+        }
+    }
+
+    /** Fase 1: tempi delle singole fasi della fusione (sulla tela massima). */
+    @Test
+    fun fusionStages() {
+        val w = 1536; val h = 2048
+        val px = scene(w, h)
+        val ai = FloatArray(w * h) { i -> val x = i % w; val y = i / w; val dx = (x - w / 2f) / (w * 0.3f); val dy = (y - h * 0.55f) / (h * 0.4f); ((1.1f - kotlin.math.sqrt(dx * dx + dy * dy)) / 0.2f).coerceIn(0f, 1f) }
+        val face = listOf(SubjectEngine.Face(w / 2f, h * 0.32f, w * 0.08f / 2.5f))
+        SubjectEngine.trace = { stage, ms -> log("%-34s %6d ms".format(stage, ms)) }
+        repeat(2) { timed("Fusione completa") { SubjectEngine.fuse(px, w, h, ai, ai, face) } }
+        SubjectEngine.trace = null
+        timed("Soggetto classico") { SubjectEngine.subject(px, w, h, face) }
+        timed("Rifinisci bordo r=6") { CutoutEngine.refineEdge(px, ai, w, h, 6) }
+        timed("Togli isolotti") { CutoutEngine.removeIslands(ai, w, h, 0.02f) }
+    }
+
+    /** "Soggetto" dall'inizio alla fine, come nell'app: volti in parallelo a IS-Net, poi MODNet e fusione. */
+    @Test
+    fun endToEnd() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        AiSegmenter.attach(ctx)
+        AiSegmenter.release()
+        val w = 1536; val h = 2048
+        val px = scene(w, h)
+        val face = listOf(SubjectEngine.Face(w / 2f, h * 0.32f, w * 0.08f / 2.5f))
+        repeat(2) { round ->
+            timed("Soggetto completo (giro ${round + 1})") {
+                val t = kotlin.concurrent.thread { faces(px, w, h) }
+                val sal = AiSegmenter.salientObject(px, w, h)!!
+                t.join()
+                val por = AiSegmenter.portraitMatte(px, w, h)
+                SubjectEngine.fuse(px, w, h, sal, por, face)
+            }
+        }
+        AiSegmenter.release(); System.gc()
+        log("dopo release: nativo ${Debug.getNativeHeapAllocatedSize() / 1048576} MB")
+    }
 }

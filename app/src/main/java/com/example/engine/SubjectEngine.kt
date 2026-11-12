@@ -30,6 +30,11 @@ object SubjectEngine {
 
     const val WORK_SIDE = 360
 
+    /** Solo per le misure: riceve il tempo di ogni fase della fusione. */
+    @Volatile var trace: ((String, Long) -> Unit)? = null
+    private var t0 = 0L
+    private fun mark(stage: String) { val tr = trace ?: return; val now = System.nanoTime(); tr(stage, (now - t0) / 1_000_000); t0 = now }
+
     private const val BG_SURE: Byte = 0
     private const val BG_PROB: Byte = 1
     private const val FG_PROB: Byte = 2
@@ -71,6 +76,7 @@ object SubjectEngine {
      */
     fun fuse(px: IntArray, w: Int, h: Int, salient: FloatArray, portrait: FloatArray?, faces: List<Face>, keep: FloatArray? = null): FloatArray {
         val n = w * h
+        t0 = System.nanoTime()
         // 1. parere combinato dell'IA: MODNet conta solo attorno alle persone trovate (testa, busto, braccia)
         val ai = salient.copyOf()
         if (portrait != null && faces.isNotEmpty()) {
@@ -84,6 +90,7 @@ object SubjectEngine {
             }
         }
 
+        mark("fusione: mix IA")
         // 2. taglio su grafo alla risoluzione di lavoro, guidato dall'IA
         val scale = min(1f, WORK_SIDE.toFloat() / max(w, h))
         val sw = max(8, (w * scale).roundToInt()); val sh = max(8, (h * scale).roundToInt())
@@ -102,7 +109,9 @@ object SubjectEngine {
                 else -> BG_PROB
             }
         }
+        mark("fusione: riduzione e fasce")
         val labels = segment(small, sw, sh, faces, keepSmall, 3, priorIn = aiSmall, triIn = tri, priorWeight = 2.2f)
+        mark("fusione: taglio su grafo")
         val cut = upscale(FloatArray(sw * sh) { if (labels[it]) 1f else 0f }, sw, sh, w, h)
         val band = upscale(FloatArray(sw * sh) { if (sure[it] < 0.5f && maybe[it] > 0.5f) 1f else 0f }, sw, sh, w, h)
 
@@ -120,9 +129,11 @@ object SubjectEngine {
             }
         }
 
+        mark("fusione: ingrandimento e unione")
         // 4. bordo a piena risoluzione: filtro guidato fine, poi pulizia
         val radius = max(2, (0.6f / scale).roundToInt())
         val refined = CutoutEngine.refineEdge(px, fused, w, h, radius, 6e-4f)
+        mark("fusione: filtro guidato")
         for (i in 0 until n) {
             // il filtro guidato aggancia i contorni; dove l'IA ha già un'opacità fine (capelli) la si conserva
             val soft = fused[i] > 0.04f && fused[i] < 0.96f
@@ -132,7 +143,7 @@ object SubjectEngine {
             if (keep != null && keep[i] < 0.05f) v = 0f
             fused[i] = v
         }
-        return CutoutEngine.removeIslands(fused, w, h, 0.01f)
+        return CutoutEngine.removeIslands(fused, w, h, 0.01f).also { mark("fusione: isolotti") }
     }
 
     /** Segmentazione alla risoluzione di lavoro: true = soggetto. */
@@ -158,8 +169,11 @@ object SubjectEngine {
         val big = 1e6f
         val fgModel = Gmm(); val bgModel = Gmm()
         repeat(iterations.coerceAtLeast(1)) { iter ->
-            val fgIdx = (0 until n).filter { fg[it] && tri[it] != BG_SURE }
-            val bgIdx = (0 until n).filter { !fg[it] }
+            var nf = 0; var nb = 0
+            for (i in 0 until n) if (fg[i]) nf++ else nb++
+            val fgIdx = IntArray(nf); val bgIdx = IntArray(nb)
+            nf = 0; nb = 0
+            for (i in 0 until n) if (fg[i]) fgIdx[nf++] = i else bgIdx[nb++] = i
             if (fgIdx.size < 10 || bgIdx.size < 10) return fg
             fgModel.fit(r, g, b, fgIdx, iter == 0)
             bgModel.fit(r, g, b, bgIdx, iter == 0)
@@ -345,7 +359,7 @@ object SubjectEngine {
         private var used = 0
         private val buf = FloatArray(k)
 
-        fun fit(r: FloatArray, g: FloatArray, b: FloatArray, idx: List<Int>, init: Boolean) {
+        fun fit(r: FloatArray, g: FloatArray, b: FloatArray, idx: IntArray, init: Boolean) {
             if (init || comp.size != r.size || used == 0) {
                 comp = IntArray(r.size)
                 kmeans(r, g, b, idx)
@@ -356,11 +370,14 @@ object SubjectEngine {
             estimate(r, g, b, idx)
         }
 
-        private fun kmeans(r: FloatArray, g: FloatArray, b: FloatArray, idx: List<Int>) {
+        private fun kmeans(r: FloatArray, g: FloatArray, b: FloatArray, idx: IntArray) {
             val kk = min(k, idx.size)
             val cr = FloatArray(kk); val cg = FloatArray(kk); val cb = FloatArray(kk)
             // partenza deterministica: centri sparsi per luminosità
-            val sorted = idx.sortedBy { 0.299f * r[it] + 0.587f * g[it] + 0.114f * b[it] }
+            // partenza su quantili di luminosità (ordinamento di un campione: costo trascurabile)
+            val step = max(1, idx.size / 4096)
+            val sorted = IntArray((idx.size + step - 1) / step) { idx[it * step] }
+                .sortedBy { 0.299f * r[it] + 0.587f * g[it] + 0.114f * b[it] }
             for (c in 0 until kk) { val p = sorted[((c + 0.5f) / kk * sorted.size).toInt().coerceAtMost(sorted.size - 1)]; cr[c] = r[p]; cg[c] = g[p]; cb[c] = b[p] }
             repeat(6) {
                 val sr = DoubleArray(kk); val sg = DoubleArray(kk); val sb = DoubleArray(kk); val cnt = IntArray(kk)
@@ -377,7 +394,7 @@ object SubjectEngine {
             }
         }
 
-        private fun estimate(r: FloatArray, g: FloatArray, b: FloatArray, idx: List<Int>) {
+        private fun estimate(r: FloatArray, g: FloatArray, b: FloatArray, idx: IntArray) {
             val s = Array(k) { DoubleArray(3) }
             val ss = Array(k) { DoubleArray(9) }
             val cnt = IntArray(k)
