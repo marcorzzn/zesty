@@ -160,7 +160,9 @@ data class EditorLayer(
     val textOnPathLayerId: String? = null,
     // Vector Path properties
     val pathPoints: List<NormPoint> = emptyList(),
-    val pathClosed: Boolean = true
+    val pathClosed: Boolean = true,
+    // livello creato dal pennello: i tratti a colore finiscono qui, la foto resta intatta
+    val isPaintLayer: Boolean = false
 ) {
     fun deepCopy(): EditorLayer = copy(
         bitmap = bitmap?.copy(Bitmap.Config.ARGB_8888, true),

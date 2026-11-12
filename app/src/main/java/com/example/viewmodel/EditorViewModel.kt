@@ -90,6 +90,14 @@ data class EditorUiState(
     val brushOpacity: Float = 100f,
     val brushHardness: Float = 65f, // 0..100 radial gradient falloff
     val brushColor: Int = Color.parseColor("#E0289A"),
+    // Pennelli a colore (BrushEngine)
+    val brushKind: com.example.engine.BrushEngine.Kind = com.example.engine.BrushEngine.Kind.ROUND,
+    val brushFlow: Float = 100f,
+    val brushSpacing: Float = 8f,
+    val brushScatter: Float = 0f,
+    val brushSmoothing: Float = 30f,
+    val brushBlend: BlendOption = BlendOption.NORMAL, // "Colore" colora mantenendo luci e ombre
+    val recentColors: List<Int> = emptyList(),
     val selectiveTargetFxKey: String? = null, // null = layer.maskBitmap, non-null = layer.effects[key].localMask
     val showMaskHeatmap: Boolean = true,
     // Strumenti zona: pennello, gomma, forme con maniglie, lazo, poligono modellabile
@@ -548,7 +556,10 @@ class EditorViewModel : ViewModel() {
                 ensureActiveLayerRasterized()
                 warpBackupBitmap = _state.value.activeLayer?.bitmap?.copy(Bitmap.Config.ARGB_8888, true)
             }
-            "brush", "clone", "dispersion", "freecrop" -> {
+            "brush" -> {
+                _state.value = _state.value.copy(lassoPoints = emptyList(), handlesHidden = true)
+            }
+            "clone", "dispersion", "freecrop" -> {
                 ensureActiveLayerRasterized()
                 dispersionSelection.clear()
                 _state.value = _state.value.copy(lassoPoints = emptyList())
@@ -2571,7 +2582,8 @@ class EditorViewModel : ViewModel() {
                     paintBrushStroke(canvasX, canvasY, canvasX, canvasY)
                 }
             }
-            "brush", "mask" -> {
+            "brush" -> brushDown(canvasX, canvasY)
+            "mask" -> {
                 lastBrushPoint = PointF(canvasX, canvasY)
                 paintBrushStroke(canvasX, canvasY, canvasX, canvasY)
             }
@@ -2593,7 +2605,7 @@ class EditorViewModel : ViewModel() {
 
         // Bug 3 fix: pushHistorySnapshot ONCE on first pointermove of a painting gesture
         // la zona selettiva salva la cronologia a fine tratto (vedi onCanvasPointerUp)
-        if (!strokeHasPushedHistory && s.currentTool in listOf("brush", "mask", "warp", "clone")) {
+        if (!strokeHasPushedHistory && s.currentTool in listOf("mask", "warp", "clone")) {
             strokeHasPushedHistory = true
             pushHistorySnapshot()
         }
@@ -2635,7 +2647,8 @@ class EditorViewModel : ViewModel() {
                     maskStrokeDirty = true
                 }
             }
-            "brush", "mask" -> {
+            "brush" -> brushMove(canvasX, canvasY)
+            "mask" -> {
                 val prev = lastBrushPoint ?: PointF(canvasX, canvasY)
                 paintBrushStroke(prev.x, prev.y, canvasX, canvasY)
                 lastBrushPoint = PointF(canvasX, canvasY)
@@ -2651,6 +2664,7 @@ class EditorViewModel : ViewModel() {
     fun onCanvasPointerUp() {
         val s = _state.value
         lastBrushPoint = null
+        if (s.currentTool == "brush" && !s.eyedropperActive) { brushUp(); return }
         if (s.currentTool == "selective_mask") {
             if (maskDrag != MaskDrag.NONE) maskPointerUp()
             if (maskStrokeDirty) { maskStrokeDirty = false; pushHistorySnapshot() }
@@ -2658,6 +2672,140 @@ class EditorViewModel : ViewModel() {
         if (s.currentTool in listOf("brush", "mask", "selective_mask", "warp", "clone", "pen")) {
             rebuildCompositeImmediate()
         }
+    }
+
+    // ============ PENNELLI A COLORE (BrushEngine) ============
+    private var brushStroke: com.example.engine.BrushEngine.Stroke? = null
+    private var brushLayerId: String? = null
+
+    /**
+     * Livello su cui dipingere. Pennelli a colore: un livello "Pennello" con il modo colore scelto
+     * (si riusa quello attivo o il più alto con lo stesso modo, altrimenti se ne crea uno). Gomma e sfumino
+     * lavorano sul livello attivo, qualunque sia.
+     */
+    private fun brushTargetLayer(): EditorLayer? {
+        val s = _state.value
+        val kind = s.brushKind
+        if (kind == com.example.engine.BrushEngine.Kind.ERASER || kind == com.example.engine.BrushEngine.Kind.SMUDGE) {
+            val a = s.activeLayer ?: return null
+            if (a.locked) { showToast("Il livello è bloccato"); return null }
+            ensureActiveLayerRasterized()
+            return _state.value.activeLayer
+        }
+        val a = s.activeLayer
+        if (a != null && a.isPaintLayer && a.blend == s.brushBlend && !a.locked && a.visible) return a
+        s.layers.lastOrNull { it.isPaintLayer && it.blend == s.brushBlend && !it.locked && it.visible }?.let {
+            _state.value = s.copy(activeLayerId = it.id)
+            return it
+        }
+        val name = if (s.brushBlend == BlendOption.NORMAL) "Pennello" else "Pennello · ${s.brushBlend.label}"
+        val layer = EditorLayer(
+            id = "paint_${System.currentTimeMillis()}",
+            type = LayerType.RASTER,
+            name = name,
+            w = s.canvasW.toFloat(), h = s.canvasH.toFloat(),
+            blend = s.brushBlend,
+            isPaintLayer = true,
+            bitmap = Bitmap.createBitmap(s.canvasW.coerceAtLeast(1), s.canvasH.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
+        )
+        _state.value = s.copy(layers = s.layers + layer, activeLayerId = layer.id)
+        return layer
+    }
+
+    private fun brushMap(l: EditorLayer, bmp: Bitmap, x: Float, y: Float) =
+        com.example.engine.BrushGeometry.toBitmap(x, y, l.x, l.y, l.w, l.h, l.rotation, bmp.width, bmp.height)
+
+    private fun brushDown(x: Float, y: Float) {
+        val s = _state.value
+        val layer = brushTargetLayer() ?: return
+        var bmp = layer.bitmap ?: return
+        if (!bmp.isMutable) {
+            bmp = bmp.copy(Bitmap.Config.ARGB_8888, true)
+            updateActiveLayer { it.copy(bitmap = bmp) }
+        }
+        val m = brushMap(layer, bmp, x, y)
+        val k = m.pxPerUnit
+        val params = com.example.engine.BrushEngine.Params(
+            size = (s.brushSize * k).coerceAtLeast(1f),
+            opacity = s.brushOpacity,
+            flow = s.brushFlow,
+            hardness = s.brushHardness,
+            spacing = s.brushSpacing,
+            scatter = s.brushScatter,
+            smoothing = s.brushSmoothing,
+            color = s.brushColor
+        )
+        brushLayerId = layer.id
+        brushStroke = com.example.engine.BrushEngine.Stroke(bmp, s.brushKind, params, seed = (System.nanoTime() and 0xFFFF).toInt()).also {
+            it.addPoint(m.x, m.y)
+            it.render()
+        }
+        interactiveEffectChange()
+        scheduleCompositeRebuild()
+    }
+
+    private fun brushMove(x: Float, y: Float) {
+        val stroke = brushStroke ?: return
+        val layer = _state.value.layers.firstOrNull { it.id == brushLayerId } ?: return
+        val bmp = layer.bitmap ?: return
+        val m = brushMap(layer, bmp, x, y)
+        stroke.addPoint(m.x, m.y)
+        stroke.render()
+        interactiveEffectChange()
+        scheduleCompositeRebuild()
+    }
+
+    private fun brushUp() {
+        val stroke = brushStroke ?: return
+        brushStroke = null
+        stroke.finish()
+        val id = brushLayerId ?: return
+        brushLayerId = null
+        val s = _state.value
+        // nuova istanza del bitmap: la cronologia e le miniature vedono il tratto concluso
+        _state.value = s.copy(
+            layers = s.layers.map { if (it.id == id) it.copy(bitmap = it.bitmap?.copy(Bitmap.Config.ARGB_8888, true)) else it },
+            recentColors = if (stroke.kind == com.example.engine.BrushEngine.Kind.ERASER || stroke.kind == com.example.engine.BrushEngine.Kind.SMUDGE) s.recentColors
+                else (listOf(s.brushColor) + s.recentColors.filter { it != s.brushColor }).take(10)
+        )
+        pushHistorySnapshot()
+        scheduleCompositeRebuild()
+    }
+
+    /** Impostazioni dei pennelli a colore. Scegliendo un tipo si caricano i suoi valori consigliati. */
+    fun updatePaintBrush(
+        kind: com.example.engine.BrushEngine.Kind? = null,
+        size: Float? = null, opacity: Float? = null, flow: Float? = null, hardness: Float? = null,
+        spacing: Float? = null, scatter: Float? = null, smoothing: Float? = null,
+        blend: BlendOption? = null, color: Int? = null
+    ) {
+        var s = _state.value
+        if (kind != null && kind != s.brushKind) {
+            val p = kind.preset
+            s = s.copy(brushKind = kind, brushSize = p.size, brushOpacity = p.opacity, brushFlow = p.flow,
+                brushHardness = p.hardness, brushSpacing = p.spacing, brushScatter = p.scatter)
+        }
+        _state.value = s.copy(
+            brushSize = size ?: s.brushSize,
+            brushOpacity = opacity ?: s.brushOpacity,
+            brushFlow = flow ?: s.brushFlow,
+            brushHardness = hardness ?: s.brushHardness,
+            brushSpacing = spacing ?: s.brushSpacing,
+            brushScatter = scatter ?: s.brushScatter,
+            brushSmoothing = smoothing ?: s.brushSmoothing,
+            brushBlend = blend ?: s.brushBlend,
+            brushColor = color ?: s.brushColor
+        )
+    }
+
+    /** Contagocce dei pennelli: il colore toccato sulla foto diventa quello del pennello. */
+    fun pickBrushColorFromCanvas() {
+        _state.value = _state.value.copy(
+            eyedropperActive = true,
+            colorPickerTarget = "brush",
+            colorPickerOpen = false,
+            toastMessage = "Tocca la foto per prendere il colore"
+        )
     }
 
     fun resetCloneSource() {
@@ -2894,7 +3042,7 @@ class EditorViewModel : ViewModel() {
             "fill" -> updateActiveLayer { it.copy(fillColor = color) }
             "grad2" -> updateActiveLayer { it.copy(gradColor2 = color, useGradient = true) }
             "stroke" -> updateActiveLayer { it.copy(strokeColor = color) }
-            "brush" -> _state.value = s.copy(brushColor = color)
+            "brush" -> _state.value = s.copy(brushColor = color, eyedropperActive = false)
             "bg" -> _state.value = s.copy(bgColor = color)
             "border" -> _state.value = s.copy(borderColor = color)
         }

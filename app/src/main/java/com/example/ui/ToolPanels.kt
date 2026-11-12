@@ -990,6 +990,8 @@ fun PenAndBooleanPanel(state: EditorUiState, vm: EditorViewModel) {
 // ============ 13 & 14. BRUSH & MASK PANELS ============
 @Composable
 fun BrushToolPanel(state: EditorUiState, vm: EditorViewModel, isMaskMode: Boolean = false) {
+    // pennelli a colore: nuovo pannello (BrushPanel.kt); qui resta solo la modalità maschera
+    if (!isMaskMode) { PaintBrushPanel(state, vm); return }
     val active = state.activeLayer
     Column(modifier = Modifier.fillMaxWidth().background(BgBlack).padding(vertical = 8.dp)) {
         if (isMaskMode && active != null) {

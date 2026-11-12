@@ -84,7 +84,13 @@ fun RowScope.ToolTopBarActions(state: EditorUiState, vm: EditorViewModel) {
                 add(PxMenuItem(if (cut) "Togli tutto" else "Svuota zona", Icons.Default.Deselect) { vm.fillSelectiveMask(false) })
             })
         }
-        "brush", "mask" -> {
+        "brush" -> {
+            val erasing = state.brushKind == com.example.engine.BrushEngine.Kind.ERASER
+            PxIconAction(Icons.Default.AutoFixOff, if (erasing) "Gomma attiva (tocca per tornare al pennello)" else "Gomma", active = erasing) {
+                vm.updatePaintBrush(kind = if (erasing) com.example.engine.BrushEngine.Kind.ROUND else com.example.engine.BrushEngine.Kind.ERASER)
+            }
+        }
+        "mask" -> {
             val erasing = state.brushStyle == BrushStyle.ERASER
             PxIconAction(Icons.Default.AutoFixOff, if (erasing) "Gomma attiva" else "Gomma", active = erasing) {
                 vm.updateBrushSettings(style = if (erasing) BrushStyle.STANDARD else BrushStyle.ERASER)
