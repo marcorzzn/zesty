@@ -161,6 +161,10 @@ class EditorViewModel : ViewModel() {
     private val maxHistory = 12 // Memory-safe cap on mobile devices (Bug 2 fix)
 
     private var renderJob: Job? = null
+    // dichiarati prima di init: all'avvio si chiede già una composizione della tela in sottofondo
+    private val renderLock = Any()
+    private var renderRunning = false
+    private var renderPending = false
     private var warpBackupBitmap: Bitmap? = null
     private var lastBrushPoint: PointF? = null
     private var strokeHasPushedHistory: Boolean = false // Bug 3 fix: pushHistory only on first paint move
@@ -413,9 +417,6 @@ class EditorViewModel : ViewModel() {
      */
     fun rebuildCompositeImmediate() = scheduleCompositeRebuild()
 
-    private val renderLock = Any()
-    private var renderRunning = false
-    private var renderPending = false
 
     /**
      * Anteprima in diretta: un rendering in corso non viene annullato (a ogni movimento del dito
