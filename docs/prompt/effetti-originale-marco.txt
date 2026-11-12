@@ -1,0 +1,979 @@
+Nella sezione degli effetti vorrei ordinare quelli esistenti e aggiungerne altri filtri in una categoria di filtri "cinematografici"
+
+immagina ad esempio se uno volesse prendere una foto e alterare i colori in modo che sembri la scena di un film di nolan, o di sam anderson, oppure filtri come pellicole (pellicole di qualunque tipo), per ogni filtro poi suggerisci e mostra come opzionale la possibilità di aggiungere bande o bordi per rendere ancora meglio l'idea in base allo stile tipico di ciascuno
+
+I Grandi Autori (Stili iconici)
+
+• Nolan (Freddo e Realistico): Toni desaturati, ombre profonde, dominanti blu acciaio e grigio ardesia con contrasto molto netto. Ideale per foto urbane o paesaggi drammatici.
+• Wes Anderson (Pastello e Simmetrico): Colori caldi, gialli senape, rosa cipria, verde menta e azzurro cielo. Basso contrasto e luci morbide per un effetto fiabesco e retrò.
+• Denis Villeneuve (Epico e Sabbioso): Palette monocromatica o bicromatica (ocra, sabbia, arancio bruciato contro blu profondo), alte luci diffuse e atmosfera polverosa.
+• Wong Kar-wai (Neon e Malinconico): Verdi smeraldo intensi, rossi profondi, luci al neon sfocate e ombre calde. Perfetto per scatti notturni e ritratti in interni.
+• David Fincher (Thriller Cupo): Dominanti verde-giallastre o ciano scuro, ombre molto chiuse e un'atmosfera tesa e clinica.
+
+2. Generi ed Epoche Cinematografiche (Per chi non conosce i registi)
+
+• Blockbuster (Teal & Orange): Il classico contrasto complementare tra il blu-verde (teal) nelle ombre e l'arancione caldo sugli incarnati. Dà subito un aspetto da grande produzione hollywoodiana.
+• Noir Classico: Bianco e nero ad altissimo contrasto, neri puri, luci dure e una leggera grana da pellicola anni '40.
+• Anni '70 / Pellicola Kodak: Colori caldi e leggermente sbiaditi, neri un po' sollevati (che tendono al grigio scuro/marrone) e una forte presenza di rossi e gialli.
+• Cyberpunk / Sci-Fi: Alte luci magenta, viola e ciano elettrico con ombre molto scure. Ottimo per foto scattate di notte o con luci artificiali.
+• Indie / Sundance: Toni naturali ma leggermente caldi, contrasto morbido, luci dorate da "golden hour" e un aspetto organico e intimo.
+
+• Quentin Tarantino (Pulp / Spaghetti Western). Colori saturi, rossi molto accesi, gialli caldi e incarnati dorati con grana visibile. Perfetto per dare un tocco ruvido da pellicola 35mm anni '70 e '90.
+• Tim Burton (Gotico / Fiaba Oscura). Palette quasi monocromatica giocata su blu notte, grigi freddi e bianchi pallidi, con sporadici accenti di colore molto accesi. Ideale per ritratti o paesaggi nebbiosi.
+• Jean-Pierre Jeunet (Il favoloso mondo di Amélie). Forte dominante verde smeraldo e giallo caldo, ombre morbide e colori ricchi. Crea subito un'atmosfera romantica, parigina e sognante.
+• Guillermo del Toro (Fantasy Barocco). Contrasto netto tra blu-verde acqua nelle ombre e oro ambrato nelle luci, con ombre profonde e avvolgenti. Ottimo per interni e scene misteriose.
+• Stanley Kubrick (Simmetria Clinica). Colori primari molto puliti (rossi, blu e bianchi puri), contrasto bilanciato e luci fredde o al tungsteno molto nette. Dà un aspetto rigoroso e inquietante.
+• Zack Snyder (Epico / Fumetto). Colori fortemente desaturati, ombre pesanti, alti contrasti e dominanti grigio-azzurre o bronzo. Trasforma qualsiasi foto in un fotogramma drammatico e statuario.
+
+Estetiche di culto e movimenti
+
+• Matrix (Verde Digitale). Dominante verde acido su tutta l'immagine, neri profondi e contrasto elevato. Un classico immediato per scene urbane o tecnologiche.
+• Euphoria (Glitter e Neon). Alte luci violacee, blu elettrico e magenta con incarnati caldi e bagliori diffusi (effetto halation o bloom). Molto popolare per foto notturne, feste e ritratti moderni.
+• Mad Max (Deserto Infuocato). Cieli ciano elettrico spinti al massimo contro terre arancioni e ocra ipersaturi. Un Teal & Orange portato all'estremo.
+• Nouvelle Vague (Parigi Anni '60). Bianco e nero morbido, neri leggermente grigi, grana fine e luci naturali. Dà un'aria intellettuale e spontanea agli scatti di strada.
+• Horror Anni '80 (Slasher / Giallo). Colori al neon (rosso sangue e blu intenso) con ombre scure e un leggero effetto bagliore tipico delle vecchie videocassette VHS o pellicole d'epoca.
+Suggerimento per i nomi in app:
+Se cerchi nomi brevi e d'impatto per le icone dei filtri, puoi usare parole chiave legate all'atmosfera: Amélie (per Jeunet), Pulp (per Tarantino), Gotico (per Burton), Codice Verde (per Matrix) o Euphoria (per lo stile neon moderno).
+
+ovviamente ricreando tutto a modo nostro e integrando queste cose in modo coerente 
+
+un altro esempio è quello della scena dell'arena Harkonnen in Dune 2, un bianco e nero molto particolare: Transform the attached image into a cinematic scene inspired by the brutalist Harkonnen arena aesthetic from Dune: Part Two. Preserve the original subject, composition, geometry, and main visual elements of the reference image, but completely reinterpret the atmosphere and photographic treatment.
+
+Create an alien, brutalist, oppressive visual world: monumental scale, stark architectural forms, vast empty space, minimalist composition, severe geometric shapes, imposing silhouettes, and a sense of ritualistic grandeur.
+
+Use a near-infrared / infrared-inspired cinematic look with an almost monochromatic palette, extremely pale luminous whites and skies, deep black shadows, crushed blacks, desaturated midtones, and very limited visible color. Emphasize intense backlighting, hard directional sunlight, extremely high contrast, stark shadows, blown highlights, deep atmospheric separation, and an eerie otherworldly glow.
+
+The image should feel cold, hostile, surreal, solemn, and monumental rather than beautiful or colorful. Add subtle cinematic film grain, slight optical softness, realistic atmospheric haze, fine particulate dust, and a restrained analog film texture.
+
+Photorealistic cinematography, large-format cinema camera, ultra-wide cinematic framing, dramatic negative space, powerful silhouettes, low-key tonal range, realistic light scattering, subtle lens imperfections, epic scale, premium science-fiction cinematography.
+
+Do not change the identity of the original subject. Do not add unrelated objects. Do not make it look like concept art, digital painting, fantasy artwork, or a video game. Keep it photographic and believable.
+
+
+Prompt 2 
+
+Push the image toward the visual language of the Harkonnen arena: oppressive monumentalism, gigantic scale, brutalist minimalism, almost total absence of color, stark near-infrared tonal separation, black silhouettes against an overexposed pale sky, harsh sunlight, alien atmosphere, ritualistic stillness, severe symmetry, intimidating emptiness, and an overwhelming sense of power and scale.
+
+Make the image feel as though it were photographed on Giedi Prime using an experimental infrared cinema process: skin, surfaces, vegetation, architecture, and atmosphere rendered in unnatural pale tones while shadows become almost pure black. Keep the result grounded in realistic photography, not stylized illustration.
+
+
+
+poi ordinare in una categoria una serie di effetti comic
+
+Per creare una categoria dedicata al mondo dei fumetti, non basta lavorare solo sui colori come nel cinema, ma bisogna combinare palette cromatiche, contrasti di luce/ombra e texture grafiche (come retinature, contorni inchiostrati e grana della carta).
+Ecco una carrellata di filtri ed estetiche riconoscibili, divisi per scuola fumettistica e stili iconici:
+
+1. Grandi Tradizioni del Fumetto
+
+• Manga Classico (Bianco e Nero Retinato). Contrasto altissimo che trasforma i grigi in bianco puro, nero pieno o retini a puntini (screentone). Aggiunge linee di contorno sottili e pulite, perfette per ritratti espressivi.
+• Comics Americani Golden/Silver Age (Pop Art). Colori primari molto accesi (rosso, giallo, blu ciano), contorni neri spessi e una leggera texture a puntini Ben-Day su fondo carta leggermente ingiallita. Ideale per foto pop e divertenti.
+• Bande Dessinée / Linea Chiara (Stile Tintin). Colori piatti e luminosi senza sfumature pesanti, ombre minime e contorni neri sottili e uniformi. Dà alla foto un aspetto pulito, illustrativo ed europeo.
+• Fumetto Bonelli (Stile Dylan Dog / Tex). Bianco e nero drammatico giocato su forti chiaroscuri, tratteggi incrociati nelle ombre e neri profondo inchiostro. Molto efficace per foto notturne o ritratti intensi.
+
+2. Stili Visivi e Autoriali Iconici
+
+• Sin City / Noir Estremo (Frank Miller). Bianco e nero brutale, quasi privo di toni medi, con un solo colore isolato (es. rosso acceso, giallo o blu) che spicca su tutto il resto. Trasforma qualsiasi scatto urbano in una tavola noir.
+• Spider-Verse (Pop Urbano / Glitch). Colori vibranti con aberrazione cromatica (bordi leggermente sdoppiati in rosso e ciano), mezzitoni a puntini grandi nelle ombre e linee d'azione. Perfetto per foto dinamiche e street photography.
+• Graphic Novel Acquerellata. Riduce la nitidezza dei dettagli creando macchie di colore morbide e trasparenti, con contorni appena accennati a matita o china leggera e texture di carta ruvida.
+• Cyber-Manga / Akira. Palette notturna dominata da rossi neon, blu elettrici e luci al tungsteno molto forti, con ombre nette e un effetto bagliore tipico dell'animazione e dei fumetti sci-fi anni '80/'90.
+• Stile Mignola / Hellboy. Ombre vastissime e completamente nere che inghiottono gran parte dell'immagine, lasciando emergere solo pochi dettagli illuminati da colori terrosi, rossi cupi e blu freddi.
+
+3. Effetti Carta e Stampa (Per il tocco finale)
+
+• Carta Giornale / Pulp. Desatura leggermente i colori, alza i neri verso il grigio scuro e sovrappone la trama porosa della carta economica stampata male (con leggere sbavature di colore fuori dai bordi).
+• Webtoon Moderno. Colori molto luminosi e puliti, sfumature morbide (gradienti digitali), luci diffuse e pelle levigata, pensato per dare un aspetto digitale e contemporaneo ai ritratti.
+Consiglio per l'interfaccia utente:
+A differenza dei filtri cinematografici, nei filtri fumetto è utilissimo aggiungere uno slider secondario (oltre all'intensità generale) chiamato "Spessore Tratto" o "Retino", così l'utente può decidere quanto rendere la foto simile a un disegno oppure mantenere più dettagli fotografici.
+Se vuoi approfondire, posso aiutarti a:
+• Definire i parametri tecnici (soglie, posterizzazione, rilevamento bordi) per programmare questi filtri
+• Creare una struttura completa dei menu che unisca Cinema, Fumetti e gli altri effetti della tua app
+Quale aspetto preferisci esplorare?
+
+
+Per la categoria Poster, l'obiettivo cambia rispetto al cinema e ai fumetti: qui l'utente vuole trasformare una foto in un oggetto grafico d'impatto, pronto per essere stampato o condiviso come locandina.
+Per far funzionare questi filtri, occorre combinare palette cromatiche limitate (spesso a 2, 3 o 4 colori), alto contrasto, texture di stampa (serigrafia, risograph, carta piegata) ed eventualmente cornici o griglie grafiche.
+Ecco una carrellata di filtri riconoscibili per la categoria Poster:
+
+1. Stili Iconici e Storici
+
+• Hope / Obama (Pop Politico). Riduce l'immagine a 4 colori piatti ad altissimo contrasto: blu scuro per le ombre, rosso acceso per i mezzitoni, azzurro chiaro e beige crema per le luci. Ideale per ritratti frontali.
+• Serigrafia Pop Art (Stile Warhol). Trasforma la foto in una stampa serigrafica con ombre nere molto marcate e campiture di colori fluo o acidi (fucsia, giallo limone, ciano) leggermente sfalsate tra loro.
+• Costruttivismo / Propaganda. Palette rigorosamente limitata a rosso mattone, nero carbone e bianco sporco (carta avorio), con contrasto netto, ombre geometriche e grana ruvida da stampa d'epoca.
+• Art Nouveau / Stile Mucha. Colori pastello caldi e dorati (ocra, verde salvia, rosa antico), contorni morbidi e luminosi e un'atmosfera decorativa ed elegante.
+
+2. Musica, Concerti e Cultura Pop
+
+• Poster Punk / Zine Fotocopiata. Bianco e nero sporco, estremizzato come una fotocopia ad alto contrasto (effetto threshold), con grana pesante, graffi e imperfezioni tipiche dei volantini underground anni '70/'80.
+• Psichedelico Anni '60 (Rock Poster). Colori complementari vibranti e saturi (viola intenso, arancione fluo, verde lime) che vibrano l'uno contro l'altro, con sfumature liquide e contorni morbidi.
+• Locandina Film Anni '80 (Stile Struzan). Colori ricchi e pittorici, bagliori caldi intorno alle luci (effetto airbrush / aerografo), blu notte profondo e arancioni dorati.
+• Brutalismo / Rave Flyer. Colori acidi su sfondo nero o grigio cemento, alto contrasto, effetto scansione o stampa termica da scontrino e nitidezza spinta all'estremo.
+
+3. Tecniche di Stampa e Texture
+
+• Risograph (Stampa Riso). Simula la celebre stampa ecologica giapponese con 2 o 3 inchiostri sovrapposti (es. rosa fluo e blu teal), dove i colori si mescolano creando una grana puntinata organica e piccole imperfezioni di registro.
+• Duotone / Bicromia Spotify. Mappa le ombre su un colore scuro (es. blu notte o viola scuro) e le luci su un colore brillante (es. verde fluo, giallo o corallo), creando un look moderno e musicale.
+• Billboard / Carta Affissa. Applica un leggero sbiadimento da esposizione al sole e sovrappone la texture realistica di pieghe della carta, bolle d'aria e piccoli strappi tipici dei manifesti incollati sui muri delle città.
+• Minimal Svizzero. Desatura lo sfondo rendendolo neutro o monocromatico, aumenta la nitidezza del soggetto principale e aggiunge una griglia grafica pulita o bordi bianchi asimmetrici.
+Consiglio per l'interfaccia utente:
+Nella categoria Poster, l'utente apprezza moltissimo la possibilità di aggiungere un bordo bianco (stile locandina o passepartout) con un semplice pulsante on/off, oppure di cambiare rapidamente la combinazione di colori (es. passare da Rosso/Blu a Giallo/Viola nello stesso stile serigrafico) tramite piccoli pallini colorati sotto il filtro.
+Se stai progettando l'intera architettura dell'app, posso aiutarti a:
+• Definire i controlli extra (es. texture carta, bordi, livelli di posterizzazione) per rendere questi filtri personalizzabili
+• Esplorare un'altra categoria visiva (come Pittura, Vintage/Analogico o Sci-Fi/Glitch)
+Come preferisci procedere?
+
+
+Per rendere la categoria Poster davvero completa e professionale, conviene pensarla come un vero studio di stampa e grafica. Oltre ai filtri puramente cromatici già visti, puoi introdurre effetti che lavorano sulla composizione spaziale, sulla scomposizione dell'immagine, sulle tecniche di incisione e sui supporti fisici.
+Ecco una selezione avanzata di effetti poster molto più ricchi e strutturati, divisi per approccio creativo:
+
+1. Tecniche Grafiche e di Stampa Avanzate
+
+• Xilografia / Linoleografia (Woodcut). Trasforma la foto in un'incisione su legno o linoleum. Elimina tutte le sfumature sostituendole con intagli direzionali (linee spesse e irregolari che seguono i volumi del soggetto) e campiture piene in nero o inchiostro colorato su carta avorio.
+• Halftone Tipografico (Mezzitoni a Righe o Cerchi). Invece dei classici puntini piccoli da fumetto, ricostruisce l'intera immagine tramite linee parallele che si ispessiscono nelle zone d'ombra (effetto stampa bancaria o incisione moderna) oppure tramite grandi cerchi concentrici.
+• Cianotipia (Blueprint). Simula l'antica tecnica fotografica al ferro. Trasforma l'immagine in un blu di Prussia intenso con alte luci bianco gesso e bordi leggermente irregolari come se l'emulsione fosse stata stesa a pennello su carta cotone.
+• Stampa Letterpress / Tipografica. Riduce la foto a 2 colori netti e aggiunge un effetto rilievo/incisione (ombra interna sottile lungo i bordi del colore) che fa sembrare l'inchiostro pressato fisicamente dentro un cartoncino spesso e poroso.
+• Stampa Termica / Scontrino (Receipt Print). Rende l'immagine monocromatica e granulosa, composta da micro-punti neri o blu su carta termica lucida, con leggere bande orizzontali di scorrimento e bordo seghettato.
+
+2. Scomposizione e Grafica Moderna (Layout & Design)
+
+• Brutalismo / Acid Graphix. Combina una posterizzazione estrema con effetto mappa termica (Thermal / Infrared), inversione parziale dei negativi, nitidezza metallica e piccoli elementi tecnici (mirini, codici a barre, griglie).
+• Collage Dadaista / Ritaglio Carta. Scompone la foto isolando il soggetto principale con un bordo bianco frastagliato (effetto strappo manuale) e lo sovrappone a uno sfondo texturizzato (carta da pacchi, ritagli di giornale o tinta unita a contrasto) con una leggera ombra portata.
+• Poster Svizzero / Bauhaus. Taglia e riorganizza l'immagine all'interno di forme geometriche rigide (cerchi, bande diagonali, griglie modulari), alternando zone in bianco e nero ad alto contrasto con blocchi di colore pieno (rosso primario, giallo, blu).
+• Glitch / Scanline CRT. Simula un manifesto fotografato da un vecchio monitor a tubo catodico, con linee di scansione orizzontali marcate, slittamento dei canali RGB e distorsione delle bande luminose.
+• Griglia Warhol / Multi-scatto. Divide il quadro in una griglia 2x2 o 3x3, ripetendo la stessa foto con combinazioni di colori pop diverse in ogni riquadro (es. giallo/viola, ciano/rosso, verde/arancio).
+
+3. Estetiche Storiche e Culturali Specifiche
+
+• Manifesto Turistico Vintage (Anni '30 - '50). Riduce i dettagli fotografici trasformandoli in campiture pittoriche semplificate (effetto gouache/tempera), con colori caldi e solari, ombre blu oltremare e sfumature morbide nei cieli.
+• Cinema Polacco (Polish Poster School). Unisce alto contrasto, colori scuri e drammatici (nero, rosso sangue, verde acido, ocra) a una forte texture pittorica/gessosa che rende i contorni nervosi ed espressivi.
+• Locandina Giapponese (Showa Era). Colori leggermente sbiaditi da stampa offset anni '70, forte predominanza di rossi vermiglio, blu indaco e nero, con texture di carta fibrosa Washi e margini asimmetrici.
+• Vaporwave / Retrowave Poster. Trasforma lo sfondo in un tramonto a bande orizzontali neon (magenta, arancio, viola) su cielo stellato o griglia prospettica anni '80, dando al soggetto riflessi cromatici ciano e rosa.
+
+4. Elementi Strutturali da abbinare ai filtri (Il vero salto di qualità)
+
+Per rendere i filtri Poster davvero completi e diversi da un semplice filtro fotografico, puoi associare a ciascuno 3 livelli combinabili che l'utente può attivare o regolare:
+1. Livello Colore / Stampa: La palette (es. Risograph, Serigrafia, Cianotipia).
+2. Livello Supporto (Overlay): La fisica della carta (es. Carta piegata in 4, Manifesto strappato sul muro, Plastica lucida con riflessi, Cartone riciclato).
+3. Livello Cornice / Impaginazione: Un bordo grafico automatico (es. Margine bianco stile galleria d'arte, Bordo nero con tacche di taglio tipografiche, Fascia inferiore stile locandina festival).
+Se vuoi trasformare queste idee in specifiche pronte per lo sviluppo, possiamo:
+• Creare una tabella tecnica con i passaggi di elaborazione immagine (es. blur -> threshold -> gradient map -> blend mode) per replicare questi effetti via codice o shader
+• Progettare il sistema di controlli UI (slider e preset rapidi) per far personalizzare ogni poster all'utente senza complicare l'interfaccia
+Quale direzione preferisci?
+
+Per dare una risposta chiara e pratica, dividiamo i due argomenti: prima vediamo come declinare la cianotipia in più varianti interessanti e poi capiamo esattamente dove posizionare sia la cianotipia che l'aberrazione cromatica nell'architettura della tua app.
+
+1. I diversi tipi di Cianotipia (Varianti creative)
+
+La cianotipia non è solo "foto blu". Nella camera oscura analogica esistono diverse tecniche di viraggio (toning) e sviluppo che puoi trasformare in altrettanti filtri o varianti colore:
+• Cianotipia Classica (Blu di Prussia): Il risultato tradizionale. Ombre blu intenso e profondo, alte luci bianco carta e texture fibrosa con bordi irregolari a pennello.
+• Cianotipia Virata al Tè (Tea-Toned): Nella realtà, immergere la stampa nel tè nero macchia la carta di beige caldo e rende il blu più scuro e violaceo. Ottima per un effetto antico e botanico.
+• Cianotipia al Caffè / Seppia (Coffee-Toned): Sostituisce il blu freddo con toni marrone scuro, bruciato e ambra, mantenendo però il contrasto chimico tipico del processo.
+• Cianotipia Solare / Sovraesposta (Solarized): Simula un'esposizione lunghissima al sole. I neri diventano metallici, quasi grigio-argentati o bronzo, mentre i mezzitoni restano blu polvere.
+• Cianotipia Doppia / Bicromia (Duotone Cyanotype): Combina due passaggi chimici (es. blu ciano nelle ombre e giallo ocra o rosso mattone nei mezzitoni) per un risultato molto artistico.
+
+2. Dove inserire la Cianotipia e l'Aberrazione Cromatica?
+
+Per non confondere l'utente, la regola d'oro è posizionare ogni effetto in base all'intento creativo di chi lo cerca.
+
+Dove mettere la Cianotipia
+
+La cianotipia sta a cavallo tra fotografia analogica e stampa artistica. Hai due opzioni ideali:
+• Categoria "Vintage / Analogico" (Scelta principale): È il suo posto naturale insieme a Pellicole scadute, Polaroid, Seppia e Camera Oscura, perché è a tutti gli effetti un antico processo fotografico chimico.
+• Categoria "Poster / Stampa" (Come variante grafica): Se la presenti con bordi pennellati, carta cotone evidente e alto contrasto grafico, funziona benissimo anche tra le tecniche di stampa (come abbiamo visto prima insieme a Risograph e Xilografia).
+
+Dove mettere l'Aberrazione Cromatica
+
+L'aberrazione cromatica (lo sdoppiamento dei canali Rosso, Verde e Blu sui bordi) non è un filtro colore, ma una distorsione ottica o digitale. Va gestita in due modi diversi a seconda di come la strutturi:
+• Categoria "Glitch / Distorsioni" (o "Creativi / Sci-Fi"): Se l'effetto è marcato e evidente, va messo insieme a VHS, Scanline, Effetto Prisma, Specchio e Sfocatura radiale. È lì che gli utenti cercano effetti ottici ed elettronici.
+• Come "Ingrediente" dentro altri filtri: Spesso l'aberrazione cromatica dà il meglio di sé se inserita in piccola dose dentro altri preset. Ad esempio, è fondamentale per far funzionare i filtri Spider-Verse (Fumetti), Cyberpunk / Euphoria (Cinema) e Rave / CRT (Poster).
+• Nella sezione "Regolazioni / Ottica" (come strumento): Se invece è uno slider continuo (da 0 a 100) che l'utente può applicare a qualsiasi foto, il posto giusto è accanto a Vignettatura, Grana e Nitidezza.
+Consiglio pratico:
+Se vuoi evitare duplicati nel menu principale, metti la Cianotipia in Analogico / Camera Oscura (con 4-5 pallini colore sotto per scegliere tra Classica, Tè, Caffè, Solare) e metti l'Aberrazione Cromatica in Glitch / Ottica (magari con varianti come RGB Shift, Anaglifo 3D, Lente Difettosa).
+Se stai disegnando l'albero completo delle categorie dell'app, posso aiutarti a:
+• Creare una mappa completa di tutte le categorie (Cinema, Fumetti, Poster, Analogico, Glitch, ecc.) per bilanciare il numero di filtri in ogni sezione
+• Definire quali effetti funzionano meglio come preset chiusi e quali invece convengono come strumenti regolabili (slider)
+Quale ti è più utile adesso?
+
+
+Poi anche una categoria di effetti specchio o prospettici e illusini ottiche 
+
+MASTER PROMPT — TELEPHOTO COMPRESSION / GIANT SUN & MOON
+
+Use the two provided images as strict visual source references to create a single final photorealistic photograph.
+
+INPUT:
+- Photo A = Main Subject: use this image to extract the primary subject. The subject may be a person, animal, car, building, object, or any other main element.
+- Photo B = Sun/Moon and Environment: use this image as the visual reference for the Sun or Moon, including its apparent position, brightness, color, atmosphere, and, when useful, the surrounding landscape, sky, horizon, and environmental conditions.
+
+OBJECTIVE:
+Create a new image that looks as if it were genuinely captured in a single photographic exposure using an approximately 600mm super-telephoto lens, with very strong perspective compression.
+
+The final image must create the visual impression that the subject and the Sun/Moon, despite being physically very far apart, appear to occupy almost the same depth plane. The Sun/Moon should therefore look extremely large, dominant, and optically very close to the subject, as in real photographs taken with extremely long focal lengths.
+
+Do NOT achieve this effect merely by digitally enlarging the Sun/Moon. The scene must be constructed so that the enormous apparent size of the celestial body is perceived as the natural result of telephoto perspective compression and long-lens optics.
+
+COMPOSITION:
+Precisely extract and integrate the subject from Photo A while preserving:
+- proportions
+- silhouette
+- posture
+- distinctive details
+- textures
+- facial features or surface characteristics
+- hair, fur, edges, and contours
+- clothing and materials
+- natural perspective
+
+Place the subject prominently in the foreground with a natural cinematic composition, preferably following the rule of thirds rather than automatically centering the subject.
+
+Maintain a realistic subject scale consistent with a portrait or telephoto photograph. Show as much of the subject as naturally available from Photo A without unnecessary cropping, deformation, or reinterpretation.
+
+GIANT SUN / MOON:
+Use the actual Sun or Moon appearance from Photo B as the primary visual reference and recreate it in the final scene.
+
+The celestial body should:
+- appear extremely large relative to the subject
+- look optically close to the subject
+- be positioned behind the subject or immediately adjacent to the subject's silhouette
+- dominate the composition
+- retain believable shape, brightness, texture, and color
+- preserve the characteristic appearance of the Sun or Moon visible in Photo B
+
+For the SUN:
+Use warm, intense backlighting coming from directly behind the subject, with realistic exposure and the possibility of a dark silhouette or strong backlight.
+
+For the MOON:
+Use cool, natural moonlight appropriate to a night or twilight scene, maintaining realistic lunar surface detail and a believable nocturnal atmosphere.
+
+TELEPHOTO PERSPECTIVE COMPRESSION:
+Explicitly recreate the optical appearance of a full-frame 600mm super-telephoto lens.
+
+The image should exhibit:
+- extremely compressed perspective
+- dramatically reduced apparent distance between subject and Sun/Moon
+- a background that appears optically pulled toward the subject
+- very little of the exaggerated depth typical of wide-angle lenses
+- distant elements appearing unusually large and close
+- natural subject-background separation
+- realistic depth of field and blur appropriate for an extreme telephoto lens
+
+The final result should look as though the photographer physically moved far away from the subject and used a very long focal length, rather than creating an obvious digital composite.
+
+LIGHTING:
+Adapt the subject's lighting to the position of the Sun/Moon.
+
+When the celestial body is directly behind the subject:
+- the subject should appear primarily as a silhouette or be strongly backlit
+- the edges of the subject should receive a realistic rim light
+- the rim-light color should match the light emitted by the Sun/Moon
+- subtle highlights and reflections on skin, hair, fur, metal, glass, or other surfaces must be physically consistent with the backlight
+- there must be no artificial outline, cutout halo, or lighting coming from an incorrect direction
+
+Lighting direction, shadows, color temperature, exposure, contrast, and reflections must remain physically coherent with the celestial body's position.
+
+PHOTOGRAPHIC INTEGRATION:
+The fusion of the two source images must be invisible.
+
+The subject must look as though it genuinely exists within the environment of Photo B. Seamlessly match:
+- exposure
+- contrast
+- white balance
+- black levels
+- reflections
+- shadows
+- atmospheric haze
+- fog or mist
+- grain
+- sharpness
+- depth
+- optical characteristics
+- subtle lens imperfections
+- vignetting, when appropriate
+- overall lens rendering
+
+The result must NOT look like a collage, obvious photomontage, pasted subject, or generic AI-generated composite.
+
+PHOTOREALISM:
+The final image must be as close as possible to a real professional photograph captured with a high-end camera and a super-telephoto lens.
+
+Preserve:
+- natural detail
+- realistic microcontrast
+- authentic photographic texture
+- fine film/digital grain
+- smooth tonal transitions
+- atmospheric depth
+- realistic bokeh
+- believable colors
+- natural edges and transitions
+
+Avoid completely:
+- painterly appearance
+- illustration
+- CGI
+- 3D rendering
+- fantasy aesthetics
+- excessive sharpening
+- excessive HDR
+- fluorescent or unnatural colors
+- artificial halos
+- visible cutout edges
+- subject deformation
+- duplicated elements
+- unnecessary invented details
+- incorrect anatomy or proportions
+- digital artifacts
+
+FUNDAMENTAL RULE:
+Photographic credibility is the highest priority.
+
+The composition must look physically plausible as a real photograph captured with a real camera, a real super-telephoto lens, and a realistic shooting position.
+
+When necessary, adjust perspective, relative scale, apparent position, and depth relationships of the elements to achieve the requested optical effect, but always preserve believable photographic physics.
+
+Do not change the visual identity or fundamental characteristics of the subject from Photo A, and do not arbitrarily replace the Sun/Moon from Photo B with a generic celestial body.
+
+The final output must be one single photorealistic, cinematic, natural-looking photograph with extremely strong super-telephoto perspective compression and a giant Sun or Moon appearing visually very close to the main subject.
+
+The input images are strict visual references: do not freely reinterpret the primary subjects. Preserve their visual identity and use generation primarily to reconstruct perspective, relative scale, lighting, depth, atmospheric integration, and photographic coherence.
+
+Before finalizing, implicitly verify that the subject, celestial body, lighting, shadows, relative scale, depth, and perspective are all consistent with a believable real photograph captured with an approximately 600mm super-telephoto lens.
+
+
+
+Ecco una enciclopedia completa ed estremamente dettagliata che raccoglie tutti gli effetti presenti in Mirror Lab, le loro varianti avanzate e una serie di illusioni ottiche, distorsioni matematiche e filtri procedurali per espandere ulteriormente le possibilità creative.
+
+1. Simmetrie Classiche e Riflessioni Planari
+
+Questi effetti dividono il piano bidimensionale tramite assi di riflessione, creando continuità o inversioni speculari.
+• Specchio Singolo (Orizzontale / Verticale / Obliquo): Divide l'immagine lungo una retta orientabile a qualsiasi angolo (0°–360°). Parametri: Posizione X/Y del fulcro, angolo di inclinazione dell'asse, inversione lato (destra-su-sinistra o viceversa), sfumatura della linea di giunzione (feathering).
+• Specchio Quadruplo (Kaleido-4 / Quad Mirror): Interseca due assi perpendicolari o inclinati generando quattro quadranti simmetrici. Parametri: Centro di intersezione, angolo relativo tra i due assi (non necessariamente 90°), offset individuale per quadrante, scala globale.
+• Riflessione a Scacchiera (Checkerboard Mirror): Ripete l'immagine in una griglia dove ogni cella adiacente è ribaltata lungo l'asse X o Y, eliminando le cuciture. Parametri: Numero di righe e colonne, rotazione della griglia, sfasamento delle file (brick offset), zoom interno alla cella.
+• Specchio a Specchi Paralleli (Tunnel Infinito): Simula due specchi posti uno di fronte all'altro che riflettono l'immagine all'infinito con leggera prospettiva. Parametri: Distanza tra i piani, fattore di decadimento luminoso (vignettatura interna), angolazione prospettica, numero di iterazioni visibili.
+
+2. Caleidoscopi, Rosoni e Tassellazioni
+
+Basati sulla geometria dei gruppi di simmetria puntuale e piana (gruppi di fregio e cristallografici).
+• Caleidoscopio Radiale Classico: Divide il cerchio in N spicchi triangolari riflessi alternativamente. Parametri: Numero di spicchi/petali (da 3 a 64), rotazione interna del campione (campionamento), rotazione esterna del caleidoscopio, centro X/Y, zoom.
+• Caleidoscopio a Specchi Curvi: I bordi degli spicchi non sono linee rette ma archi di cerchio, creando petali gonfi o affusolati. Parametri: Curvatura dei lati, numero di ripetizioni, torsione radiale, sfalsamento cromatico sui bordi.
+• Tassellazione Triangolare / Esagonale (Wallpaper Groups): Riempie l'intero schermo con triangoli equilateri o esagoni che si riflettono su tutti e tre i lati. Parametri: Dimensione del modulo base, angolo di rotazione della trama, offset di campionamento interno, distorsione prospettica del piano.
+• Mandala Concentrico a Livelli: Sovrappone anelli concentrici, ognuno con un numero diverso di simmetrie radiali. Parametri: Numero di anelli, frequenza di simmetria per ciascun anello, rotazione alternata (oraria/antioraria), bordo di separazione con ombra portata.
+
+3. Geometrie Non-Euclidee, Frattali e Spazio Iperbolico
+
+Effetti basati su trasformazioni conformi, numeri complessi e ricorsione infinita.
+• Effetto Droste (Ricorsione Infinita): L'immagine contiene una copia più piccola di se stessa, che a sua volta ne contiene un'altra, all'infinito. Parametri: Fattore di scala tra i livelli, rotazione per livello, forma della finestra (rettangolo, cerchio, spirale), offset del centro di fuga.
+• Spirale Logaritmica di Droste (Escher Print Gallery): Trasforma l'effetto Droste in una spirale continua senza inizio né fine, dove l'esterno confluisce nell'interno. Parametri: Passo della spirale (tightness), numero di bracci, rotazione globale, torsione del punto centrale (singolarità).
+• Disco di Poincaré (Geometria Iperbolica): Proietta una tassellazione infinita all'interno di un cerchio finito; gli elementi diventano infinitamente piccoli man mano che si avvicinano al bordo. Parametri: Ordine del poligono (p) e numero di poligoni per vertice (q), raggio del disco, traslazione iperbolica (panning nello spazio curvo), curvatura dello spazio.
+• Inversione Circolare (Mobius Transformation): Ribalta l'interno di un cerchio verso l'esterno e viceversa, trasformando linee rette in cerchi. Parametri: Raggio del cerchio di inversione, centro X/Y, numero di poli di attrazione/repulsione, rotazione complessa.
+• Frattale di Julia / Mandelbrot Warp: Usa le equazioni dei frattali complessi come mappa di spostamento per deformare i pixel della foto. Parametri: Costante reale e immaginaria (\(C_x, C_y\)), numero di iterazioni, zoom frattale, soglia di fuga (escape radius).
+
+4. Proiezioni Sferiche, 3D e Pianeti
+
+Mappature che simulano superfici tridimensionali, lenti ottiche e proiezioni cartografiche.
+• Tiny Planet (Proiezione Stereografica): Avvolge l'immagine a 360° attorno a un punto centrale trasformando l'orizzonte in un piccolo pianeta sospeso. Parametri: Fattore di avvolgimento (wrap), altezza dell'orizzonte, rotazione polare, inversione (da pianeta a "Rabbit Hole" / tunnel inverso).
+• Sfera Riflettente / Bolla di Cristallo: Applica l'indice di rifrazione di una sfera di vetro sopra l'immagine, capovolgendo e distorcendo ciò che sta dietro. Parametri: Raggio della sfera, indice di rifrazione (IOR da 1.0 a 2.5), riflesso speculare superficiale, ombra di contatto.
+• Tunnel Cilindrico e Conico 3D: Proietta l'immagine sulle pareti interne di un tunnel infinito in prospettiva. Parametri: Profondità focale, curvatura della traiettoria del tunnel (effetto montagne russe), rotazione delle pareti, nebbia di profondità (depth fog).
+• Lente Fisheye / Grandangolo Estremo: Simula una lente a focale ultra-corta con forte distorsione a barilotto o a cuscinetto. Parametri: Potenza della curvatura (positiva o negativa), raggio di influenza, aberrazione cromatica ai bordi della lente.
+• Cilindro Anamorfico (Illusione Ottica Storica): Distorge l'immagine a ventaglio in modo che appaia irriconoscibile sul piano, ma torni perfettamente proporzionata se vista riflessa su un cilindro metallico posto al centro. Parametri: Raggio del cilindro virtuale, angolo di visione dell'osservatore, altezza della camera, visualizzazione dello specchio cilindrico.
+
+5. Onde, Vortici e Fluidodinamica
+
+Deformazioni continue che simulano movimenti liquidi, turbolenze e campi di forza.
+• Increspature Concentriche (Water Ripples): Genera onde sinusoidali che si irradiano da uno o più punti come gocce nell'acqua. Parametri: Frequenza delle onde, ampiezza (altezza dell'onda), smorzamento con la distanza (decay), fase di animazione, rifrazione luminosa sulle creste.
+• Vortice e Mulinello (Swirl / Twirl): Ruota i pixel attorno a un centro con un angolo che diminuisce verso l'esterno. Parametri: Angolo massimo di torsione, raggio d'azione, curva di decadimento (lineare, esponenziale, elastica), numero di vortici simultanei.
+• Onde Interferenti (Effetto Moiré / Doppia Fenditura): Sovrappone due o più griglie di onde che creano figure di interferenza costruttiva e distruttiva. Parametri: Distanza tra le sorgenti d'onda, frequenza individuale, angolo di sfasamento, modalità di fusione delle creste.
+• Turbolenza Perlin / Simplex Noise: Deforma l'immagine seguendo un campo vettoriale organico simile al fumo o al calore sull'asfalto. Parametri: Scala del rumore (granulosità), ottave di dettaglio, forza dello spostamento X e Y, velocità di evoluzione.
+• Stropicciamento e Piega di Tessuto (Cloth Fold): Simula l'immagine stampata su un telo di seta che cade formando pieghe morbide e ombreggiate. Parametri: Direzione della gravità, numero di pieghe, profondità delle ombre nelle valli, lucentezza del tessuto.
+
+6. Frammentazione, Vetro e Ritagli Geometrici
+
+Effetti che spezzano la continuità dell'immagine in tasselli, schegge o strati sfalsati.
+• Vetro Rotto / Frantumazione (Shatter): Divide l'immagine in poligoni irregolari (diagramma di Voronoi) spostati e ruotati individualmente. Parametri: Numero di frammenti, concentrazione intorno al punto d'impatto, spostamento radiale, rotazione casuale dei pezzi, spessore e riflesso dei bordi di taglio.
+• Ritagli Concentrici Sfalsati (Concentric Shapes): Ritaglia forme geometriche (cerchi, quadrati, esagoni, stelle) l'una dentro l'altra, ruotandole o ridimensionandole. Parametri: Numero di anelli/livelli, forma geometrica, angolo di rotazione progressivo, ombra portata tra uno strato e l'altro per dare effetto rilievo 3D.
+• Persiane Veneziane / Lamelle (Blinds & Slats): Taglia l'immagine in strisce parallele che ruotano su se stesse mostrando il retro o sfalsando il contenuto. Parametri: Numero di lamelle, angolo di inclinazione (0°–180°), spaziatura, ombreggiatura tra le fessure.
+• Spostamento a Scatti (Glitch & Slice Shift): Taglia bande orizzontali o verticali spostandole lateralmente in modo irregolare. Parametri: Frequenza dei tagli, ampiezza massima dello spostamento, separazione dei canali RGB (Red/Green/Blue shift), rumore digitale.
+• Mosaico Dinamico / Pixel Sort: Ordina i pixel lungo righe o colonne in base alla loro luminosità, tonalità o saturazione, creando scie liquide di colore. Parametri: Soglia minima e massima di attivazione, direzione di ordinamento (0°–360°), lunghezza massima della scia, curvatura del percorso.
+
+7. Illusioni Ottiche Percettive e Op-Art (Arte Cinetica)
+
+Filtri progettati specificamente per ingannare il sistema visivo umano, ispirati a Bridget Riley, Victor Vasarely e Akiyoshi Kitaoka.
+• Illusione di Movimento Periferico (Serpenti Rotanti): Crea pattern ad alto contrasto con sequenze specifiche di luminanza (nero-blu-bianco-giallo) che sembrano ruotare continuamente quando l'occhio si muove sull'immagine. Parametri: Contrasto di luminanza, spessore dei bordi asimmetrici, densità della griglia, saturazione dei colori antagonisti.
+• Griglia di Hermann / Scintillio (Hermann Grid): Sovrappone una griglia ad alto contrasto che genera "punti fantasma" grigi o luminosi alle intersezioni che spariscono quando li si fissa direttamente. Parametri: Spessore delle linee, dimensione dei quadrati, colore di sfondo e primo piano, arrotondamento degli incroci.
+• Illusione di Cafè Wall (Muro del Caffè): Sfalsa file di rettangoli chiari e scuri separati da linee sottili; linee perfettamente parallele appaiono fortemente inclinate e convergenti. Parametri: Rapporto di contrasto tra le tessere, spessore e colore della "malta" (linea divisoria), offset di scorrimento delle file.
+• Vortice di Vasarely (Rilievo Illusorio): Deforma una scacchiera o una griglia concentrica per creare l'illusione di una sfera o un cono che sporge tridimensionalmente dallo schermo. Parametri: Raggio della protuberanza, altezza simulata, numero di suddivisioni della griglia, sfumatura di luce direzionale.
+• Anaglifo 3D / Stereogramma (Red-Cyan & Magic Eye): Separa l'immagine in base alla mappa di profondità per visione con occhiali 3D bicolore, oppure nasconde una sagoma 3D dentro una trama ripetitiva (Autostereogramma). Parametri: Separazione parallasse (profondità), frequenza della trama ripetitiva, nitidezza della mappa di profondità.
+• Effetto Mezzatinta / Linee Modulate (Halftone & Engraving): Converte i toni di grigio dell'immagine nello spessore di linee ondulate o punti di dimensione variabile; da vicino sembrano solo righe, da lontano emerge il volto o il soggetto. Parametri: Frequenza delle linee, spessore minimo e massimo del tratto, angolo di inclinazione, ondulazione delle righe.
+
+8. Stili Generativi, Vettoriali e Ottici Avanzati
+
+• Triangolazione Low-Poly (Delaunay): Rileva i bordi dell'immagine e la ricostruisce interamente tramite triangoli piatti colorati con la media cromatica dell'area. Parametri: Densità dei vertici, sensibilità ai contorni, bordi wireframe visibili (colore e spessore), sfumatura interna ai triangoli.
+• Effetto Prisma / Dispersione Spettrale: Simula il passaggio della luce attraverso un prisma di vetro, scomponendo i contorni luminosi nell'intero spettro dell'arcobaleno (non solo RGB). Parametri: Angolo di dispersione, numero di bande spettrali, intensità dei riflessi caustici, sfocatura direzionale.
+• Effetto Kirlian / Aura Elettrica: Estrae i contorni ad alto contrasto e genera scariche elettriche frattali e aloni luminosi attorno ai soggetti. Parametri: Soglia di rilevamento bordi, lunghezza delle scariche, colore dell'aura, intensità del bagliore (bloom).
+• Dithering Artistico (Floyd-Steinberg / Bayer): Riduce la palette colori a pochissime tinte (es. solo bianco e nero) disponendo i pixel in pattern geometrici ordinati per simulare le sfumature. Parametri: Dimensione della matrice, numero di colori nella palette, tipo di algoritmo (ordinato, diffusione d'errore, spirale), contrasto pre-filtro.
+Se vuoi trasformare una di queste idee in realtà, dimmi quale effetto specifico ti incuriosisce di più (ad esempio il Disco di Poincaré, l'Effetto Droste o le Illusioni Op-Art) e posso spiegarti passo dopo passo come ottenerlo combinando i filtri nell'app!
+
+
+effetti ispirati a tutte le forme dell'arte antica, sculture, bassorilievi, pitture medievali, effetto stile giotto, qualunque tipo di artista, per colori o deformazioni di forme, sempre con particolare attenzione a parametri scelti per ciascuna
+
+
+Transform the input image into an authentic Ancient Egyptian wall painting (mural fresco) while preserving the main subject, recognizable features, pose, and overall composition of the original image.
+
+Render the subject in the traditional style of Egyptian tomb and temple art: strict frontal/profile conventions, elegant stylized proportions, simplified anatomical forms, almond-shaped eyes, dark outlined features, symbolic gestures, and hieroglyphic-inspired decorative elements. Use a historically inspired palette of ochre, sand, terracotta, muted red, Egyptian blue, turquoise, black, and gold.
+
+Create the appearance of an aged limestone wall covered with ancient pigment: slightly uneven plaster, faded mineral colors, subtle cracks, weathering, chipped areas, and a naturally distressed archaeological texture. Integrate the subject seamlessly into the mural as though it were painted thousands of years ago.
+
+Use flat, graphic areas of color with crisp dark contours, minimal shading, and highly decorative composition. Add subtle Egyptian motifs such as lotus flowers, papyrus, geometric borders, sun disks, and hieroglyphic symbols where appropriate, without overwhelming the main subject.
+
+The final image should feel like a genuine archaeological Egyptian mural rather than a modern illustration: timeless, ceremonial, symbolic, elegant, and historically inspired.
+
+Bit anni 80
+Prompt (English)
+Transform this image into a bold retro pixel-art poster inspired by 1980s computer graphics, medieval iconography, and risograph printing. Preserve the original composition and recognizable subjects while simplifying them into high-contrast pixel forms. Use only black, vivid red and deep electric blue, with heavy dithering, halftone textures, crisp pixel edges, minimal color palette, strong silhouettes, ornamental geometric background patterns, screen-print imperfections, vintage CRT aesthetic, dramatic composition, graphic design quality, no gradients, no antialiasing, no photorealism, highly detailed despite limited colors.
+
+
+Per ottenere un look ancora più fedele
+Puoi aggiungere:
+1-bit pixel art, Commodore Amiga, MS-DOS graphics, ZX Spectrum aesthetic, Atari ST, medieval woodcut meets pixel art, risograph poster, halftone print, brutalist graphic design, album cover, experimental typography aesthetic (without text), digital folklore, limited palette illustration.
+
+
+Negative Prompt
+photorealistic, watercolor, oil painting, anime, comic, 3D render, CGI, smooth gradients, soft lighting, modern digital painting, HDR, glossy, realistic textures, vibrant rainbow colors, blur, anti-aliasing, text, watermark, logo
+
+
+Transform this image into a 1940s American Art Deco railway poster in the style of Leslie Ragan. Preserve the original composition and recognizable subjects while reinterpreting them as a hand-painted vintage travel poster. Use monumental geometric forms, streamlined industrial design, dramatic low-angle perspective, bold lighting, large atmospheric clouds and steam, muted steel blue, warm cream, ochre and charcoal color palette, subtle painterly brushwork, soft gradients, lithographic print texture, crisp architectural silhouettes, cinematic contrast, elegant realism, Precisionism influence, highly detailed, timeless, museum-quality vintage illustration, no modern digital look, no photorealism, no anime, no 3D rendering.
+
+
+
+1940s WPA poster aesthetic, vintage lithograph, gouache and oil painting, hand-painted commercial illustration, American railroad advertising poster, heroic composition, clean geometric masses, subtle paper grain, aged print, limited color palette, dramatic atmospheric perspective.
+
+
+Negative Prompt
+photorealistic, CGI, 3D render, digital painting, concept art, anime, comic, cel shading, glossy, hyper saturated colors, neon, modern graphic design, vector art, flat illustration, AI artifacts, blurry, oversharpened, text, watermark, logo
+
+
+
+Altri tipi di poster
+
+Use the uploaded image as the CONTENT SOURCE and transform it into a poster in the exact same visual language as the provided reference poster.
+
+IMPORTANT:
+Do not copy the subject, composition, objects, location, or story of the reference poster.
+The uploaded image must remain the actual subject and composition.
+The reference image is ONLY a STYLE REFERENCE.
+
+Preserve the original photograph as faithfully as possible:
+- keep the original subject, pose, environment, perspective, framing and spatial relationships
+- preserve recognizable details and realistic anatomy
+- do not invent unnecessary objects
+- do not radically crop or recompose the image
+- do not turn the photograph into an illustration
+
+Apply the following visual treatment:
+
+A vintage photographic editorial poster, based on a real analog photograph printed on slightly aged warm ivory paper.
+
+The image should remain fundamentally PHOTOREALISTIC, but with the physical appearance of an old printed photograph:
+- muted and desaturated colors
+- warm olive / beige / faded blue color palette
+- slightly yellowed highlights
+- lifted blacks and softer contrast
+- subtle fading and tonal compression
+- fine analog film grain
+- very subtle paper grain
+- extremely subtle halftone / ink-print texture
+- tiny irregularities in ink density
+- slightly softened micro-details
+- restrained sharpness
+- a faint archival / aged-print feeling
+- no glossy digital appearance
+- no modern HDR
+- no excessive clarity
+- no cinematic teal-and-orange grading
+- no strong sepia effect
+
+The final image should feel like a real photograph reproduced as a vintage printed poster, not like digital artwork.
+
+LAYOUT:
+Create a clean vertical poster composition.
+Place the photographic image inside a thin warm off-white / ivory paper border.
+The border should feel physical and slightly imperfect, like an old printed piece of paper.
+Keep the design minimal and photographic.
+No decorative graphics unless they are already present in the source image.
+No text, no logos, no captions, no typography.
+
+SURFACE / PRINT CHARACTER:
+The final result should resemble a scanned vintage print:
+subtle paper fibers, fine grain, tiny tonal irregularities, slightly faded pigments, very mild print misregistration/noise, and gentle color aging.
+These effects must remain subtle and believable.
+
+MOST IMPORTANT:
+Photographic realism first.
+Vintage print treatment second.
+The original image content must remain clearly recognizable.
+
+Avoid:
+digital illustration, painting, drawing, vector art, comic-book style, excessive film effects, excessive grain, strong vignette, heavy sepia, extreme blur, oversharpening, HDR, glossy commercial photography, AI-looking skin, plastic textures, surreal details, altered anatomy, invented objects, excessive color grading, modern graphic-design aesthetics.
+
+Output a polished, minimalist vintage sports/editorial-style photographic poster matching the visual character of the reference image.
+
+
+
+
+Per ottenere una serie coerente:
+
+
+STYLE CONSISTENCY RULE:
+
+Treat the reference poster as a fixed visual style template.
+For every new input image, reproduce the same:
+- paper color
+- border treatment
+- color density
+- saturation level
+- contrast curve
+- grain intensity
+- print texture
+- softness
+- aging level
+- overall visual mood
+
+Do NOT reinterpret the style for each image.
+Do NOT make some images more colorful, cleaner, sharper, darker or more cinematic than others.
+
+The goal is that all generated images look like they belong to the SAME physical collection of vintage posters, photographed and printed using the same process.
+Only the photographic content changes.
+
+Altro tipo di effetto digitale stile film matrix o fantascienza
+
+"A highly abstract, hypnotic generative art animation set against a pure, pitch-black (#000000) void background. The composition features three distinct, concentric circular elements: a thick outer annulus, a slightly thinner middle annulus, and a dense inner circular core. [Modify shapes here if needed]. None of the shapes have solid color fills; instead, they are strictly rendered using a high-density stochastic particle system, resembling heavy digital noise, crisp pixel-stippling, or pointillism. The particles are densely packed but allow micro-gaps of black background to bleed through, giving the shapes jagged, un-anti-aliased outer boundaries. The outer and inner elements are colored in vivid [COLOR 1], while the middle annulus is colored in sharply contrasting [COLOR 2].
+The core animation relies on a continuous, seamless looping rotation driven by an eccentric, offset-axis dynamic. The geometric centers of the three circular forms are intentionally misaligned. As they rotate synchronously, this off-center displacement creates a striking optical illusion of wobbling and pulsating. The apparent thickness of each annulus dynamically shifts—thickening on one hemisphere while simultaneously thinning on the exact opposite hemisphere—simulating the 2D orthographic projection of tilted 3D toroids intersecting a plane. The stippled particle texture must rotate locked onto the geometric masks, moving in unison with the shape distortion. High contrast, sharp optical art style, mesmerizing kinetic movement, 60fps frame rate aesthetic."
+
+But this time the 2 circular shapes should represent a big small eye. In this eye is reflected some moving actions far away from diego armando maradona stadium 
+
+
+Questa iconica maglia da portiere (prodotta da Ennerre / NR per il Napoli a cavallo tra il 1989 e il 1990) si inserisce nel filone del Postmodernismo Grafico applicato allo sportswear, fortemente influenzato dalle correnti visive di fine anni '80.
+I termini e i concetti chiave per definire questo stile grafico includono:
+1. Estetica Memphis Group & Postmodernismo
+ * Geometrie spezzate e motivi a zig-zag: La parte superiore e centrale usa bordature dentellate e forme spigolose che rompono la rigidità delle classiche strisce o blocchi di colore.
+ * Palette cromatica acida e contrastante: L'accostamento tra il viola/magenta di fondo, il verde brillante/ottanio, il nero e i dettagli in giallo acido è un marchio di fabbrica del design postmoderno anni '80, slegato dai colori tradizionali del club.
+2. Geometric Retro-Futurism (Synthwave ante-litteram)
+ * L'effetto lucido del tessuto poliestere/satin abbinato alle linee vettoriali e alle tonalità viola/neon richiama la grafica digitale di prima generazione, affine allo stile retro-futurista e cyberpunk dell'epoca.
+3. "Disruptive" Goalkeeper Pattern
+ * Tra la fine degli anni '80 e l'inizio degli anni '90, le divise da portiere abbandonarono la tinta unita per abbracciare pattern astratti e d'impatto. Questo stile viene definito "disruptive" o abstract geometric paneling, pensato per espandere visivamente la figura del portiere ed evidenziare la presenza tra i pali.
+4. Composizione Totemica / A Scudo
+ * La grande "V" centrale (il classico motivo chevron) che si sviluppa verso il basso con pannelli verticali e una colonna di stelle nere crea una struttura quasi totemica o ad "armatura", che dà un forte senso di verticalità e simmetria al busto.
+> Sintesi: Si definisce come un pattern geometrico-astratto ad alto contrasto in stile Memphis / Retro-Futurista.
+> 
+
+
+filtri futuristici 
+Transform this image into a 1950s retrofuturistic editorial illustration inspired by classic American magazine artwork. Preserve the original composition and recognizable subjects while reimagining them as an optimistic Mid-Century Modern vision of the future. Use clean architectural geometry, streamlined modernist forms, elevated perspective, long geometric shadows, simplified but highly detailed buildings, elegant transportation, balanced composition, crisp outlines, subtle gouache and ink rendering, vintage offset print texture, muted pastel palette with sage green, sky blue, cream, warm gray and soft red accents, bright daylight, optimistic atmosphere, highly detailed, hand-painted commercial illustration, no modern digital aesthetics, no photorealism.
+
+
+Inspired by 1950s Popular Mechanics, Popular Science, General Motors' Futurama, Mid-Century Modern architectural renderings, Googie architecture, retrofuturism, educational book illustration, vintage commercial art, offset lithographic print, clean graphic realism
+
+
+Negative Prompt
+photorealistic, cyberpunk, dystopian, neon lights, CGI, 3D render, anime, comic book, watercolor, oil painting, fantasy, dark atmosphere, grunge, modern skyscrapers, ultra saturated colors, AI artifacts, blurry, text, watermark, logo
+
+Se vuoi ottenere sempre lo stesso linguaggio visivo, il segreto è non chiedere semplicemente uno "stile Dune", ma descrivere in modo preciso le caratteristiche estetiche. In questo modo il risultato sarà coerente anche con immagini molto diverse (calcio, paesaggi, persone, architettura, ecc.).
+
+Ti suggerisco un prompt come questo:
+
+
+---
+
+Prompt (ITA)
+
+> Trasforma questa immagine mantenendo esattamente la stessa inquadratura, prospettiva, composizione, soggetti e posizione di tutti gli elementi. Non aggiungere, eliminare o spostare alcun elemento.
+
+Applica uno stile grafico da manifesto cinematografico minimalista vintage, ispirato alla grafica serigrafica anni '60-'70.
+
+Riduci la palette cromatica mantenendo i colori originali della fotografia, ma semplificandoli in poche tonalità piatte e leggermente desaturate. Non cambiare il colore degli oggetti: il prato deve rimanere verde, il cielo azzurro, le divise nei loro colori originali, ecc.
+
+Aggiungi una leggera texture di carta stampata con grana uniforme e un effetto serigrafico molto fine.
+
+Mantieni tutte le linee, le texture e i dettagli principali della foto, ma semplifica le sfumature eliminando gran parte delle transizioni fotografiche.
+
+Contrasto elevato, ombre pulite, pochissimi colori ben separati.
+
+Aspetto da poster cinematografico premium, elegante e minimale.
+
+Non reinterpretare la scena: deve sembrare la stessa fotografia, soltanto trasformata in un manifesto illustrato.
+
+
+
+
+---
+
+Per ottenere un risultato ancora più coerente, aggiungerei queste istruzioni (sono quelle che spesso fanno la differenza):
+
+> Preserve the exact geometry of the original image.
+
+Preserve the original camera angle and focal length.
+
+Preserve all object proportions.
+
+Do not crop or recompose.
+
+Do not invent details.
+
+Stylize only the rendering, never the composition.
+
+Keep every line and contour in the same position as the source image.
+
+
+
+
+
+---
+
+Se invece vuoi replicare esattamente il linguaggio grafico della locandina di Dune (che è quello che stavamo facendo), userei questo prompt "master":
+
+PROMPT PROMPT PROMPT
+
+ Transform the provided photograph into a minimalist vintage movie poster. Preserve the original composition pixel by pixel: identical framing, perspective, proportions, camera angle and object placement. Do not redesign or reinterpret the scene.
+
+Render the image as a high-end screen print on textured paper with a fine grain. Reduce the image to a limited color palette while preserving the original color identity of every object. Simplify gradients into large flat color areas with subtle tonal transitions. Use strong graphic contrast, clean silhouettes and minimal shading.
+
+Keep the original grass texture, field markings, clothing colors and all important visual details, but express them using only a few carefully selected tones. The result should look like an authentic collectible film poster printed in the 1970s, with elegant minimalism, restrained colors, matte paper texture and subtle print grain.
+
+Stylize the rendering only—never alter the composition.
+
+
+
+Quest'ultimo è quello che userei come base per tutte le immagini del progetto, perché definisce con precisione il tipo di trasformazione senza lasciare al modello la libertà di ricomporre la scena.
+
+altra serie di poster neo-noir
+Rosso 
+
+Restyle this photo as a neo-noir cinematic illustration: 
+dark teal-blue and desaturated palette contrasted with a 
+single vivid red/orange light source, dramatic rim lighting 
+and backlighting, subject rendered mostly as a strong 
+silhouette, atmospheric haze in the background for depth, 
+painterly digital illustration with crisp ink-like linework 
+and dense fine detail on textures, subtle film grain, 
+high contrast, moody comic-book concept art look. 
+Keep the original composition and pose.
+
+
+Azzurro 
+
+Restyle this photo as a neo-noir cinematic illustration: 
+dark charcoal-grey and desaturated palette contrasted with 
+a single vivid cyan/electric-blue light source, dramatic 
+rim lighting and backlighting, subject rendered mostly as 
+a strong silhouette, atmospheric haze in the background for 
+depth, painterly digital illustration with crisp ink-like 
+linework and dense fine detail on textures, subtle film grain, 
+high contrast, moody comic-book concept art look. 
+Keep the original composition and pose.
+
+Ottanio vegetale 
+
+Restyle this photo as a neo-noir cinematic illustration: 
+dark charcoal and desaturated industrial palette contrasted 
+with a single vivid petrol-green / deep emerald light source, 
+dramatic rim lighting and backlighting, subject rendered 
+mostly as a strong silhouette, atmospheric haze in the 
+background for depth. Add subtle dystopian jungle elements 
+encroaching on the urban structure: creeping vines and roots 
+wrapping around steel beams and building edges, faint 
+bioluminescent moss glowing in the shadows, cracked concrete 
+with vegetation breaking through, decayed overgrowth 
+suggesting nature reclaiming the city. Painterly digital 
+illustration with crisp ink-like linework and dense fine 
+detail on textures, subtle film grain, high contrast, moody 
+comic-book concept art look. Keep the original composition 
+and pose.
+
+
+Viola tossico 
+Restyle this photo as a neo-noir cinematic illustration: 
+dark charcoal and desaturated industrial palette contrasted 
+with a single vivid toxic violet / ultraviolet light source, 
+dramatic rim lighting and backlighting, subject rendered 
+mostly as a strong silhouette, atmospheric haze in the 
+background for depth, faint chemical mist/smog drifting 
+between buildings. Painterly digital illustration with crisp 
+ink-like linework and dense fine detail on textures, subtle 
+film grain, high contrast, moody comic-book concept art look. 
+Keep the original composition and pose.
+
+Viola tossico variante steampunk 
+Restyle this photo as a neo-noir cinematic illustration: 
+dark charcoal and desaturated industrial palette contrasted 
+with a single vivid toxic violet / ultraviolet light source, 
+dramatic rim lighting and backlighting, subject rendered 
+mostly as a strong silhouette, atmospheric haze in the 
+background for depth, faint chemical mist/smog drifting 
+between buildings. Add subtle steampunk details: exposed 
+brass gears and pressure valves along the metal structures, 
+riveted iron plating, small steam vents releasing thin 
+vapor trails, weathered copper pipes running along the 
+architecture, Victorian-industrial machinery integrated 
+into the cityscape. Painterly digital illustration with 
+crisp ink-like linework and dense fine detail on textures, 
+subtle film grain, high contrast, moody comic-book concept 
+art look. Keep the original composition and pose.
+
+Giallo cyberpunk 
+Restyle this photo as a neo-noir cinematic illustration: 
+dark charcoal and desaturated urban palette contrasted with 
+a single vivid neon-yellow / amber light source, dramatic 
+rim lighting and backlighting, subject rendered mostly as a 
+strong silhouette, atmospheric haze and light drizzle in the 
+background for depth. Add subtle cyberpunk details: flickering 
+holographic ad fragments reflecting off wet surfaces, thin 
+fiber-optic cables and exposed circuitry along the structure, 
+faint digital glitch distortion at the edges of the light, 
+small drone lights in the distant skyline, glowing yellow 
+signage bleeding into the fog. Painterly digital illustration 
+with crisp ink-like linework and dense fine detail on textures, 
+subtle film grain, high contrast, moody comic-book concept 
+art look. Keep the original composition and pose.
+
+Variante spazi liminali
+
+Restyle this photo as an unsettling liminal-space illustration: 
+flat, shadowless fluorescent lighting in a sickly washed-out 
+yellow-beige tone, evenly lit with no dramatic contrast or 
+strong silhouettes, colors slightly desaturated and jaundiced 
+as if under old sodium/fluorescent bulbs. Empty, symmetrical, 
+repetitive architecture, subtle wrongness in scale or perspective, 
+faint analog noise / VHS-like grain, slightly overexposed and 
+hazy as if from an old disposable camera. No visible light source, 
+no dramatic shadows, an uncanny stillness and silence. Keep the 
+original composition and pose, but drain the scene of cinematic 
+drama in favor of quiet, eerie flatness.
+
+Variante beksinski 
+
+Restyle this photo in the style of dystopian surrealist 
+painting reminiscent of Zdzisław Beksiński: a desolate, 
+apocalyptic atmosphere rendered in muted rust, bone, and 
+sepia tones, hazy and decayed like an old oil painting. 
+Architecture and structures appear organic and skeletal, 
+as if fused with flesh, bone, or fossilized remains — 
+melting, twisted, or biomechanical forms replacing clean 
+industrial edges. Thick atmospheric fog and dim, diffuse 
+light with no clear source, giving a nightmarish, dreamlike 
+mood. Meticulous, hyper-detailed painterly texture despite 
+the abstract and unsettling forms, subtle grotesque details 
+emerging gradually on closer inspection. Somber, funereal, 
+haunting stillness. Keep the original composition and pose, 
+but transform the material and architectural language into 
+this decayed organic-surrealist aesthetic.
+
+Variante sin city 
+Restyle this photo in the style of Frank Miller's Sin City: 
+pure high-contrast black and white, ink-heavy chiaroscuro 
+with stark pooling shadows and blown-out highlights, no 
+midtones. Isolate a single element (or a single accent) in 
+vivid color — [choose: blood-red / electric-blue / acid-yellow] 
+— while everything else remains pure black, white, and grey. 
+Bold graphic silhouettes, heavy black shapes, rain-streaked 
+or noir urban texture, hard-edged linework like a comic-book 
+woodcut. Dramatic, theatrical, almost stage-lit composition. 
+Keep the original pose and composition.
+
+Variante brutalista 
+
+Restyle this photo as monochrome architectural photography 
+in the spirit of French Brutalism and Italian Rationalism: 
+pure black, grey, and white palette with no color accents. 
+Emphasize raw poured concrete (béton brut) texture, massive 
+geometric volumes, monumental scale, and stark rectilinear 
+or arched forms. Strong directional sunlight creating hard, 
+graphic shadows — deep black voids against flat grey and 
+white surfaces, stripped-down ornamentation, austere and 
+authoritarian stillness. Clean architectural photography 
+composition, sharp focus, high contrast like a 1970s film 
+still (reminiscent of "Il Conformista" cinematography), 
+cold and impersonal mood, subject reduced to a graphic 
+silhouette against monumental structure. Keep the original 
+composition and pose.
+
+Variante giapponese 
+
+Restyle this photo as a traditional Japanese ukiyo-e woodblock 
+print, nocturnal scene: deep indigo (ai) as the dominant color, 
+rendered in flat, unshaded areas of color rather than painterly 
+gradients — no realistic light-and-shadow modeling. Bold, clean 
+black outlines around every form, like hand-carved woodblock 
+linework. Mist and fog represented as soft horizontal bokashi 
+gradient bands layered across the composition, subtle color 
+bleed at the edges as in traditional block printing. Simplified, 
+stylized forms with decorative pattern-like detail instead of 
+photographic texture — architecture and structures reduced to 
+elegant flat geometric shapes. Warm paper-grain texture, subtle 
+registration imperfections typical of hand-pulled prints, muted 
+accent of pale gold or soft white for moonlight/lantern glow. 
+Keep the original composition and pose, but flatten all forms 
+into this graphic woodblock-print language.
+
+Variante liberty art nouveau
+
+Restyle this photo in the Art Nouveau / Liberty style: 
+flowing organic whiplash linework replacing hard industrial 
+edges, decorative botanical and floral motifs integrated into 
+the architecture, stained-glass color quality with jewel tones 
+(peacock green, gold, soft violet), elegant curvilinear 
+silhouettes, ornamental framing borders. Keep the original 
+composition and pose, translated into this decorative organic 
+graphic language.
+
+
+Variante neoliberty italiano 
+Restyle the architecture in this photo in the Italian 
+Neo-Liberty style: medieval-inspired tower forms reinterpreted 
+in modern materials, corbelled upper floors that flare outward 
+like a castle turret, dark stone and muted brick tones, a 
+brooding fortress-like silhouette breaking from clean rationalist 
+geometry. Keep the original composition and pose.
+
+
+Variante vittoriana 
+
+Restyle this photo in a Victorian Gothic atmosphere: dense 
+fog lit by warm gaslamp amber, wrought-iron railings and 
+ornate ironwork, dark soot-stained brick and stone, gargoyles 
+and pointed Gothic arches, sepia-tinted low light, a Dickensian 
+London mood. Keep the original composition and pose.
+
+Variante barocco 
+
+Restyle this photo in a Baroque painterly style: extreme 
+tenebrism chiaroscuro in the manner of Caravaggio, a single 
+dramatic light source carving the subject out of deep 
+darkness, rich gold and deep crimson accents, dynamic diagonal 
+composition, theatrical and ornate drama, thick oil-painting 
+brushwork. Keep the original composition and pose.
+
+
+Variante futurista 
+
+Restyle this photo in the Italian Futurist style: dynamic 
+motion lines and fractured, multiplied silhouettes suggesting 
+speed and movement, fragmented geometric planes, aggressive 
+angular energy, metallic mechanical tones, a sense of violent 
+kinetic force in a static image. Keep the original pose as 
+the base but render it as if caught mid-motion, fractured 
+across space.
+
+
+Variante art decò 
+
+Restyle this photo in the Art Deco style: bold geometric 
+symmetry, sunburst and chevron patterns, stepped ziggurat 
+building forms, a palette of black, gold, and chrome, sleek 
+polished surfaces, elegant streamlined silhouettes, 1920s-30s 
+skyscraper glamour. Keep the original composition and pose.
+
+Variante espressionismo tedesco 
+
+Restyle this photo in the style of 1920s German Expressionist 
+cinema (Caligari, Nosferatu): shadows painted directly onto 
+surfaces as sharp geometric shapes, independent of any real 
+light source, warped and tilted architecture with impossible 
+angles, jagged unnatural silhouettes, stark black-white-grey 
+contrast with theatrical, artificial stage-set quality. 
+Distorted perspective, unsettling asymmetry, expressionist 
+psychological dread. Keep the original composition and pose.
+
+Vaporwave 
+
+Restyle this photo in a Vaporwave aesthetic: gradient sky in 
+hot pink/magenta blending into cyan, retro 1980s synthwave 
+color grading, glowing neon grid lines on the ground plane, 
+chrome and marble statue textures, subtle VHS scan-line 
+distortion and chromatic aberration, dreamy nostalgic 
+artificiality, sunset-glow haze. Keep the original composition 
+and pose.
+
+Costruttivismo tedesco Bauhaus
+
+Restyle this photo as a Soviet Constructivist / Bauhaus 
+propaganda poster: bold flat red, black, and white palette 
+only, aggressive diagonal composition, geometric shapes 
+(circles, triangles, bold diagonal bars) overlaying the 
+image, strong graphic typography-inspired framing elements, 
+reduced to essential angular forms, stark political-poster 
+energy. Keep the original composition and pose, simplified 
+into hard geometric graphic shapes.
+
+Solarpunk 
+
+Restyle this photo as a Solarpunk illustration: bright warm 
+daylight instead of night, lush green vegetation integrated 
+harmoniously with clean architecture, solar panels and organic 
+greenhouse structures, vines and gardens growing naturally 
+alongside (not decaying) buildings, optimistic golden-hour 
+lighting, vibrant and hopeful color palette, a sense of 
+technology and nature in balance. Keep the original composition 
+and pose, but shift the entire mood from noir threat to 
+hopeful renewal.
+
+Stile de Chirico 
+
+Restyle this photo in the style of Giorgio de Chirico's 
+metaphysical painting: empty, eerily silent architecture 
+under a flat, ambiguous afternoon light with no clear source, 
+long unnaturally elongated shadows cast at impossible angles, 
+warm ochre, terracotta, and dusty rose color palette against 
+deep blue-violet shadow tones. Exaggerated, dreamlike linear 
+perspective with arcades and colonnades receding into 
+uncertain distance, a sense of frozen time and melancholic 
+stillness. The subject rendered as a still, statue-like or 
+mannequin-like silhouette, isolated and enigmatic within the 
+vast empty space. Surreal juxtaposition of scale between 
+foreground and background elements. Keep the original 
+composition and pose, but transform the mood into this 
+metaphysical, dreamlike unease.
+
+Dieselpunk
+
+Restyle this photo in a Dieselpunk aesthetic: 1920s-1940s 
+industrial-military atmosphere, heavy riveted iron and steel 
+plating, exposed pipes venting thick black smoke and steam, 
+massive combustion-engine machinery integrated into the 
+architecture, propaganda-poster era Art Deco geometry mixed 
+with grimy wartime wear. Muted olive-drab, rust, and brass 
+tones under harsh industrial searchlight beams cutting through 
+smog. Zeppelins or heavy bomber silhouettes faint in the 
+distant sky. Gritty, oil-stained, mechanical brutality. Keep 
+the original composition and pose.
+
+
+poi c'è una categoria di effetti che sfruttano illusioni ottiche combinate con i layout dei social o delle piattaforme sulle quali vengono pubblicate 
+
+Nome dell'Effetto	Descrizione e Funzionamento su X.com	Prompt for LLM (English – Technical & Refined)
+1. Espansione al Click (Open Image Trick)	Sfrutta il ritaglio automatico delle anteprime nel feed. X.com centra l'immagine in un rapporto 16:9. Posizionando l'elemento "sorpresa" nei bordi superiore e inferiore, fuori dall'area di anteprima, questo viene rivelato solo quando l'utente clicca per vedere l'immagine intera.	"Take the provided image and generate a final output with exact dimensions 1080×1350 pixels (4:5 aspect ratio). Compose the scene so that the primary, innocent subject is strictly confined within the central 1080×608 pixel region (16:9 feed‑preview crop). Place all hidden or surprising elements exclusively in the upper and lower margins outside this central zone. Use a strong, high‑contrast focal point (such as a face or bold shape) in the center to influence X.com’s automatic center‑crop algorithm. The result must appear ordinary in the timeline preview, revealing the hidden content only when the image is opened full‑screen."
+2. Camaleonte (Chameleon Images)	Utilizza la trasparenza (canale Alpha) dei PNG. L'immagine è composta da elementi in nero puro (#000000) visibili solo in Modalità Chiara, ed elementi in bianco puro (#FFFFFF) visibili solo in Modalità Notte.	"Convert the input image into a PNG‑24 file with a fully transparent background. On this canvas, create two overlaid visual layers: a ‘light‑mode’ artwork drawn exclusively with pure black pixels (#000000), visible only on X.com’s white background, and a ‘dark‑mode’ artwork drawn exclusively with pure white pixels (#FFFFFF), visible only on X.com’s black background. Use exact alpha compositing so both layers coexist without overlap artifacts. Strictly prohibit semi‑transparent pixels, anti‑aliased edges, or gradient transparency; only fully opaque black and white on a completely transparent canvas. This prevents X.com’s compression from flattening the illusion, preserving the dual‑appearance effect depending on the viewer’s display mode."
+3. Finto Pulsante UI (Fake UI Elements)	Si basa sulla replica di elementi dell'interfaccia utente di X.com (es. "Mostra altro...", pulsante "Play"). L'utente, ingannato, clicca sull'immagine invece di eseguire l'azione prevista.	"Modify the provided image by seamlessly embedding a photorealistic replica of a native X.com (Twitter) UI element – for example, the ‘Show more…’ text expander, a video ‘Play’ button, or a ‘Follow’ pill. The fake element must exactly match X.com’s current interface: use the Chirp typeface, the correct text colors (e.g., #1D9BF0 for links, #71767B for secondary text), background fills, and spacing. Integrate it naturally into the composition so it appears to be an interactive part of the tweet. The goal is a psychological illusion that causes users to tap the image expecting a UI action, rather than opening the image viewer. Preserve the original image content but add the UI element in a visually native manner."
+4. Effetto Moiré da Scorrimento	Pattern geometrici ad alta frequenza (linee, griglie) interagiscono con la compressione di X.com e lo scorrimento, generando distorsioni visibili solo in movimento.	"Using the image concept as thematic inspiration, generate a full‑frame high‑frequency geometric pattern optimized for a strong scroll‑based moiré illusion. The image should consist of extremely dense, repeating structures such as parallel lines (vertical/horizontal), concentric circles, or a fine checkerboard grid, alternating pure black and pure white. Set the spatial frequency near the Nyquist limit of typical mobile displays (2‑3 pixel cycles) to maximize aliasing. The pattern must appear static when the frame is still, but produce pronounced shimmering, wave‑like distortions, and chromatic artifacts when the viewer scrolls rapidly on a smartphone. Replace any original photographic content with this optimized optical pattern."
+5. Illusione "Diffusion" (AI)	Immagini che appaiono astratte da vicino ma rivelano un volto, un logo o una parola se viste in miniatura (es. anteprima feed).	"Transform the supplied image into a ‘diffusion optical illusion’ (hybrid image). The final image must present as a detailed, seemingly abstract texture, landscape, or pattern when viewed at full resolution (close‑up). However, when downscaled or viewed from a distance – exactly as in X.com’s small feed thumbnail – the low‑frequency luminance and contrast modulations must coalesce to clearly reveal a hidden subject: [describe the target – e.g., a specific face, a logo, a word]. Preserve the original color palette and texture style, but reorganize the image data so the hidden subject is encoded in the low spatial frequencies, invisible at high resolution yet dominant in the miniature preview. Output the image at 1080×1350 pixels."
+6. Testo "Zalgo" (Glitch dell'Interfaccia)	Caratteri Unicode speciali con diacritici che "sanguinano" fuori dallo spazio del testo, creando un effetto corrotto che invade i post vicini.	"Overlay the provided image with a text comment rendered in an extreme Zalgo glitch style. The text must consist of highly corrupted, chaotic Unicode strings that use heavy stacking of combining diacritical marks (e.g., U+0300–U+036F range), causing the text to extend far above and below the normal line height, visually bleeding out of its bounding box. The message should read: ‘[insert desired short text]’. Render it in a bold, large sans‑serif font (mimicking X.com’s comment style) and position it as a graphic overlay near the bottom of the image. The resulting visual must appear as a glitched, broken UI element that disrupts the standard layout, as if the interface itself is corrupted."
+7. Vertical Slice (Ricostruzione a Scorrimento)	Un'immagine molto alta, tagliata in pezzi orizzontali e caricata in ordine. Cliccando, X.com li impila verticalmente ricostruendo l'immagine originale.	"Take the input image and slice it horizontally into exactly [2 / 3 / 4] equal‑height rectangular strips. Each strip must retain the full original width and be pixel‑perfectly aligned, with no gaps or overlaps when reassembled. Output each strip as a separate image file, numbered sequentially from top to bottom (e.g., slice_01.png, slice_02.png, etc.). These strips are intended to be uploaded in that exact vertical order to a single X.com post. When a user clicks the post, X.com’s image viewer will stack the strips vertically, seamlessly reconstructing the original full image as a single tall composition."
+
+
+aggiungi alla categoria fumetti anche 
+
+I due riquadri affiancati nell'immagine applicano alla stessa fotografia due stili di illustrazione a fumetto molto diversi tra loro, giocando sul contrasto tra colore e bianco e nero.
+
+Riquadro a sinistra (Stile fumetto a colori)
+
+• Effetto generale: Ricorda una tavola di un fumetto americano moderno o una graphic novel colorata.
+• Colori e sfumature: Mantiene i toni naturali della pelle e dell'abitacolo, ma li semplifica in campiture di colore piatte e leggermente posterizzate, eliminando le sfumature fotografiche morbide.
+• Tratto e contorni: Presenta linee di contorno scure e sottili che definiscono i lineamenti del viso, le pieghe della maglietta e i dettagli dell'auto, dando un aspetto disegnato a mano.
+
+Riquadro a destra (Stile fumetto in bianco e nero / Ink)
+
+• Effetto generale: Richiama un disegno a china (ink), un manga o un fumetto noir ad alto contrasto.
+• Contrasto e luci: Elimina completamente il colore e gran parte dei mezzi toni, spingendo al massimo il contrasto tra bianchi puri e neri profondi.
+• Dettagli grafici: Le ombre sul viso, sulla barba e sugli abiti sono rese tramite tratti netti, tratteggi incrociati e macchie d'inchiostro nero, creando un forte impatto drammatico e grafico.
+
+
+
+Naturalmente mi piacerebbe che per ogni effetto, soprattutto quelli dei poster e quelli dei fumetti, fosse suggerito un eventuale font da abbinare nella sezione dei font, ma non so come implementare questo suggerimento senza appesantire la vista o introdurre un elemento non voluto
