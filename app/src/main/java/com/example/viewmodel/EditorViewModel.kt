@@ -46,6 +46,8 @@ data class EditorUiState(
     val currentTool: String? = null,
     val toolGridOpen: Boolean = false,
     val layersPanelOpen: Boolean = false,
+    // tocco a vuoto sulla tela: maniglie nascoste (il livello resta attivo per gli strumenti aperti)
+    val handlesHidden: Boolean = false,
     val colorPickerOpen: Boolean = false,
     val colorPickerTarget: String = "fill", // "fill", "stroke", "brush", "bg", "border", "grad2"
     val eyedropperActive: Boolean = false,
@@ -583,7 +585,44 @@ class EditorViewModel : ViewModel() {
     }
 
     fun selectLayer(id: String) {
-        _state.value = _state.value.copy(activeLayerId = id)
+        _state.value = _state.value.copy(activeLayerId = id, handlesHidden = false)
+    }
+
+    /**
+     * Livello visibile e non bloccato sotto il punto (il più in alto). Nei livelli immagine conta solo
+     * la parte piena: toccando una zona trasparente (es. attorno a un soggetto scontornato) si passa sotto.
+     */
+    fun layerAt(x: Float, y: Float): EditorLayer? {
+        for (l in _state.value.layers.asReversed()) {
+            if (!l.visible || l.locked) continue
+            val b = com.example.engine.TransformGeometry.box(l.x, l.y, l.w, l.h, l.rotation)
+            val p = com.example.engine.TransformGeometry.toLocal(b, x, y)
+            if (abs(p.x) > l.w / 2f || abs(p.y) > l.h / 2f) continue
+            val u = (p.x / l.w + 0.5f).coerceIn(0f, 0.9999f)
+            val v = (p.y / l.h + 0.5f).coerceIn(0f, 0.9999f)
+            val bmp = l.bitmap
+            if (bmp != null && (l.type == LayerType.IMAGE || l.type == LayerType.RASTER)) {
+                val a = (bmp.getPixel((u * bmp.width).toInt(), (v * bmp.height).toInt()) ushr 24) and 255
+                if (a < 16) continue
+            }
+            val m = l.maskBitmap
+            if (m != null) {
+                val a = (m.getPixel((u * m.width).toInt(), (v * m.height).toInt()) ushr 24) and 255
+                if ((if (l.maskInverted) 255 - a else a) < 16) continue
+            }
+            return l
+        }
+        return null
+    }
+
+    /** Tocco a vuoto sulla tela: spariscono le maniglie e si chiude il pannello dei livelli. */
+    fun tapEmptyCanvas() {
+        _state.value = _state.value.copy(handlesHidden = true, layersPanelOpen = false)
+    }
+
+    /** Tocco su un livello: diventa attivo con le maniglie visibili. */
+    fun tapLayer(id: String) {
+        _state.value = _state.value.copy(activeLayerId = id, handlesHidden = false)
     }
 
     fun toggleLayerMultiSelect(id: String) {
@@ -850,6 +889,7 @@ class EditorViewModel : ViewModel() {
     fun transformActiveLayer(dx: Float, dy: Float, dScale: Float = 1f, dRot: Float = 0f) {
         val active = _state.value.activeLayer ?: return
         if (active.locked) return
+        interactiveEffectChange() // durante il gesto anteprima leggera, poi piena qualità
         updateActiveLayer { l ->
             val nw = (l.w * dScale).coerceIn(24f, 4096f)
             val nh = (l.h * dScale).coerceIn(24f, 4096f)
@@ -875,6 +915,7 @@ class EditorViewModel : ViewModel() {
     fun setActiveLayerBox(b: com.example.engine.TransformGeometry.Box) {
         val active = _state.value.activeLayer ?: return
         if (active.locked) return
+        interactiveEffectChange() // anche con un effetto attivo le maniglie restano fluide
         updateActiveLayer { it.copy(x = b.x, y = b.y, w = b.w.coerceIn(16f, 8192f), h = b.h.coerceIn(16f, 8192f), rotation = b.rotation) }
         scheduleCompositeRebuild()
     }

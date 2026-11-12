@@ -283,7 +283,12 @@ object PixelEngine {
     }
 
     private fun computeLayerCacheKey(layer: EditorLayer, allLayers: List<EditorLayer>): Int {
-        var result = layer.hashCode()
+        // spostare, ruotare, cambiare opacità o fusione non cambia i pixel del livello: niente ricalcolo degli effetti
+        var result = layer.copy(
+            x = 0f, y = 0f, rotation = 0f, opacity = 1f, blend = com.example.model.BlendOption.NORMAL,
+            visible = true, locked = false, selectedForMulti = false, editingMask = false, name = "",
+            shadowBlur = 0f, shadowOffsetX = 0f, shadowOffsetY = 0f, shadowColor = 0
+        ).hashCode()
         result = 31 * result + (layer.bitmap?.generationId ?: 0)
         result = 31 * result + (layer.maskBitmap?.generationId ?: 0)
         result = 31 * result + (layer.activeFilterMask?.generationId ?: 0)

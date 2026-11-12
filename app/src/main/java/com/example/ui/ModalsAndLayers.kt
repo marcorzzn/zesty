@@ -27,6 +27,7 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
@@ -39,128 +40,69 @@ import com.example.viewmodel.EditorViewModel
 import kotlin.math.*
 
 // ============ 20. LAYERS PANEL (DRAWER) ============
+/**
+ * Pannello dei livelli: isola a destra dentro l'area della tela (non copre le barre in alto e in basso),
+ * con gli stessi componenti delle altre schermate. Si chiude con ✕, con Indietro o toccando la tela a vuoto.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun LayersSidePanel(state: EditorUiState, vm: EditorViewModel) {
+fun LayersSidePanel(state: EditorUiState, vm: EditorViewModel, modifier: Modifier = Modifier) {
     AnimatedVisibility(
         visible = state.layersPanelOpen,
         enter = slideInHorizontally(initialOffsetX = { it }),
         exit = slideOutHorizontally(targetOffsetX = { it }),
-        modifier = Modifier.fillMaxHeight()
+        modifier = modifier.fillMaxHeight()
     ) {
         val active = state.activeLayer
         Column(
             modifier = Modifier
-                .width(265.dp)
+                .width(264.dp)
                 .fillMaxHeight()
-                .background(PanelDark.copy(alpha = 0.98f))
-                .border(1.dp, BorderCol)
-                .statusBarsPadding()
-                .navigationBarsPadding()
+                .padding(8.dp)
+                .clip(RoundedCornerShape(18.dp))
+                .background(BgBlack)
                 .testTag("layers_panel")
         ) {
-            // Header
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 14.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text("Livelli (${state.layers.size})", color = TextWhite, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                    IconButton(
-                        onClick = { vm.addEmptyRasterLayer() },
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color.White.copy(alpha = 0.08f))
-                            .testTag("add_layer_button")
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = "Aggiungi livello", tint = TextWhite, modifier = Modifier.size(16.dp))
+            PxSectionTitle("Livelli · ${state.layers.size}") {
+                Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Box(Modifier.testTag("add_layer_button")) {
+                        PxIconAction(Icons.Default.Add, "Aggiungi livello") { vm.addEmptyRasterLayer() }
                     }
-                    IconButton(
-                        onClick = { vm.toggleLayersPanel() },
-                        modifier = Modifier
-                            .size(30.dp)
-                            .clip(RoundedCornerShape(6.dp))
-                            .background(Color.White.copy(alpha = 0.08f))
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Chiudi livelli", tint = TextWhite, modifier = Modifier.size(16.dp))
-                    }
+                    PxIconAction(Icons.Default.Close, "Chiudi livelli") { vm.toggleLayersPanel() }
                 }
             }
 
-            HorizontalDivider(color = BorderCol)
-
-            // Active Layer Opacity + 16 Blend Modes + Mask Target toggle
             if (active != null) {
-                Column(modifier = Modifier.fillMaxWidth().padding(8.dp)) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
+                PxSlider("Opacità", active.opacity * 100f, 0f..100f, { vm.updateActiveLayerOpacity(it / 100f) }, "%")
+                BlendModeStrip(active.blend) { vm.updateActiveLayerBlend(it) }
+                Row(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 4.dp),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    PxIconAction(
+                        icon = Icons.Default.Masks,
+                        description = if (active.editingMask) "Stai modificando la maschera (tocca per il livello)" else "Stai modificando il livello (tocca per la maschera)",
+                        active = active.editingMask
+                    ) { vm.toggleEditingMaskTarget(!active.editingMask) }
+                    PxIconAction(
+                        icon = Icons.Default.Gradient,
+                        description = if (active.maskBitmap != null) "Modifica la visibilità del livello" else "Mostra il livello solo in una zona",
+                        active = active.maskBitmap != null
                     ) {
-                        Text("Opacità: ${(active.opacity * 100).roundToInt()}%", color = TextDim, fontSize = 11.sp)
-                        Text("Fusione: ${active.blend.label}", color = AccentPinkHi, fontSize = 11.sp, fontWeight = FontWeight.SemiBold)
+                        vm.toggleLayersPanel()
+                        vm.openSelectivePaintMode(fxKey = null, initBlackMask = false)
                     }
-                    Slider(
-                        value = active.opacity,
-                        onValueChange = { vm.updateActiveLayerOpacity(it) },
-                        valueRange = 0f..1f,
-                        colors = SliderDefaults.colors(thumbColor = AccentPinkHi, activeTrackColor = AccentPink),
-                        modifier = Modifier.height(26.dp)
-                    )
-
-                    // 16 Native Blend Modes horizontal selector
-                    BlendModeStrip(active.blend) { vm.updateActiveLayerBlend(it) }
-
-                    // Edit target: Layer vs Mask + Quick actions
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 4.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        SmallChipButton(
-                            text = if (active.editingMask) "Target: Maschera" else "Target: Livello",
-                            active = active.editingMask,
-                            modifier = Modifier.weight(1f)
-                        ) { vm.toggleEditingMaskTarget(!active.editingMask) }
-
-                        IconButton(
-                            onClick = { vm.duplicateLayer(active.id) },
-                            modifier = Modifier.size(30.dp).background(Panel2, RoundedCornerShape(6.dp))
-                        ) {
-                            Icon(Icons.Default.ContentCopy, contentDescription = "Duplica", tint = TextWhite, modifier = Modifier.size(15.dp))
-                        }
-                        IconButton(
-                            onClick = { vm.deleteLayer(active.id) },
-                            modifier = Modifier.size(30.dp).background(Panel2, RoundedCornerShape(6.dp))
-                        ) {
-                            Icon(Icons.Default.Delete, contentDescription = "Elimina", tint = Color(0xFFFF5C8A), modifier = Modifier.size(15.dp))
-                        }
-                    }
-
-                    // §23 Universal Layer Localization quick button
-                    Row(
-                        modifier = Modifier.fillMaxWidth().padding(top = 6.dp),
-                        horizontalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        SmallChipButton(
-                            text = if (active.maskBitmap != null) "Modifica Maschera Locale" else "Localizza Visibilità",
-                            active = active.maskBitmap != null,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            vm.toggleLayersPanel()
-                            vm.openSelectivePaintMode(fxKey = null, initBlackMask = false)
-                        }
-                    }
+                    Spacer(Modifier.weight(1f))
+                    PxIconAction(Icons.Default.ContentCopy, "Duplica livello") { vm.duplicateLayer(active.id) }
+                    PxIconAction(Icons.Default.Delete, "Elimina livello") { vm.deleteLayer(active.id) }
                 }
-                HorizontalDivider(color = BorderCol)
+                HorizontalDivider(color = DividerCol, modifier = Modifier.padding(horizontal = 12.dp, vertical = 2.dp))
             }
 
-            // Layers list (top-most first visually)
+            // elenco: il livello più in alto per primo
             LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth().padding(6.dp),
+                modifier = Modifier.weight(1f).fillMaxWidth().padding(horizontal = 8.dp, vertical = 6.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 items(state.layers.reversed(), key = { it.id }) { layer ->
@@ -177,13 +119,8 @@ fun LayersSidePanel(state: EditorUiState, vm: EditorViewModel) {
                     )
                 }
             }
-
-            Text(
-                text = "Tocco prolungato sul nome per rinominare • Spunta per selez. multipla",
-                color = TextMute,
-                fontSize = 11.sp,
-                modifier = Modifier.padding(10.dp)
-            )
+            PxHint("Tieni premuto un livello per rinominarlo")
+            Spacer(Modifier.height(6.dp))
         }
     }
 }
@@ -201,42 +138,29 @@ private fun LayerRowItem(
     onMoveDown: () -> Unit,
     onToggleMulti: () -> Unit
 ) {
-    val thumbBmp = remember(layer) {
-        PixelEngine.renderSingleLayerBitmap(layer)
+    // miniatura piccola, ricalcolata solo se cambia l'aspetto del livello (non spostandolo o ruotandolo)
+    val look = layer.copy(x = 0f, y = 0f, rotation = 0f, selectedForMulti = false, locked = false, visible = true, name = "")
+    val thumbBmp = remember(look) {
+        PixelEngine.renderSingleLayerBitmap(layer, scale = 96f / max(layer.w, layer.h).coerceAtLeast(1f))
     }
 
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(8.dp))
-            .background(if (isActive) AccentPink.copy(alpha = 0.18f) else Panel2)
-            .border(
-                width = 1.dp,
-                color = if (isActive) ActivePurple else BorderCol,
-                shape = RoundedCornerShape(8.dp)
-            )
-            .combinedClickable(
-                onClick = onSelect,
-                onLongClick = onLongPressRename
-            )
-            .padding(6.dp),
+            .clip(RoundedCornerShape(12.dp))
+            .background(if (isActive) Px.Accent.copy(alpha = 0.16f) else Px.Surface)
+            .border(1.dp, if (isActive) Px.Accent else Color.Transparent, RoundedCornerShape(12.dp))
+            .combinedClickable(onClick = onSelect, onLongClick = onLongPressRename)
+            .padding(horizontal = 6.dp, vertical = 5.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        Checkbox(
-            checked = layer.selectedForMulti,
-            onCheckedChange = { onToggleMulti() },
-            modifier = Modifier.size(20.dp),
-            colors = CheckboxDefaults.colors(checkedColor = AccentPink)
-        )
-
-        // Real-time 34x34 thumbnail
         Box(
             modifier = Modifier
-                .size(34.dp)
-                .clip(RoundedCornerShape(4.dp))
-                .background(BgBlack)
-                .border(1.dp, BorderCol, RoundedCornerShape(4.dp)),
+                .size(38.dp)
+                .clip(RoundedCornerShape(8.dp))
+                .background(StageCheckA)
+                .clickable { onToggleMulti() },
             contentAlignment = Alignment.Center
         ) {
             Image(
@@ -245,59 +169,36 @@ private fun LayerRowItem(
                 contentScale = ContentScale.Fit,
                 modifier = Modifier.fillMaxSize()
             )
+            // selezione multipla: tocco sulla miniatura
+            if (layer.selectedForMulti) {
+                Box(Modifier.align(Alignment.TopEnd).padding(2.dp).size(12.dp).clip(CircleShape).background(Px.Active))
+            }
         }
 
         Column(modifier = Modifier.weight(1f)) {
+            Text(layer.name, color = TextWhite, fontSize = 12.sp, fontWeight = FontWeight.Medium, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                text = layer.name,
-                color = TextWhite,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                maxLines = 1
-            )
-            Text(
-                text = "${layer.blend.label} • ${(layer.opacity * 100).roundToInt()}%",
-                color = TextDim,
-                fontSize = 11.sp,
-                maxLines = 1
+                "${layer.blend.label} · ${(layer.opacity * 100).roundToInt()}%",
+                color = TextMute, fontSize = 10.sp, maxLines = 1
             )
         }
 
-        // Up/Down reorder
-        Column {
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowUp,
-                contentDescription = "Sposta su",
-                tint = TextDim,
-                modifier = Modifier.size(15.dp).clickable { onMoveUp() }
-            )
-            Icon(
-                imageVector = Icons.Default.KeyboardArrowDown,
-                contentDescription = "Sposta giù",
-                tint = TextDim,
-                modifier = Modifier.size(15.dp).clickable { onMoveDown() }
-            )
+        Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Icon(Icons.Default.KeyboardArrowUp, "Sposta su", tint = TextDim, modifier = Modifier.size(18.dp).clickable { onMoveUp() })
+            Icon(Icons.Default.KeyboardArrowDown, "Sposta giù", tint = TextDim, modifier = Modifier.size(18.dp).clickable { onMoveDown() })
         }
-
-        // Lock button
-        IconButton(onClick = onToggleLock, modifier = Modifier.size(24.dp)) {
-            Icon(
-                imageVector = if (layer.locked) Icons.Default.Lock else Icons.Default.LockOpen,
-                contentDescription = "Blocca livello",
-                tint = if (layer.locked) AccentPinkHi else TextDim,
-                modifier = Modifier.size(14.dp)
-            )
-        }
-
-        // Eye visibility button
-        IconButton(onClick = onToggleVis, modifier = Modifier.size(24.dp)) {
-            Icon(
-                imageVector = if (layer.visible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                contentDescription = "Visibilità livello",
-                tint = if (layer.visible) TextWhite else TextMute,
-                modifier = Modifier.size(14.dp)
-            )
-        }
+        Icon(
+            imageVector = if (layer.locked) Icons.Default.Lock else Icons.Default.LockOpen,
+            contentDescription = if (layer.locked) "Sblocca livello" else "Blocca livello",
+            tint = if (layer.locked) Px.Active else TextDim,
+            modifier = Modifier.size(28.dp).clip(CircleShape).clickable { onToggleLock() }.padding(5.dp)
+        )
+        Icon(
+            imageVector = if (layer.visible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+            contentDescription = if (layer.visible) "Nascondi livello" else "Mostra livello",
+            tint = if (layer.visible) TextWhite else TextMute,
+            modifier = Modifier.size(28.dp).clip(CircleShape).clickable { onToggleVis() }.padding(5.dp)
+        )
     }
 }
 

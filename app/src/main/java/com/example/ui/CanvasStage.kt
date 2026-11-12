@@ -96,7 +96,6 @@ fun InteractiveCanvasStage(
                 state.currentTool,
                 state.eyedropperActive,
                 state.cropSubTab,
-                state.activeLayerId,
                 stageW,
                 stageH,
                 state.viewScale,
@@ -256,25 +255,43 @@ fun InteractiveCanvasStage(
                     }
 
                     // 4. Sposta / ridimensiona / ruota il livello attivo (TransformGeometry), zoom e panoramica a due dita
-                    val active = state.activeLayer
                     // unità della tela per pixel di schermo: le maniglie hanno la stessa presa a ogni zoom
                     val t2c = scaleToCanvasX / state.viewScale.coerceAtLeast(0.05f)
-                    val startBox = active?.let { TransformGeometry.box(it.x, it.y, it.w, it.h, it.rotation) }
-                    var handle: TransformGeometry.Handle? = null
-                    if (active != null && !active.locked && startBox != null) {
+                    var active = state.activeLayer
+                    var box0 = active?.let { TransformGeometry.box(it.x, it.y, it.w, it.h, it.rotation) }
+                    var hit: TransformGeometry.Handle? = null
+                    if (active != null && !active.locked && box0 != null && !state.handlesHidden) {
                         val screenMin = min(active.w, active.h) / t2c
-                        handle = TransformGeometry.hit(
-                            startBox, startCanvas.x, startCanvas.y,
+                        hit = TransformGeometry.hit(
+                            box0, startCanvas.x, startCanvas.y,
                             radius = HANDLE_TOUCH_DP.dp.toPx() * t2c,
                             rotateOffset = ROTATE_OFFSET_DP.dp.toPx() * t2c,
                             deleteOffset = DELETE_OFFSET_DP.dp.toPx() * t2c,
                             showSides = screenMin > SIDE_HANDLES_MIN_DP.dp.toPx()
                         )
                     }
-                    if (handle == TransformGeometry.Handle.DELETE) {
+                    if (hit == TransformGeometry.Handle.DELETE) {
                         vm.deleteActiveLayer()
                         return@awaitEachGesture
                     }
+                    // fuori dalle maniglie: il livello più in alto sotto il dito (non bloccato) diventa attivo
+                    var emptyTouch = false
+                    if (hit == null || hit == TransformGeometry.Handle.BODY) {
+                        val top = vm.layerAt(startCanvas.x, startCanvas.y)
+                        if (top != null) {
+                            if (top.id != active?.id || state.handlesHidden) vm.tapLayer(top.id)
+                            active = top
+                            box0 = TransformGeometry.box(top.x, top.y, top.w, top.h, top.rotation)
+                            hit = TransformGeometry.Handle.BODY
+                        } else {
+                            hit = null
+                            emptyTouch = true
+                        }
+                    }
+                    val startBox = box0
+                    val handle = hit
+                    val touchSlop = viewConfiguration.touchSlop
+                    var moved = false
                     val startAngle = startBox?.let { TransformGeometry.angleOf(it, startCanvas.x, startCanvas.y) } ?: 0f
                     val keepRatio = true // angoli proporzionali, lati liberi
 
@@ -283,6 +300,7 @@ fun InteractiveCanvasStage(
                     do {
                         val event = awaitPointerEvent()
                         if (event.changes.size >= 2) {
+                            moved = true
                             val zoom = event.calculateZoom()
                             val pan = event.calculatePan()
                             val rot = event.calculateRotation()
@@ -301,6 +319,7 @@ fun InteractiveCanvasStage(
                         } else {
                             val change = event.changes.firstOrNull() ?: break
                             if (change.pressed) {
+                                if (!moved && (change.position - screenPt).getDistance() > touchSlop) moved = true
                                 val curCanvas = toCanvasPt(change.position)
                                 val h = handle
                                 when {
@@ -332,6 +351,8 @@ fun InteractiveCanvasStage(
                     if (modifiedLayer) {
                         vm.pushHistorySnapshot()
                     }
+                    // tocco a vuoto (senza trascinare): via le maniglie e chiuso il pannello dei livelli
+                    if (emptyTouch && !moved) vm.tapEmptyCanvas()
                 }
             },
         contentAlignment = Alignment.Center
@@ -670,7 +691,7 @@ fun InteractiveCanvasStage(
                 }
 
                 // Active Layer Bounding Box + Quick Delete 'X' + 8 Resize Handles + Rotation Knob with Icon
-                if (active != null && state.currentTool !in listOf("crop", "rotate", "collage") &&
+                if (active != null && !state.handlesHidden && state.currentTool !in listOf("crop", "rotate", "collage") &&
                     (state.layers.size > 1 || active.type != LayerType.RASTER || active.bitmap != null)) {
                     // Riquadro, maniglie e rotazione: dimensioni costanti sullo schermo (divise per lo zoom)
                     val zs = state.viewScale.coerceAtLeast(0.05f)

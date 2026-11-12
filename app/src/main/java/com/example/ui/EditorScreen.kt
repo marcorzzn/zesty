@@ -194,7 +194,8 @@ fun ZestyEditorScreen(vm: EditorViewModel) {
                 // 2. Tela
                 Box(modifier = Modifier.weight(1f).fillMaxHeight()) {
                     InteractiveCanvasStage(state = state, vm = vm, modifier = Modifier.fillMaxSize())
-
+                    // pannello livelli: isola a destra dentro l'area della tela, tra la barra in alto e quella in basso
+                    LayersSidePanel(state = state, vm = vm, modifier = Modifier.align(Alignment.CenterEnd))
                 }
 
                 // 3C. Pannello parametri a destra (tablet/web): isola staccata dai bordi, accanto alla foto
@@ -233,10 +234,6 @@ fun ZestyEditorScreen(vm: EditorViewModel) {
             }
         }
 
-        // 4. LAYERS SIDE PANEL DRAWER
-        Box(modifier = Modifier.align(Alignment.CenterEnd)) {
-            LayersSidePanel(state = state, vm = vm)
-        }
 
         // 5. MODALS (Color Picker, Export, Rename Layer, New Project, Confirm Localize FX)
         ColorPickerModal(state = state, vm = vm)
