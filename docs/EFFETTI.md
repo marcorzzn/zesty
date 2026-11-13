@@ -435,11 +435,11 @@ L'animazione a particelle descritta nel documento:
 | Colore e luce | `infrared` ✅, `rim_light`, `long_shadow`, `halation` |
 | Fumetto e disegno | `screentone` ✅, `flat_regions` ✅, `hatching` ✅, `speed_lines` ✅, `brush_strokes` ✅, `woodcut` (fatto con `engrave` ✅) |
 | Stampa e carta | `misregister` ✅, `paper_folds`, `torn_edge` ✅, `brush_edge`, `zigzag_edge`, `plaster` (texture) |
-| Specchi e geometria | `droste`, `log_spiral`, `poincare`, `mobius`, `julia_warp`, `glass_sphere`, `anamorphic`, `shatter`, `concentric`, `blinds`, `pixel_sort`, `delaunay`, `prism`, `kirlian`, `tessellate`, `mandala`, `cloth` |
+| Specchi e geometria | `droste` ✅, `log_spiral` (modo "spiral" di `droste` ✅), `poincare`, `mobius`, `julia_warp`, `glass_sphere` ✅, `anamorphic`, `shatter` ✅, `concentric`, `blinds` ✅, `pixel_sort` ✅, `delaunay` (come `low_poly` ✅), `prism`, `kirlian`, `tessellate`, `mandala`, `cloth` |
 | Illusioni e pattern | `op_art` (serpenti, Hermann, muro del caffè, Vasarely), `memphis`, `moire`, `hybrid` |
 | Sistema | `mosaic` (Voronoi), `relief` (con profondità), `echo`, `skew_warp`, `sky_gradient` (con maschera del cielo), parametri "bande" e "bordo" comuni |
 
-✅ = già nel motore (`FxOpsArt.kt`, `FxOpsPaint.kt`). Le pennellate si dipingono in parallelo su tutti i core (`FxParallel`).
+✅ = già nel motore (`FxOpsArt.kt`, `FxOpsPaint.kt`, `FxOpsOptic.kt`). Le pennellate si dipingono in parallelo su tutti i core (`FxParallel`).
 
 Ogni operazione nuova si scrive in Kotlin (APK) e si collauda con test sul computer, come le attuali. La webapp la riceverà con il codice condiviso (roadmap §2).
 
