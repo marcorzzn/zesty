@@ -84,6 +84,27 @@ class FxCatalogTest {
         assertTrue(cat.inCategory("cinema").any { it.group == "I grandi autori" })
     }
 
+    /**
+     * Provini grandi (640×480) degli effetti elencati in ZESTY_FX_BIG (id separati da virgola), con il tempo:
+     * per giudicare tratti fini come pennellate e retini, che nelle tavole piccole non si vedono.
+     */
+    @Test
+    fun bigPreviews() {
+        val ids = System.getenv("ZESTY_FX_BIG")?.split(',')?.map { it.trim() }?.filter { it.isNotEmpty() } ?: return
+        val cat = catalog()
+        val src = scene(640, 480)
+        val dir = File("build/fx-provini").apply { mkdirs() }
+        for (id in ids) {
+            val fx = cat.get(id) ?: error("effetto sconosciuto: $id")
+            val t0 = System.nanoTime()
+            val out = FxEngine.applyToImage(src.copy(), fx, emptyMap(), 1f, "normal")
+            println("$id: ${(System.nanoTime() - t0) / 1_000_000} ms")
+            val bi = BufferedImage(out.w, out.h, BufferedImage.TYPE_INT_RGB)
+            bi.setRGB(0, 0, out.w, out.h, out.px, 0, out.w)
+            ImageIO.write(bi, "png", File(dir, "big-$id.png"))
+        }
+    }
+
     /** Provini: una tavola per categoria, ogni effetto su 160×120 con il nome nel file indice. */
     @Test
     fun contactSheets() {

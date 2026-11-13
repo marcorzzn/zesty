@@ -192,6 +192,24 @@ class ZestyDeviceBench {
         log("Nuova bitmap 1536×2048 (media)            %4d ms".format((SystemClock.elapsedRealtime() - t0) / 10))
     }
 
+    /** Effetti di pittura e tecniche nuove: tempo all'anteprima (720×960) e a piena risoluzione (1536×2048). */
+    @Test
+    fun paintEffects() {
+        val ctx = InstrumentationRegistry.getInstrumentation().targetContext
+        com.example.fx.FxEngine.load(ctx)
+        val cat = com.example.fx.FxEngine.catalog
+        for ((w, h) in listOf(720 to 960, 1536 to 2048)) {
+            val src = com.example.fx.FxImage(w, h, scene(w, h))
+            for (id in listOf("art_impressionism", "art_swirl", "art_oil_brush", "art_pastel_strokes", "comic_speed", "poster_torn", "film_aerochrome")) {
+                val fx = cat.get(id) ?: run { log("$id mancante"); continue }
+                com.example.fx.FxEngine.applyToImage(src.copy(), fx, emptyMap(), 1f, "normal") // riscaldamento
+                val t0 = SystemClock.elapsedRealtime()
+                com.example.fx.FxEngine.applyToImage(src.copy(), fx, emptyMap(), 1f, "normal")
+                log("%-22s %4d×%-4d %5d ms".format(id, w, h, SystemClock.elapsedRealtime() - t0))
+            }
+        }
+    }
+
     /** Colorizza sul telefono: download verificato del pacchetto DDColor (se manca) e tempi del colore. */
     @Test
     fun colorize() {
