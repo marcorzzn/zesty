@@ -1,6 +1,6 @@
 # Zesty — roadmap generale
 
-Documento di lavoro (12/11/2026). Raccoglie tutto ciò che è stato deciso finora: prestazioni, intelligenza artificiale sul telefono, nuove funzioni, webapp.
+Documento di lavoro (12/11/2026, registro aggiornato il 13/11/2026). Raccoglie tutto ciò che è stato deciso finora: prestazioni, intelligenza artificiale sul telefono, nuove funzioni, webapp.
 Ogni fase si chiude solo con tre verifiche: test automatici, tempi misurati sul telefono di riferimento (Redmi Note 13 Pro 5G) e un commit separato.
 I principi di interfaccia sono in [UI_PRINCIPLES.md](UI_PRINCIPLES.md); l'analisi dei prototipi è in [PIANO_INTEGRAZIONE.md](PIANO_INTEGRAZIONE.md).
 
@@ -16,18 +16,63 @@ I principi di interfaccia sono in [UI_PRINCIPLES.md](UI_PRINCIPLES.md); l'analis
 
 ---
 
-## 1. Fatto finora (fase 0 e fase 1)
+## 1. Registro: fatto finora
 
+Aggiornato al 13/11/2026. L'ultima versione (`c9fefda`) è installata sul telefono di riferimento.
+
+### 1.1 Prestazioni (fase 0 e fase 1)
 | Commit | Cosa |
 |---|---|
-| `68cab84` | Scontorna (bacchetta CIELAB, sfondo uniforme, rifinitura), Soggetto automatico (GrabCut nostro + IS-Net + MODNet) |
-| `0de0535` | IA: memoria da 1,6 GB a 77 MB, analisi anticipata all'apertura di Scontorna |
-| `4c6a88c` | Gesti fluidi (tela a 1080 px, effetto a 720 px), versione ottimizzata con R8 |
-| `a57ea0f` | Maniglie fluide con un effetto attivo, selezione al tocco, tocco a vuoto, nuovo pannello livelli |
-| `b317fdf` | Tela caricata sulla GPU in sottofondo, profilo di avvio (avvio 0,42–0,58 s) |
-| `01ec838`, `b055807` | Tela fuori dal thread dell'interfaccia (più correzione della chiusura all'avvio) |
+| `5d73b8e` | Scontorna (bacchetta CIELAB, sfondo uniforme, rifinitura), Soggetto automatico (GrabCut nostro + IS-Net + MODNet), poster, divisione, prospettiva |
+| `82ca091`, `ddca0dd` | Misure di riferimento sul telefono; IA di Scontorna da 1,6 GB a 77 MB di memoria, analisi anticipata all'apertura |
+| `514c56a` | Gesti fluidi (tela a 1080 px, effetto a 720 px), versione ottimizzata con R8 |
+| `589f502` | Maniglie fluide con un effetto attivo, selezione al tocco, tocco a vuoto, nuovo pannello livelli |
+| `1cf1383` | Tela caricata sulla GPU in sottofondo, profilo di avvio (avvio 0,42–0,58 s) |
+| `25fee00`, `f671d67` | Tela fuori dal thread dell'interfaccia (più correzione della chiusura all'avvio) |
 
 Fluidità misurata nelle prove a mano: fotogrammi a scatti dal 7,0% al 3,6%; caricamenti lenti sulla GPU dall'1,8% allo 0,2%.
+
+### 1.2 Funzioni e IA
+| Commit | Cosa |
+|---|---|
+| `5b461cf` | Nuovo motore dei pennelli, tipi e parametri di colore |
+| `68a6f8d` | Pacchetti IA scaricati al primo uso (registro unico `assets/ai/registry.json`, impronta SHA-256, download ripreso) e Colorizza con DDColor-tiny |
+| `4aaad17` | Colorizza: colori fedeli e nuovi controlli |
+| `31be960`, `ddb2091` | Cancella oggetti con LaMa (famiglia Ritocca); il modello si prepara all'apertura dello strumento |
+| `de2d5ca` | Nome Zesty ovunque, nuova icona, licenza "tutti i diritti riservati", README; materiale di terzi solo in locale |
+| `c9fefda` | Esporta → Dividi e salva: colonne, righe e pannelli fino a 20 (fino a 400 file); i numeri sui pannelli stretti si rimpiccioliscono per non coprire la foto |
+
+### 1.3 Effetti (dettaglio in [EFFETTI.md](EFFETTI.md))
+Oggi il catalogo ha **410 effetti in 16 categorie**, tutti con motore nostro.
+| Commit | Cosa |
+|---|---|
+| `b02ec47`, `f824029` | Nuovo ordinamento del catalogo e 87 effetti nuovi |
+| `c424e4b` | Navigazione degli effetti più chiara, miniature uniformi, foto trascinabile fra le bande |
+| `72109e0` | 5 tecniche di disegno e stampa (retino, campiture, tratteggio, incisione/xilografia, fuori registro); icone più chiare |
+| `e019f29` | Pennellate vere (impressionismo, vorticose, olio, pastello, espressionismo), linee cinetiche, carta strappata, infrarosso a colori; via i cursori doppi o inutili; pennellate dipinte in parallelo su tutti i core |
+| `348f623` | Ricorsione e spirale infinita, bolla di cristallo, vetro in frantumi, low-poly, persiane, pixel sort |
+| `c9fefda` | Mandala, 3 tassellazioni, frattali di Julia, disco di Poincaré, inversione circolare, op-art (righe, onde, cerchi, Vasarely), prisma, scie d'arcobaleno, aura elettrica e di fuoco, Notturna 800 (alone da pellicola) |
+
+### 1.4 Ancora da verificare sul telefono
+- Tempi delle pennellate e degli effetti ottici: le misure sono pronte (`ZestyDeviceBench.paintEffects` e `opticEffects`), ma non ancora eseguite. Sul computer ogni effetto nuovo sta sotto il secondo a 640×480; le pennellate restano le più pesanti.
+- Resa degli effetti nuovi su foto vere: finora sono stati controllati solo sulla scena di prova.
+
+---
+
+## 1bis. Cosa manca ancora (in ordine di priorità)
+
+1. **Effetti** (priorità attuale: risultati belli e caratteristici, chiarezza e ordine di funzioni e icone).
+   - Tecniche ancora da scrivere (EFFETTI.md §10): `rim_light`, `long_shadow`, `paper_folds`, `brush_edge`, `zigzag_edge`, `plaster`, `anamorphic`, `concentric`, `cloth`, op-art (serpenti rotanti, griglia di Hermann, muro del caffè), `memphis`, `moire`, `hybrid`.
+   - Parametri comuni: bordo, i tre livelli dei Poster, scelta del carattere.
+   - Eventuale pacchetto di trasferimento di stile con reti neurali (licenza da verificare).
+   - Altro lavoro su chiarezza e ordine di categorie, gruppi e icone.
+2. **Misure sul telefono** di tutti gli effetti nuovi, con ottimizzazione di quelli lenti.
+3. **Scontorna e Cancella:** MobileSAM (tocchi un oggetto e viene selezionato), MI-GAN per l'anteprima veloce di Cancella, BiRefNet-lite per i bordi migliori, le tre scelte grandi all'apertura (§3.1).
+4. **Oggetti nella foto:** Sposta soggetto, Allarga, Adatta formato (§3.2, §3.4, §3.7).
+5. **Colorizza:** colore dai campioni (Zhang) e oggetto di riferimento (§3.5); poi il resto di Restauro (Ripara, Toni, Rumore, Nitidezza, Ingrandisci).
+6. **Studio luce** (§3.3) e Profondità/Volto/Miglioramento automatico (§3.6).
+7. **Webapp alla pari dell'APK** (§2.2): oggi i nuovi effetti, Colorizza, Cancella e Dividi esistono solo nell'APK.
+8. **Grafica vettoriale e loghi** (§3.7).
 
 ---
 
@@ -37,7 +82,7 @@ Fluidità misurata nelle prove a mano: fotogrammi a scatti dal 7,0% al 3,6%; car
    - Registro dei modelli unico per APK e web: file, impronta SHA-256, licenza, preparazione dell'immagine.
    - Nell'APK resta solo il nucleo; gli altri modelli si scaricano una volta al primo uso, con download ripreso se si interrompe e impronta verificata.
    - Un modello pesante alla volta, liberato dopo l'uso.
-   - *Decisione aperta:* dove ospitare i file (proposta: Release del repository GitHub) oppure tutto nell'APK.
+   - ✅ Fatto (`68a6f8d`): i file si scaricano dalle fonti ufficiali (Hugging Face) e si accettano solo con l'impronta giusta.
 2. **Webapp = stessa app.** Oggi la webapp (`public/`) è un programma separato e più vecchio. Proposta:
    - motori in **Kotlin Multiplatform**, che girano anche nel browser come WebAssembly;
    - interfaccia con **Compose Multiplatform per il web**, da verificarne la maturità prima di partire;
