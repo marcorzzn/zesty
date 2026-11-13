@@ -33,7 +33,7 @@ object FxEngine {
     fun setCatalog(c: FxCatalog) { catalog = c }
 
     private val ops: Map<String, FxOp> by lazy {
-        FxOpsColor.ops + FxOpsSpatial.ops + FxOpsDistort.ops + FxOpsPalette.ops
+        FxOpsColor.ops + FxOpsSpatial.ops + FxOpsDistort.ops + FxOpsPalette.ops + FxOpsArt.ops
     }
 
     /** Elenco delle operazioni disponibili (utile per documentazione e validazione del catalogo). */

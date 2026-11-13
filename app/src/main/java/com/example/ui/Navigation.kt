@@ -31,14 +31,14 @@ data class ToolFamily(val id: String, val label: String, val icon: ImageVector, 
 
 val TOOL_FAMILIES = listOf(
     ToolFamily("regola", "Regola", Icons.Default.Tune, listOf(
-        ToolNavItem("adjust", "Regolazioni", Icons.Default.Tune),
+        ToolNavItem("adjust", "Regolazioni", Icons.Default.WbSunny),
         ToolNavItem("curve", "Curve", Icons.Default.ShowChart)
     )),
     ToolFamily("effetti", "Effetti", Icons.Default.AutoAwesome, listOf(
         ToolNavItem("effects", "Filtri ed effetti", Icons.Default.AutoAwesome)
     )),
     ToolFamily("ritaglia", "Ritaglia", Icons.Default.Crop, listOf(
-        ToolNavItem("crop", "Ritaglia", Icons.Default.Crop),
+        ToolNavItem("crop", "Ritaglia", Icons.Default.CropFree),
         ToolNavItem("rotate", "Ruota e prospettiva", Icons.Default.RotateRight),
         ToolNavItem("resize", "Dimensione tela", Icons.Default.AspectRatio),
         ToolNavItem("fit", "Estendi", Icons.Default.FitScreen),
@@ -50,23 +50,23 @@ val TOOL_FAMILIES = listOf(
         // (i vecchi "Ritaglio libero", "Ritaglio a forma" e "Maschera" confluiscono qui; il codice resta)
         ToolNavItem("cutout", "Scontorna", Icons.Default.ContentCut)
     )),
-    // foto vecchie: colore, riparazioni, toni (Colorizza per primo; gli altri strumenti arrivano a seguire)
-    ToolFamily("restauro", "Restauro", Icons.Default.Palette, listOf(
-        ToolNavItem("colorize", "Colorizza", Icons.Default.Palette)
-    )),
     ToolFamily("ritocca", "Ritocca", Icons.Default.Healing, listOf(
         ToolNavItem("erase", "Cancella oggetti", Icons.Default.AutoFixOff),
-        ToolNavItem("clone", "Clona", Icons.Default.Healing),
+        ToolNavItem("clone", "Clona", Icons.Default.CopyAll),
         ToolNavItem("warp", "Fluidifica", Icons.Default.WaterDrop),
         ToolNavItem("brush", "Pennelli", Icons.Default.Brush),
         ToolNavItem("dispersion", "Dispersione", Icons.Default.Grain)
+    )),
+    // foto vecchie: colore, riparazioni, toni (Colorizza per primo; gli altri strumenti arrivano a seguire)
+    ToolFamily("restauro", "Restauro", Icons.Default.HistoryEdu, listOf(
+        ToolNavItem("colorize", "Colorizza", Icons.Default.Palette)
     )),
     ToolFamily("aggiungi", "Aggiungi", Icons.Default.AddCircleOutline, listOf(
         ToolNavItem("addphoto", "Foto", Icons.Default.AddPhotoAlternate),
         ToolNavItem("text", "Testo", Icons.Default.Title),
         ToolNavItem("shapes", "Forme", Icons.Default.Category),
         ToolNavItem("sticker", "Adesivi", Icons.Default.Star),
-        ToolNavItem("callout", "Fumetti", Icons.Default.ChatBubbleOutline),
+        ToolNavItem("callout", "Nuvolette", Icons.Default.ChatBubbleOutline),
         ToolNavItem("pen", "Penna e booleane", Icons.Default.Polyline),
         ToolNavItem("collage", "Collage", Icons.Default.GridView)
     )),
