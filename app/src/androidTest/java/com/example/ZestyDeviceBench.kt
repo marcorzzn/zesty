@@ -194,13 +194,20 @@ class ZestyDeviceBench {
 
     /** Effetti di pittura e tecniche nuove: tempo all'anteprima (720×960) e a piena risoluzione (1536×2048). */
     @Test
-    fun paintEffects() {
+    fun paintEffects() = timeEffects(listOf("art_impressionism", "art_swirl", "art_oil_brush", "art_pastel_strokes", "comic_speed", "poster_torn", "film_aerochrome"))
+
+    /** Tempi degli effetti ottici e geometrici (specchi, frattali, op-art, luce). */
+    @Test
+    fun opticEffects() = timeEffects(listOf("dist_droste_spiral", "dist_crystal_ball", "dist_shatter", "glitch_pixel_sort", "dist_mandala",
+        "geo_tiles_hex", "dist_julia", "dist_poincare_rose", "op_lines", "op_vasarely", "light_prism", "light_kirlian", "film_night_800"))
+
+    private fun timeEffects(ids: List<String>) {
         val ctx = InstrumentationRegistry.getInstrumentation().targetContext
         com.example.fx.FxEngine.load(ctx)
         val cat = com.example.fx.FxEngine.catalog
         for ((w, h) in listOf(720 to 960, 1536 to 2048)) {
             val src = com.example.fx.FxImage(w, h, scene(w, h))
-            for (id in listOf("art_impressionism", "art_swirl", "art_oil_brush", "art_pastel_strokes", "comic_speed", "poster_torn", "film_aerochrome")) {
+            for (id in ids) {
                 val fx = cat.get(id) ?: run { log("$id mancante"); continue }
                 com.example.fx.FxEngine.applyToImage(src.copy(), fx, emptyMap(), 1f, "normal") // riscaldamento
                 val t0 = SystemClock.elapsedRealtime()

@@ -18,6 +18,17 @@ class SplitGeometryTest {
     }
 
     @Test
+    fun upToTwentyColumnsRowsAndPanels() {
+        val g = SplitGeometry.rects(4000, 3000, SplitGeometry.Settings(mode = 0, cols = 20, rows = 20))
+        assertEquals(400, g.size)
+        assertEquals(4000 * 3000, g.sumOf { it.width() * it.height() })
+        assertEquals(200, g[0].width()); assertEquals(150, g[0].height())
+        val p = SplitGeometry.rects(20000, 1000, SplitGeometry.Settings(mode = 1, ratioW = 1f, ratioH = 1f, count = 20))
+        assertEquals(20, p.size)
+        assertEquals(20000, p.last().right)
+    }
+
+    @Test
     fun gapIsRemovedBetweenPanels() {
         val r = SplitGeometry.rects(1000, 500, SplitGeometry.Settings(mode = 0, cols = 2, rows = 1, gap = 20))
         assertEquals(490, r[0].width())

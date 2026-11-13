@@ -35,8 +35,8 @@ fun SplitToolPanel(state: EditorUiState, vm: EditorViewModel) {
             onSelect = { m -> vm.updateSplit { it.copy(mode = m) } }
         )
         if (s.mode == 0) {
-            PxSlider("Colonne", s.cols.toFloat(), 1f..10f, { v -> vm.updateSplit { it.copy(cols = v.roundToInt()) } })
-            PxSlider("Righe", s.rows.toFloat(), 1f..10f, { v -> vm.updateSplit { it.copy(rows = v.roundToInt()) } })
+            PxSlider("Colonne", s.cols.toFloat(), 1f..20f, { v -> vm.updateSplit { it.copy(cols = v.roundToInt()) } })
+            PxSlider("Righe", s.rows.toFloat(), 1f..20f, { v -> vm.updateSplit { it.copy(rows = v.roundToInt()) } })
         } else {
             PxCollectionRow {
                 SPLIT_RATIOS.forEach { (label, r) ->
@@ -48,7 +48,7 @@ fun SplitToolPanel(state: EditorUiState, vm: EditorViewModel) {
             // proporzione libera: due valori qualsiasi
             PxSlider("Larghezza", s.ratioW, 1f..21f, { v -> vm.updateSplit { it.copy(ratioW = (v * 2).roundToInt() / 2f) } }, decimals = true)
             PxSlider("Altezza", s.ratioH, 1f..21f, { v -> vm.updateSplit { it.copy(ratioH = (v * 2).roundToInt() / 2f) } }, decimals = true)
-            PxSlider("Pannelli", s.count.toFloat(), 1f..10f, { v -> vm.updateSplit { it.copy(count = v.roundToInt()) } })
+            PxSlider("Pannelli", s.count.toFloat(), 1f..20f, { v -> vm.updateSplit { it.copy(count = v.roundToInt()) } })
             PxSegmented(
                 options = listOf(PxOption("In fila"), PxOption("In colonna")),
                 selected = if (s.vertical) 1 else 0,

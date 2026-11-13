@@ -549,13 +549,21 @@ fun InteractiveCanvasStage(
                         color = android.graphics.Color.WHITE; textSize = 13.dp.toPx() / zs; isFakeBoldText = true
                         textAlign = android.graphics.Paint.Align.CENTER
                     }
+                    val badgeMax = 11.dp.toPx() / zs
+                    val badgeMin = 5.dp.toPx() / zs
                     rects.forEachIndexed { i, r ->
                         val l = left + r.left * sx; val t = top + r.top * sy; val rw = r.width() * sx; val rh = r.height() * sy
                         drawRect(Color.Black.copy(alpha = 0.5f), Offset(l, t), Size(rw, rh), style = Stroke(width = 3.dp.toPx() / zs))
                         drawRect(AccentPinkHi, Offset(l, t), Size(rw, rh), style = Stroke(width = 1.5.dp.toPx() / zs))
-                        val c = Offset(l + 16.dp.toPx() / zs, t + 16.dp.toPx() / zs)
-                        drawCircle(Color(0xE61F1D1A), radius = 11.dp.toPx() / zs, center = c)
-                        drawIntoCanvas { it.nativeCanvas.drawText("${i + 1}", c.x, c.y + 4.5.dp.toPx() / zs, paint) }
+                        // con molte colonne/righe il numero rimpicciolisce col pannello e sparisce quando non ci sta,
+                        // così non copre la foto né i pannelli vicini
+                        val rad = min(badgeMax, min(rw, rh) * 0.28f)
+                        if (rad >= badgeMin) {
+                            val c = Offset(l + rad * 1.45f, t + rad * 1.45f)
+                            drawCircle(Color(0xE61F1D1A), radius = rad, center = c)
+                            paint.textSize = 13.dp.toPx() / zs * (rad / badgeMax)
+                            drawIntoCanvas { it.nativeCanvas.drawText("${i + 1}", c.x, c.y + paint.textSize * 0.35f, paint) }
+                        }
                     }
                 }
 
